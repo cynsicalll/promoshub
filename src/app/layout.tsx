@@ -16,9 +16,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PromoHub – Sound-Promo-Verwaltung",
+  title: "PromoHub – Sound Promo Manager",
   description:
-    "Modernes Promo-Management für Sounds: Promos, Zahlungen, Kunden und Sounds zentral verwalten.",
+    "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
+  openGraph: {
+    title: "PromoHub – Sound Promo Manager",
+    description:
+      "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "PromoHub – Sound Promo Manager",
+    description:
+      "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
