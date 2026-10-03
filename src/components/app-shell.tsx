@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useAppStore, type ViewKey } from "@/lib/store";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -30,6 +29,7 @@ import { useDashboard } from "@/hooks/use-data";
 import { formatCurrency } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
+import { BounceSidebar, type BounceSidebarItem } from "@/components/ui/bounce-sidebar";
 
 interface NavItem {
   key: ViewKey;
@@ -91,32 +91,24 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const setView = useAppStore((s) => s.setView);
   // promo-detail should highlight promos
   const activeKey: ViewKey = view === "promo-detail" ? "promos" : view;
+  const activeIndex = NAV.findIndex((item) => item.key === activeKey);
+
+  const items: BounceSidebarItem[] = NAV.map((item) => ({
+    label: t(item.label),
+    icon: item.icon,
+  }));
 
   return (
-    <nav className="flex flex-col gap-1">
-      {NAV.map((item) => {
-        const Icon = item.icon;
-        const active = activeKey === item.key;
-        return (
-          <button
-            key={item.key}
-            onClick={() => {
-              setView(item.key);
-              onNavigate?.();
-            }}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {t(item.label)}
-          </button>
-        );
-      })}
-    </nav>
+    <BounceSidebar
+      items={items}
+      value={activeIndex}
+      defaultValue={0}
+      onChange={(index) => {
+        setView(NAV[index].key);
+        onNavigate?.();
+      }}
+      dotColor="#10b981"
+    />
   );
 }
 
