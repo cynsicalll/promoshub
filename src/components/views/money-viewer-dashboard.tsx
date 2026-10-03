@@ -187,7 +187,10 @@ export function MoneyViewerDashboard() {
                           entry.earned += p.amount;
                           if (p.received) entry.received += p.amount;
                         }
-                        return Array.from(months.values()).sort((a, b) => a.label.localeCompare(b.label));
+                        // Sort chronologically by key (oldest first for the chart)
+                        return Array.from(months.entries())
+                          .sort((a, b) => a[0].localeCompare(b[0]))
+                          .map(([, val]) => val);
                       })()}
                       barGap={4}
                     >
