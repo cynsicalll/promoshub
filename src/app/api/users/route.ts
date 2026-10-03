@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   }
 
   const users = await db.user.findMany({
-    where: { role: "CUSTOMER" },
+    where: { role: { in: ["CUSTOMER", "VIEWER"] } },
     include: {
       promoAccess: {
         include: {
@@ -31,11 +31,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
   }
 
-  const { username, password, displayName, promoIds } = (await req.json()) as {
+  const { username, password, displayName, promoIds, role } = (await req.json()) as {
     username?: string;
     password?: string;
     displayName?: string;
     promoIds?: string[];
+    role?: string;
   };
 
   if (!username || !username.trim()) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     data: {
       username: normalizedUsername,
       passwordHash: hashPassword(password),
-      role: "CUSTOMER",
+      role: role === "VIEWER" ? "VIEWER" : "CUSTOMER",
       displayName: displayName?.trim() || null,
       promoAccess: promoIds?.length
         ? {

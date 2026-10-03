@@ -17,6 +17,7 @@ import { SettingsView } from "@/components/views/settings-view";
 import { ShareView } from "@/components/views/share-view";
 import { LoginScreen } from "@/components/views/login-screen";
 import { CustomerDashboard } from "@/components/views/customer-dashboard";
+import { MoneyViewerDashboard } from "@/components/views/money-viewer-dashboard";
 
 function AdminApp() {
   const view = useAppStore((s) => s.view);
@@ -61,6 +62,9 @@ function AuthRouter() {
 
   // Admin → full app
   if (user.role === "ADMIN") return <AdminApp />;
+
+  // Viewer → money viewer dashboard (only sees financial data)
+  if (user.role === "VIEWER") return <MoneyViewerDashboard />;
 
   // Customer → customer dashboard
   return <CustomerDashboard />;

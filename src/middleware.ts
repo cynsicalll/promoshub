@@ -68,8 +68,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // For /api/my-promos, require any logged-in user
-  if (pathname === "/api/my-promos") {
+  // For /api/my-promos and /api/viewer-data, require any logged-in user
+  if (pathname === "/api/my-promos" || pathname === "/api/viewer-data") {
     if (!hasSessionCookie(req)) {
       return NextResponse.json(
         { error: "Authentication required" },

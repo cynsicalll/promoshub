@@ -507,6 +507,23 @@ const en: Dict = {
   "stats.col.shares": "Shares",
   "stats.col.avgViews": "Avg Views",
 
+  // ─── Money Viewer ─────────────────────────────────────────
+  "viewer.title": "Payments Overview",
+  "viewer.subtitle": "Financial overview — payments received and outstanding.",
+  "viewer.total": "Total",
+  "viewer.received": "Received",
+  "viewer.outstanding": "Outstanding",
+  "viewer.overdue": "Overdue",
+  "viewer.noData": "No payment data available.",
+  "viewer.noPayments": "No payments found.",
+  "viewer.payments": "payment(s)",
+  "viewer.col.date": "Date",
+  "viewer.col.amount": "Amount",
+  "viewer.col.paidOut": "Paid Out",
+  "viewer.col.received": "Received",
+  "viewer.col.receivedDate": "Received On",
+  "viewer.col.status": "Status",
+
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "PromoHub · Sound Promo Manager · Data is stored locally in SQLite",
 
@@ -1053,6 +1070,23 @@ const de: Dict = {
   "stats.col.comments": "Kommentare",
   "stats.col.shares": "Shares",
   "stats.col.avgViews": "Ø Aufrufe",
+
+  // ─── Money Viewer ─────────────────────────────────────────
+  "viewer.title": "Zahlungsübersicht",
+  "viewer.subtitle": "Finanzielle Übersicht – erhaltene und ausstehende Zahlungen.",
+  "viewer.total": "Gesamt",
+  "viewer.received": "Erhalten",
+  "viewer.outstanding": "Ausstehend",
+  "viewer.overdue": "Überfällig",
+  "viewer.noData": "Keine Zahlungsdaten verfügbar.",
+  "viewer.noPayments": "Keine Zahlungen gefunden.",
+  "viewer.payments": "Zahlung(en)",
+  "viewer.col.date": "Datum",
+  "viewer.col.amount": "Betrag",
+  "viewer.col.paidOut": "Ausgezahlt",
+  "viewer.col.received": "Angekommen",
+  "viewer.col.receivedDate": "Eingang am",
+  "viewer.col.status": "Status",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "PromoHub · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",
