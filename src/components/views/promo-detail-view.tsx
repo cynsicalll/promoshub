@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StatCard } from "@/components/stat-card";
 import { toast } from "sonner";
+import { useI18n } from "@/components/language-provider";
 import {
   useUpdatePayment,
   useEnableShare,
@@ -67,6 +68,7 @@ import {
 import { formatDateInput, toISODate } from "@/lib/format";
 
 export function PromoDetailView() {
+  const { t } = useI18n();
   const promoId = useAppStore((s) => s.selectedPromoId);
   const setView = useAppStore((s) => s.setView);
   const { data: promos = [] } = usePromos();
@@ -82,9 +84,9 @@ export function PromoDetailView() {
   if (!promo) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-muted-foreground">Promo nicht gefunden.</p>
+        <p className="text-muted-foreground">{t("detail.notFound")}</p>
         <Button variant="outline" className="mt-4" onClick={() => setView("promos")}>
-          Zurück zu Promos
+          {t("detail.back")}
         </Button>
       </div>
     );
@@ -113,19 +115,19 @@ export function PromoDetailView() {
     if (field === "paidOut" && !value) patch.payoutDate = null;
     try {
       await updatePayment.mutateAsync({ id, data: patch as never });
-      toast.success(value ? "Aktualisiert" : "Aktualisiert");
+      toast.success(t("detail.updatedToast"));
     } catch {
-      toast.error("Fehler beim Aktualisieren");
+      toast.error(t("detail.updateFailedToast"));
     }
   }
 
   async function handleDelete() {
     try {
       await deletePromo.mutateAsync(promo!.id);
-      toast.success("Promo gelöscht");
+      toast.success(t("promos.deletedToast"));
       setView("promos");
     } catch {
-      toast.error("Löschen fehlgeschlagen");
+      toast.error(t("action.deleteFailed"));
     }
   }
 
@@ -134,20 +136,20 @@ export function PromoDetailView() {
       const res = await enableShare.mutateAsync(promo!.id);
       const url = `${window.location.origin}/?share=${res.shareCode}`;
       await navigator.clipboard.writeText(url);
-      toast.success("Freigabe aktiviert – Link kopiert!", {
+      toast.success(t("detail.shareEnabledToast"), {
         description: url,
       });
     } catch {
-      toast.error("Freigabe konnte nicht aktiviert werden");
+      toast.error(t("detail.shareEnableFailedToast"));
     }
   }
 
   async function handleDisableShare() {
     try {
       await disableShare.mutateAsync(promo!.id);
-      toast.success("Kunden-Freigabe deaktiviert");
+      toast.success(t("detail.shareDisabledToast"));
     } catch {
-      toast.error("Deaktivieren fehlgeschlagen");
+      toast.error(t("detail.shareDisableFailedToast"));
     }
   }
 
@@ -156,9 +158,9 @@ export function PromoDetailView() {
     const url = `${window.location.origin}/?share=${promo.shareCode}`;
     try {
       await navigator.clipboard.writeText(url);
-      toast.success("Link kopiert", { description: url });
+      toast.success(t("detail.linkCopiedToast"), { description: url });
     } catch {
-      toast.error("Kopieren fehlgeschlagen");
+      toast.error(t("detail.copyFailedToast"));
     }
   }
 
@@ -187,7 +189,7 @@ export function PromoDetailView() {
                 <Calendar className="h-3.5 w-3.5" /> {formatDate(promo.date)}
               </span>
               <span className="flex items-center gap-1">
-                <User className="h-3.5 w-3.5" /> {promo.customer?.name || "Kein Kunde"}
+                <User className="h-3.5 w-3.5" /> {promo.customer?.name || t("detail.noCustomer")}
                 {promo.customer?.company ? ` · ${promo.customer.company}` : ""}
               </span>
             </p>
@@ -201,7 +203,7 @@ export function PromoDetailView() {
               onClick={copyShareLink}
               className="gap-2"
             >
-              <Share2 className="h-4 w-4" /> Link kopieren
+              <Share2 className="h-4 w-4" /> {t("detail.copyLink")}
             </Button>
           ) : null}
           {promo.shareEnabled ? (
@@ -212,7 +214,7 @@ export function PromoDetailView() {
               className="gap-2"
               disabled={disableShare.isPending}
             >
-              <Lock className="h-4 w-4" /> Freigabe stoppen
+              <Lock className="h-4 w-4" /> {t("detail.stopShare")}
             </Button>
           ) : (
             <Button
@@ -222,7 +224,7 @@ export function PromoDetailView() {
               className="gap-2"
               disabled={enableShare.isPending}
             >
-              <Unlock className="h-4 w-4" /> Kunden teilen
+              <Unlock className="h-4 w-4" /> {t("detail.shareWithCustomer")}
             </Button>
           )}
           <Button
@@ -231,7 +233,7 @@ export function PromoDetailView() {
             onClick={() => setFormOpen(true)}
             className="gap-2"
           >
-            <Pencil className="h-4 w-4" /> Bearbeiten
+            <Pencil className="h-4 w-4" /> {t("action.edit")}
           </Button>
           <Button
             variant="outline"
@@ -239,7 +241,7 @@ export function PromoDetailView() {
             onClick={() => setDeleteConfirm(true)}
             className="gap-2 text-rose-600 hover:text-rose-700"
           >
-            <Trash2 className="h-4 w-4" /> Löschen
+            <Trash2 className="h-4 w-4" /> {t("action.delete")}
           </Button>
         </div>
       </div>
@@ -251,9 +253,9 @@ export function PromoDetailView() {
             <Share2 className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">Kunden-Ansicht aktiv</p>
+            <p className="text-sm font-medium">{t("detail.shareActive")}</p>
             <p className="text-xs text-muted-foreground truncate">
-              Link: {typeof window !== "undefined" ? window.location.origin : ""}/?share={promo.shareCode}
+              {t("detail.shareLink")} {typeof window !== "undefined" ? window.location.origin : ""}/?share={promo.shareCode}
             </p>
           </div>
           <div className="flex gap-2">
@@ -263,7 +265,7 @@ export function PromoDetailView() {
               onClick={copyShareLink}
               className="gap-2"
             >
-              <Copy className="h-3.5 w-3.5" /> Kopieren
+              <Copy className="h-3.5 w-3.5" /> {t("action.copy")}
             </Button>
             <a
               href={`/?share=${promo.shareCode}`}
@@ -271,7 +273,7 @@ export function PromoDetailView() {
               rel="noopener noreferrer"
             >
               <Button variant="outline" size="sm" className="gap-2">
-                <ExternalLink className="h-3.5 w-3.5" /> Öffnen
+                <ExternalLink className="h-3.5 w-3.5" /> {t("detail.openShare")}
               </Button>
             </a>
           </div>
@@ -281,26 +283,26 @@ export function PromoDetailView() {
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Gesamtbetrag"
+          label={t("detail.totalAmount")}
           value={formatCurrency(total)}
           icon={Wallet}
         />
         <StatCard
-          label="Bereits erhalten"
+          label={t("detail.alreadyReceived")}
           value={formatCurrency(received)}
           icon={CheckCircle2}
           tone="emerald"
         />
         <StatCard
-          label="Noch offen"
+          label={t("detail.stillOpen")}
           value={formatCurrency(outstanding)}
           icon={Clock}
           tone={outstanding > 0 ? "amber" : "default"}
         />
         <StatCard
-          label="Sounds übrig"
+          label={t("detail.soundsRemaining")}
           value={`${soundsRemaining} / ${soundsTotal}`}
-          hint={`${soundsUsed} verwendet`}
+          hint={t("detail.soundsUsedHint", { count: soundsUsed })}
           icon={Music2}
           tone="teal"
         />
@@ -311,11 +313,11 @@ export function PromoDetailView() {
         <div className="space-y-5">
           <Card className="p-5">
             <h3 className="font-semibold flex items-center gap-2 mb-3">
-              <Music2 className="h-4 w-4 text-muted-foreground" /> Sounds
+              <Music2 className="h-4 w-4 text-muted-foreground" /> {t("detail.sounds")}
             </h3>
             {promo.sounds.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Keine Sounds zugeordnet.
+                {t("detail.noSounds")}
               </p>
             ) : (
               <div className="space-y-3">
@@ -374,7 +376,7 @@ export function PromoDetailView() {
                             </a>
                           )}
                           <span className={over ? "text-rose-600" : ""}>
-                            {remaining} übrig
+                            {remaining} {t("form.remaining")}
                             {over && " ⚠"}
                           </span>
                         </div>
@@ -389,28 +391,28 @@ export function PromoDetailView() {
           {promo.customer && (
             <Card className="p-5">
               <h3 className="font-semibold flex items-center gap-2 mb-3">
-                <User className="h-4 w-4 text-muted-foreground" /> Kunde
+                <User className="h-4 w-4 text-muted-foreground" /> {t("detail.customer")}
               </h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Name</dt>
+                  <dt className="text-muted-foreground">{t("detail.field.name")}</dt>
                   <dd className="font-medium text-right">{promo.customer.name}</dd>
                 </div>
                 {promo.customer.company && (
                   <div className="flex justify-between gap-2">
-                    <dt className="text-muted-foreground">Firma</dt>
+                    <dt className="text-muted-foreground">{t("detail.field.company")}</dt>
                     <dd className="text-right">{promo.customer.company}</dd>
                   </div>
                 )}
                 {promo.customer.contactPerson && (
                   <div className="flex justify-between gap-2">
-                    <dt className="text-muted-foreground">Ansprechpartner</dt>
+                    <dt className="text-muted-foreground">{t("detail.field.contact")}</dt>
                     <dd className="text-right">{promo.customer.contactPerson}</dd>
                   </div>
                 )}
                 {promo.customer.email && (
                   <div className="flex justify-between gap-2">
-                    <dt className="text-muted-foreground">E-Mail</dt>
+                    <dt className="text-muted-foreground">{t("detail.field.email")}</dt>
                     <dd className="text-right">
                       <a
                         href={`mailto:${promo.customer.email}`}
@@ -423,7 +425,7 @@ export function PromoDetailView() {
                 )}
                 {promo.customer.phone && (
                   <div className="flex justify-between gap-2">
-                    <dt className="text-muted-foreground">Telefon</dt>
+                    <dt className="text-muted-foreground">{t("detail.field.phone")}</dt>
                     <dd className="text-right">{promo.customer.phone}</dd>
                   </div>
                 )}
@@ -444,11 +446,11 @@ export function PromoDetailView() {
         <div className="space-y-5 lg:col-span-2">
           <Card className="p-5">
             <h3 className="font-semibold flex items-center gap-2 mb-4">
-              <Wallet className="h-4 w-4 text-muted-foreground" /> Zahlungen
+              <Wallet className="h-4 w-4 text-muted-foreground" /> {t("detail.payments")}
             </h3>
             {promo.payments.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Keine Zahlungen erfasst.
+                {t("detail.noPayments")}
               </p>
             ) : (
               <div className="space-y-3">
@@ -485,7 +487,7 @@ export function PromoDetailView() {
                             }
                             disabled={updatePayment.isPending}
                           />
-                          <span>Ausgezahlt</span>
+                          <span>{t("form.paidOut")}</span>
                         </label>
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox
@@ -495,25 +497,25 @@ export function PromoDetailView() {
                             }
                             disabled={updatePayment.isPending}
                           />
-                          <span>Geld angekommen</span>
+                          <span>{t("form.received")}</span>
                         </label>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                         <div>
-                          <p className="text-muted-foreground">Erwartet</p>
+                          <p className="text-muted-foreground">{t("money.col.expected")}</p>
                           <p className="font-medium">
                             {formatDate(p.expectedDate)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Ausgezahlt am</p>
+                          <p className="text-muted-foreground">{t("form.payoutDate")}</p>
                           <p className="font-medium">
                             {formatDate(p.payoutDate)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Eingang</p>
+                          <p className="text-muted-foreground">{t("money.col.received")}</p>
                           <p className="font-medium">
                             {formatDate(p.receivedDate)}
                           </p>
@@ -530,7 +532,7 @@ export function PromoDetailView() {
               </div>
             )}
             <div className="mt-4 pt-3 border-t flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Gesamt erhalten / offen</span>
+              <span className="text-muted-foreground">{t("detail.totalReceivedOpen")}</span>
               <span className="font-semibold tabular-nums">
                 <span className="text-emerald-600">{formatCurrency(received)}</span>
                 {" / "}
@@ -543,7 +545,7 @@ export function PromoDetailView() {
           <Card className="p-5">
             <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
               <h3 className="font-semibold flex items-center gap-2">
-                <Video className="h-4 w-4 text-muted-foreground" /> TikToks
+                <Video className="h-4 w-4 text-muted-foreground" /> {t("detail.tiktoks")}
               </h3>
               <div className="text-right">
                 <p className="text-lg font-semibold tabular-nums">
@@ -552,7 +554,7 @@ export function PromoDetailView() {
                     /{promo.tiktokTarget || 0}
                   </span>
                 </p>
-                <p className="text-[11px] text-muted-foreground">erstellt / Ziel</p>
+                <p className="text-[11px] text-muted-foreground">{t("detail.createdDone")}</p>
               </div>
             </div>
 
@@ -572,16 +574,16 @@ export function PromoDetailView() {
 
             {promo.tiktoks.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Noch keine TikTok-Links erfasst.
+                {t("detail.noTiktoks")}
               </p>
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
-                {promo.tiktoks.map((t) => {
-                  const sound = promo.sounds.find((ps) => ps.soundId === t.soundId);
+                {promo.tiktoks.map((tk) => {
+                  const sound = promo.sounds.find((ps) => ps.soundId === tk.soundId);
                   return (
                     <a
-                      key={t.id}
-                      href={normalizeUrl(t.url)}
+                      key={tk.id}
+                      href={normalizeUrl(tk.url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="group flex items-center gap-3 rounded-lg border p-3 hover:border-pink-400 hover:bg-pink-50/40 dark:hover:bg-pink-950/20 transition-colors"
@@ -591,10 +593,10 @@ export function PromoDetailView() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">
-                          {t.title || "Ohne Titel"}
+                          {tk.title || t("share.noTitle")}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {domainFromUrl(t.url)}
+                          {domainFromUrl(tk.url)}
                           {sound ? ` · ${sound.sound.name}` : ""}
                         </p>
                       </div>
@@ -609,13 +611,13 @@ export function PromoDetailView() {
           {(promo.notes || promo.customer?.notes) && (
             <Card className="p-5">
               <h3 className="font-semibold flex items-center gap-2 mb-3">
-                <StickyNote className="h-4 w-4 text-muted-foreground" /> Notizen
+                <StickyNote className="h-4 w-4 text-muted-foreground" /> {t("detail.notes")}
               </h3>
               {promo.notes ? (
                 <p className="text-sm whitespace-pre-wrap">{promo.notes}</p>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Keine Notizen zur Promo.
+                  {t("detail.noNotes")}
                 </p>
               )}
             </Card>
@@ -636,19 +638,18 @@ export function PromoDetailView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Promo „{promo.name}" löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t("detail.deleteTitle", { name: promo.name })}</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht rückgängig gemacht werden. Alle
-              verknüpften Zahlungen und Sound-Zuordnungen werden gelöscht.
+              {t("detail.deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              Löschen
+              {t("action.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

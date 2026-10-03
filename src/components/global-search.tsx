@@ -20,6 +20,7 @@ import {
   Music2,
   Search as SearchIcon,
 } from "lucide-react";
+import { useI18n } from "@/components/language-provider";
 
 export function GlobalSearch({
   open,
@@ -28,6 +29,7 @@ export function GlobalSearch({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useI18n();
   const [q, setQ] = React.useState("");
   const [results, setResults] = React.useState<{
     promos: Promo[];
@@ -50,7 +52,7 @@ export function GlobalSearch({
       setResults({ promos: [], customers: [], sounds: [] });
       return;
     }
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const r = await api.search(q);
         setResults(r);
@@ -58,7 +60,7 @@ export function GlobalSearch({
         /* ignore */
       }
     }, 200);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [q]);
 
   function handlePromo(id: string) {
@@ -76,17 +78,17 @@ export function GlobalSearch({
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
-        placeholder="Promos, Kunden, Sounds, Beträge durchsuchen…"
+        placeholder={t("search.placeholder")}
         value={q}
         onValueChange={setQ}
       />
       <CommandList>
         <CommandEmpty>
-          {q ? "Keine Treffer." : "Tippe um zu suchen."}
+          {q ? t("search.noResults") : t("search.typeToSearch")}
         </CommandEmpty>
 
         {results.promos.length > 0 && (
-          <CommandGroup heading="Promos">
+          <CommandGroup heading={t("nav.promos")}>
             {results.promos.map((p) => (
               <CommandItem
                 key={p.id}
@@ -114,7 +116,7 @@ export function GlobalSearch({
         {results.customers.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="Kunden">
+            <CommandGroup heading={t("nav.customers")}>
               {results.customers.map((c) => (
                 <CommandItem
                   key={c.id}
@@ -140,7 +142,7 @@ export function GlobalSearch({
         {results.sounds.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="Sounds">
+            <CommandGroup heading={t("nav.sounds")}>
               {results.sounds.map((s) => (
                 <CommandItem
                   key={s.id}
@@ -164,7 +166,7 @@ export function GlobalSearch({
         )}
 
         {q && total === 0 && (
-          <CommandEmpty>Keine Treffer für „{q}".</CommandEmpty>
+          <CommandEmpty>{t("search.noResultsFor", { q })}</CommandEmpty>
         )}
       </CommandList>
     </CommandDialog>
@@ -176,13 +178,14 @@ export function SearchTrigger({
 }: {
   onOpen: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <button
       onClick={onOpen}
       className="group flex w-full items-center gap-2.5 rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-64"
     >
       <SearchIcon className="h-4 w-4" />
-      <span className="flex-1 text-left">Suchen…</span>
+      <span className="flex-1 text-left">{t("action.search")}</span>
       <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
         ⌘K
       </kbd>

@@ -28,6 +28,8 @@ import { GlobalSearch, SearchTrigger } from "@/components/global-search";
 import { PromoFormDialog } from "@/components/views/promo-form-dialog";
 import { useDashboard } from "@/hooks/use-data";
 import { formatCurrency } from "@/lib/format";
+import { useI18n } from "@/components/language-provider";
+import { LanguageToggle } from "@/components/language-toggle";
 
 interface NavItem {
   key: ViewKey;
@@ -36,30 +38,32 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { key: "promos", label: "Promos", icon: Megaphone },
-  { key: "money", label: "Geld", icon: Wallet },
-  { key: "monthly", label: "Monatsübersicht", icon: CalendarRange },
-  { key: "sounds", label: "Sounds", icon: Music2 },
-  { key: "customers", label: "Kunden", icon: Users },
-  { key: "settings", label: "Einstellungen", icon: Settings },
+  { key: "dashboard", label: "nav.dashboard", icon: LayoutDashboard },
+  { key: "promos", label: "nav.promos", icon: Megaphone },
+  { key: "money", label: "nav.money", icon: Wallet },
+  { key: "monthly", label: "nav.monthly", icon: CalendarRange },
+  { key: "sounds", label: "nav.sounds", icon: Music2 },
+  { key: "customers", label: "nav.customers", icon: Users },
+  { key: "settings", label: "nav.settings", icon: Settings },
 ];
 
 function BrandLogo() {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-2.5">
       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
         <AudioLines className="h-5 w-5" />
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-semibold tracking-tight">PromoHub</p>
-        <p className="text-[11px] text-muted-foreground">Sound Promo Manager</p>
+        <p className="text-sm font-semibold tracking-tight">{t("app.name")}</p>
+        <p className="text-[11px] text-muted-foreground">{t("app.subtitle")}</p>
       </div>
     </div>
   );
 }
 
 function ThemeToggle() {
+  const { t } = useI18n();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -70,7 +74,7 @@ function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      aria-label="Theme wechseln"
+      aria-label={t("action.themeToggle")}
     >
       {theme === "dark" ? (
         <Sun className="h-4 w-4" />
@@ -82,6 +86,7 @@ function ThemeToggle() {
 }
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useI18n();
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
   // promo-detail should highlight promos
@@ -107,7 +112,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             )}
           >
             <Icon className="h-4 w-4" />
-            {item.label}
+            {t(item.label)}
           </button>
         );
       })}
@@ -116,22 +121,24 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function MoneySummary() {
+  const { t } = useI18n();
   const { data } = useDashboard();
   if (!data) return null;
   return (
     <div className="mt-auto rounded-lg border bg-muted/30 p-3 space-y-1.5">
-      <p className="text-xs font-medium text-muted-foreground">Offene Zahlungen</p>
+      <p className="text-xs font-medium text-muted-foreground">{t("sidebar.openPayments")}</p>
       <p className="text-lg font-semibold tabular-nums">
         {formatCurrency(data.money.outstanding)}
       </p>
       <p className="text-xs text-muted-foreground">
-        Erhalten: {formatCurrency(data.money.received)}
+        {t("sidebar.received")} {formatCurrency(data.money.received)}
       </p>
     </div>
   );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [formOpen, setFormOpen] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -158,7 +165,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mt-6 flex flex-col gap-2">
           <Button onClick={() => setFormOpen(true)} className="w-full gap-2">
             <Plus className="h-4 w-4" />
-            Neue Promo
+            {t("action.newPromo")}
           </Button>
         </div>
         <div className="mt-6">
@@ -183,7 +190,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="w-full gap-2"
             >
               <Plus className="h-4 w-4" />
-              Neue Promo
+              {t("action.newPromo")}
             </Button>
           </div>
           <div className="mt-6">
@@ -200,7 +207,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             size="icon"
             className="md:hidden"
             onClick={() => setMobileOpen(true)}
-            aria-label="Menü öffnen"
+            aria-label={t("action.openMenu")}
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -215,8 +222,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="gap-2"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Neue Promo</span>
+              <span className="hidden sm:inline">{t("action.newPromo")}</span>
             </Button>
+            <LanguageToggle />
             <ThemeToggle />
           </div>
         </header>
@@ -224,7 +232,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0">{children}</main>
 
         <footer className="mt-auto border-t bg-background px-4 py-4 text-center text-xs text-muted-foreground md:px-6">
-          PromoHub · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert
+          {t("app.footer")}
         </footer>
       </div>
 

@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { useI18n } from "@/components/language-provider";
 
 interface CustomerUser {
   id: string;
@@ -65,6 +66,7 @@ interface Promo {
 }
 
 export function CustomerAccessSection() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editUser, setEditUser] = React.useState<CustomerUser | null>(null);
@@ -73,7 +75,7 @@ export function CustomerAccessSection() {
     queryKey: ["users"],
     queryFn: async () => {
       const res = await fetch("/api/users");
-      if (!res.ok) throw new Error("Fehler beim Laden");
+      if (!res.ok) throw new Error(t("customerAccess.toast.loadFailed"));
       return res.json();
     },
   });
@@ -82,7 +84,7 @@ export function CustomerAccessSection() {
     queryKey: ["promos-for-access"],
     queryFn: async () => {
       const res = await fetch("/api/promos");
-      if (!res.ok) throw new Error("Fehler");
+      if (!res.ok) throw new Error(t("common.error"));
       return res.json();
     },
   });
@@ -90,13 +92,13 @@ export function CustomerAccessSection() {
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Löschen fehlgeschlagen");
+      if (!res.ok) throw new Error(t("customerAccess.toast.deleteFailed"));
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Kundenzugang gelöscht");
+      toast.success(t("settings.customerAccessDeleted"));
     },
-    onError: () => toast.error("Löschen fehlgeschlagen"),
+    onError: () => toast.error(t("customerAccess.toast.deleteFailed")),
   });
 
   return (
@@ -104,7 +106,7 @@ export function CustomerAccessSection() {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-semibold">Kundenzugänge verwalten</h2>
+          <h2 className="font-semibold">{t("settings.customerAccess")}</h2>
         </div>
         <Button
           size="sm"
@@ -114,14 +116,12 @@ export function CustomerAccessSection() {
           }}
           className="gap-2"
         >
-          <UserPlus className="h-4 w-4" /> Neuer Kundenzugang
+          <UserPlus className="h-4 w-4" /> {t("settings.newCustomerAccess")}
         </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Erstellen Sie Kunden-Logins mit beliebigem Namen und Passwort und
-        weisen Sie ihnen Promos zu. Kunden sehen nach dem Login nur ihre
-        zugewiesenen Promos mit Status, Sounds und TikTok-Links.
+        {t("settings.customerAccessDesc")}
       </p>
 
       <Separator />
@@ -134,7 +134,7 @@ export function CustomerAccessSection() {
         <div className="text-center py-8">
           <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
-            Noch keine Kundenzugänge angelegt.
+            {t("settings.noCustomerAccess")}
           </p>
         </div>
       ) : (
@@ -155,7 +155,7 @@ export function CustomerAccessSection() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Angelegt am {formatDate(u.createdAt)}
+                    {t("settings.createdAt")} {formatDate(u.createdAt)}
                   </p>
                 </div>
                 <div className="flex gap-1">
@@ -183,20 +183,19 @@ export function CustomerAccessSection() {
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>
-                          Kundenzugang „{u.username}" löschen?
+                          {t("settings.customerAccessDeleteTitle", { username: u.username })}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Der Zugang wird unwiderruflich entfernt. Der Kunde
-                          kann sich danach nicht mehr anmelden.
+                          {t("settings.customerAccessDeleteDesc")}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => deleteUser.mutate(u.id)}
                           className="bg-rose-600 hover:bg-rose-700 text-white"
                         >
-                          Löschen
+                          {t("action.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -242,6 +241,7 @@ function UserFormDialog({
   user: CustomerUser | null;
   promos: Promo[];
 }) {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -273,11 +273,11 @@ function UserFormDialog({
 
   async function handleSubmit() {
     if (!username.trim()) {
-      toast.error("Benutzername erforderlich");
+      toast.error(t("customerAccess.error.usernameRequired"));
       return;
     }
     if (!user && (!password || password.length < 4)) {
-      toast.error("Passwort muss mindestens 4 Zeichen lang sein");
+      toast.error(t("customerAccess.error.passwordMin"));
       return;
     }
     setSaving(true);
@@ -298,13 +298,18 @@ function UserFormDialog({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Fehler beim Speichern");
+        const fallback = user
+          ? t("customerAccess.toast.saveFailed")
+          : t("customerAccess.error.usernameTaken");
+        throw new Error(data.error || fallback);
       }
-      toast.success(user ? "Zugang aktualisiert" : "Zugang erstellt");
+      toast.success(
+        user ? t("settings.customerAccessUpdated") : t("settings.customerAccessCreated")
+      );
       qc.invalidateQueries({ queryKey: ["users"] });
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fehler");
+      toast.error(e instanceof Error ? e.message : t("common.error"));
     } finally {
       setSaving(false);
     }
@@ -315,66 +320,67 @@ function UserFormDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {user ? "Kundenzugang bearbeiten" : "Neuen Kundenzugang erstellen"}
+            {user ? t("settings.form.editAccess") : t("settings.form.createAccess")}
           </DialogTitle>
           <DialogDescription>
-            Der Kunde meldet sich mit diesen Daten an und sieht nur die
-            zugewiesenen Promos.
+            {t("settings.form.accessDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="cu-username">Benutzername *</Label>
+            <Label htmlFor="cu-username">{t("settings.form.username")}</Label>
             <Input
               id="cu-username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="z. B. nike_lisa"
+              placeholder={t("settings.form.usernamePlaceholder")}
               disabled={!!user}
             />
             {user && (
               <p className="text-xs text-muted-foreground">
-                Der Benutzername kann nicht geändert werden.
+                {t("settings.form.usernameLocked")}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="cu-displayname">
-              Anzeigename (optional)
+              {t("settings.form.displayName")}
             </Label>
             <Input
               id="cu-displayname"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="z. B. Lisa Müller (Nike)"
+              placeholder={t("settings.form.displayNamePlaceholder")}
             />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="cu-password">
-              Passwort {user ? "(leer = nicht ändern)" : "*"}
+              {user
+                ? `${t("settings.form.password")} ${t("settings.form.passwordEdit")}`
+                : t("settings.form.passwordCreate")}
             </Label>
             <Input
               id="cu-password"
               type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={user ? "Neues Passwort (optional)" : "Mind. 4 Zeichen"}
+              placeholder={user ? t("settings.form.passwordEditPlaceholder") : t("settings.form.passwordPlaceholder")}
             />
           </div>
 
           <Separator />
 
           <div className="space-y-2">
-            <Label>Zugewiesene Promos</Label>
+            <Label>{t("settings.form.assignedPromos")}</Label>
             <p className="text-xs text-muted-foreground">
-              Wählen Sie die Promos, die dieser Kunde sehen darf.
+              {t("settings.form.assignedPromosDesc")}
             </p>
             {promos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Keine Promos vorhanden.
+                {t("settings.form.noPromos")}
               </p>
             ) : (
               <div className="max-h-56 overflow-y-auto space-y-1 rounded-lg border p-2">
@@ -396,17 +402,17 @@ function UserFormDialog({
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              {selectedPromos.size} Promo(s) ausgewählt
+              {t("settings.selectedPromos", { count: selectedPromos.size })}
             </p>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Abbrechen
+            {t("action.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={saving}>
-            {saving ? "Speichern…" : user ? "Speichern" : "Erstellen"}
+            {saving ? t("action.saving") : user ? t("action.save") : t("action.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

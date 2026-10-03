@@ -36,8 +36,10 @@ import { toast } from "sonner";
 import type { Customer, CustomerInput } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
 import { useAppStore } from "@/lib/store";
+import { useI18n } from "@/components/language-provider";
 
 export function CustomersView() {
+  const { t } = useI18n();
   const { data: customers = [], isLoading } = useCustomers();
   const { data: promos = [] } = usePromos();
   const createCustomer = useCreateCustomer();
@@ -106,7 +108,7 @@ export function CustomersView() {
 
   async function handleSubmit() {
     if (!form.name.trim()) {
-      toast.error("Kundenname ist erforderlich");
+      toast.error(t("customers.error.nameRequired"));
       return;
     }
     const payload: CustomerInput = {
@@ -120,15 +122,15 @@ export function CustomersView() {
     try {
       if (editCustomer) {
         await updateCustomer.mutateAsync({ id: editCustomer.id, data: payload });
-        toast.success("Kunde aktualisiert");
+        toast.success(t("customers.toast.updated"));
       } else {
         await createCustomer.mutateAsync(payload);
-        toast.success("Kunde angelegt");
+        toast.success(t("customers.toast.created"));
       }
       setFormOpen(false);
       setEditCustomer(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fehler");
+      toast.error(e instanceof Error ? e.message : t("common.error"));
     }
   }
 
@@ -136,9 +138,9 @@ export function CustomersView() {
     if (!deleteId) return;
     try {
       await deleteCustomer.mutateAsync(deleteId);
-      toast.success("Kunde gelöscht");
+      toast.success(t("customers.toast.deleted"));
     } catch {
-      toast.error("Löschen fehlgeschlagen");
+      toast.error(t("common.deleteFailed"));
     } finally {
       setDeleteId(null);
     }
@@ -146,21 +148,21 @@ export function CustomersView() {
 
   function handleExport() {
     window.open("/api/export?type=customers&format=csv", "_blank");
-    toast.success("Kunden werden exportiert");
+    toast.success(t("settings.exportStarted"));
   }
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Kunden</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("customers.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Kunden zentral verwalten und in Promos wieder verwenden.
+            {t("customers.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" /> Export
+            <Download className="h-4 w-4" /> {t("action.export")}
           </Button>
           <Button
             size="sm"
@@ -170,7 +172,7 @@ export function CustomersView() {
             }}
             className="gap-2"
           >
-            <Plus className="h-4 w-4" /> Neuer Kunde
+            <Plus className="h-4 w-4" /> {t("form.newCustomer")}
           </Button>
         </div>
       </div>
@@ -179,7 +181,7 @@ export function CustomersView() {
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Kunde, Firma oder Ansprechpartner suchen…"
+            placeholder={t("customers.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
@@ -196,7 +198,7 @@ export function CustomersView() {
       ) : filtered.length === 0 ? (
         <Card className="py-16 text-center">
           <Users className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Keine Kunden gefunden.</p>
+          <p className="text-muted-foreground">{t("customers.noResults")}</p>
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -258,15 +260,15 @@ export function CustomersView() {
                 <div className="mt-auto grid grid-cols-3 gap-2 border-t pt-3 text-center">
                   <div>
                     <p className="text-lg font-semibold tabular-nums">{st.promos}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Promos</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">{t("customers.stats.promos")}</p>
                   </div>
                   <div>
                     <p className="text-lg font-semibold tabular-nums">{formatCurrency(st.earned)}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Umsatz</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">{t("customers.stats.revenue")}</p>
                   </div>
                   <div>
                     <p className="text-lg font-semibold tabular-nums text-emerald-600">{formatCurrency(st.received)}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Erhalten</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">{t("customers.stats.received")}</p>
                   </div>
                 </div>
               </Card>
@@ -279,34 +281,34 @@ export function CustomersView() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editCustomer ? "Kunde bearbeiten" : "Neuen Kunden anlegen"}
+              {editCustomer ? t("customers.editTitle") : t("customers.createTitle")}
             </DialogTitle>
             <DialogDescription>
-              Kunden einmal anlegen und beim Erstellen von Promos auswählen.
+              {t("customers.formDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="c-name">Name *</Label>
+                <Label htmlFor="c-name">{t("form.customerName")}</Label>
                 <Input
                   id="c-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="z. B. Nike Europe"
+                  placeholder={t("form.customerNamePlaceholder")}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="c-company">Firma</Label>
+                <Label htmlFor="c-company">{t("form.company")}</Label>
                 <Input
                   id="c-company"
                   value={form.company || ""}
                   onChange={(e) => setForm({ ...form, company: e.target.value })}
-                  placeholder="z. B. Nike GmbH"
+                  placeholder={t("form.companyPlaceholder")}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="c-contact">Ansprechpartner</Label>
+                <Label htmlFor="c-contact">{t("form.contactPerson")}</Label>
                 <Input
                   id="c-contact"
                   value={form.contactPerson || ""}
@@ -314,7 +316,7 @@ export function CustomersView() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="c-email">E-Mail</Label>
+                <Label htmlFor="c-email">{t("form.email")}</Label>
                 <Input
                   id="c-email"
                   type="email"
@@ -323,7 +325,7 @@ export function CustomersView() {
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="c-phone">Telefon</Label>
+                <Label htmlFor="c-phone">{t("form.phone")}</Label>
                 <Input
                   id="c-phone"
                   value={form.phone || ""}
@@ -332,25 +334,25 @@ export function CustomersView() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="c-notes">Notizen</Label>
+              <Label htmlFor="c-notes">{t("form.customerNotes")}</Label>
               <Textarea
                 id="c-notes"
                 value={form.notes || ""}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={3}
-                placeholder="z. B. Bevorzugt Rechnung am Monatsende."
+                placeholder={t("form.customerNotesPlaceholder")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Abbrechen
+              {t("action.cancel")}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={createCustomer.isPending || updateCustomer.isPending}
             >
-              {editCustomer ? "Speichern" : "Anlegen"}
+              {editCustomer ? t("action.save") : t("action.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -359,19 +361,18 @@ export function CustomersView() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Kunde löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.customerTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Der Kunde wird entfernt. Zugehörige Promos bleiben erhalten, der
-              Kundenbezug wird jedoch aufgehoben.
+              {t("delete.customerDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              Löschen
+              {t("action.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

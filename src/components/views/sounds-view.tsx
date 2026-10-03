@@ -44,8 +44,10 @@ import { toast } from "sonner";
 import type { Sound, SoundInput } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { normalizeUrl, domainFromUrl } from "@/lib/format";
+import { useI18n } from "@/components/language-provider";
 
 export function SoundsView() {
+  const { t } = useI18n();
   const { data: sounds = [], isLoading } = useSounds();
   const { data: promos = [] } = usePromos();
   const createSound = useCreateSound();
@@ -104,7 +106,7 @@ export function SoundsView() {
 
   async function handleSubmit() {
     if (!name.trim()) {
-      toast.error("Soundname ist erforderlich");
+      toast.error(t("sounds.error.nameRequired"));
       return;
     }
     const payload: SoundInput = {
@@ -117,15 +119,15 @@ export function SoundsView() {
     try {
       if (editSound) {
         await updateSound.mutateAsync({ id: editSound.id, data: payload });
-        toast.success("Sound aktualisiert");
+        toast.success(t("sounds.toast.updated"));
       } else {
         await createSound.mutateAsync(payload);
-        toast.success("Sound angelegt");
+        toast.success(t("sounds.toast.created"));
       }
       setFormOpen(false);
       setEditSound(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fehler");
+      toast.error(e instanceof Error ? e.message : t("common.error"));
     }
   }
 
@@ -133,9 +135,9 @@ export function SoundsView() {
     if (!deleteId) return;
     try {
       await deleteSound.mutateAsync(deleteId);
-      toast.success("Sound gelöscht");
+      toast.success(t("sounds.toast.deleted"));
     } catch {
-      toast.error("Löschen fehlgeschlagen");
+      toast.error(t("common.deleteFailed"));
     } finally {
       setDeleteId(null);
     }
@@ -143,21 +145,21 @@ export function SoundsView() {
 
   function handleExport() {
     window.open("/api/export?type=sounds&format=csv", "_blank");
-    toast.success("Sounds werden exportiert");
+    toast.success(t("settings.exportStarted"));
   }
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Sounds</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("sounds.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Deine Sound-Bibliothek – einmal anlegen, beliebig oft verwenden.
+            {t("sounds.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" /> Export
+            <Download className="h-4 w-4" /> {t("action.export")}
           </Button>
           <Button
             size="sm"
@@ -167,7 +169,7 @@ export function SoundsView() {
             }}
             className="gap-2"
           >
-            <Plus className="h-4 w-4" /> Neuer Sound
+            <Plus className="h-4 w-4" /> {t("form.newSound")}
           </Button>
         </div>
       </div>
@@ -176,7 +178,7 @@ export function SoundsView() {
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Sound, Artist oder Bezeichnung suchen…"
+            placeholder={t("sounds.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
@@ -189,28 +191,28 @@ export function SoundsView() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="min-w-[180px]">Sound</TableHead>
-                <TableHead className="min-w-[140px]">Artist</TableHead>
-                <TableHead className="w-[140px]">Interne Bez.</TableHead>
-                <TableHead className="min-w-[140px]">Link</TableHead>
-                <TableHead className="text-center w-[100px]">Verwendungen</TableHead>
-                <TableHead className="text-center w-[110px]">Gebucht</TableHead>
-                <TableHead className="text-center w-[100px]">Verwendet</TableHead>
-                <TableHead className="w-[80px] text-right">Aktion</TableHead>
+                <TableHead className="min-w-[180px]">{t("sounds.col.sound")}</TableHead>
+                <TableHead className="min-w-[140px]">{t("sounds.col.artist")}</TableHead>
+                <TableHead className="w-[140px]">{t("sounds.col.internalRef")}</TableHead>
+                <TableHead className="min-w-[140px]">{t("sounds.col.link")}</TableHead>
+                <TableHead className="text-center w-[100px]">{t("sounds.col.uses")}</TableHead>
+                <TableHead className="text-center w-[110px]">{t("sounds.col.booked")}</TableHead>
+                <TableHead className="text-center w-[100px]">{t("sounds.col.used")}</TableHead>
+                <TableHead className="w-[80px] text-right">{t("sounds.col.action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                    Lade…
+                    {t("action.loading")}
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                     <Music2 className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    Keine Sounds gefunden.
+                    {t("sounds.noResults")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -297,77 +299,77 @@ export function SoundsView() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editSound ? "Sound bearbeiten" : "Neuen Sound anlegen"}
+              {editSound ? t("sounds.editTitle") : t("sounds.createTitle")}
             </DialogTitle>
             <DialogDescription>
-              Einmal angelegt, kann der Sound in beliebig vielen Promos verwendet werden.
+              {t("sounds.formDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="sound-name">Soundname *</Label>
+              <Label htmlFor="sound-name">{t("form.soundName")}</Label>
               <Input
                 id="sound-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="z. B. Summer Vibes Beat"
+                placeholder={t("form.soundNamePlaceholder")}
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="sound-artist">Artist</Label>
+                <Label htmlFor="sound-artist">{t("form.artist")}</Label>
                 <Input
                   id="sound-artist"
                   value={artist}
                   onChange={(e) => setArtist(e.target.value)}
-                  placeholder="z. B. DJ Lumo"
+                  placeholder={t("form.artistPlaceholder")}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sound-ref">Interne Bezeichnung</Label>
+                <Label htmlFor="sound-ref">{t("form.internalRef")}</Label>
                 <Input
                   id="sound-ref"
                   value={internalRef}
                   onChange={(e) => setInternalRef(e.target.value)}
-                  placeholder="z. B. SVB-01"
+                  placeholder={t("form.internalRefPlaceholder")}
                 />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="sound-url" className="flex items-center gap-1.5">
-                <Link2 className="h-3.5 w-3.5" /> Sound-Link
+                <Link2 className="h-3.5 w-3.5" /> {t("form.soundUrl")}
               </Label>
               <Input
                 id="sound-url"
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.tiktok.com/music/… oder Soundcloud-Link"
+                placeholder={t("form.soundUrlPlaceholder")}
               />
               <p className="text-xs text-muted-foreground">
-                Wird auf der Kunden-Freigabeseite als klickbarer Link angezeigt.
+                {t("form.soundUrlHint")}
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sound-notes">Notizen</Label>
+              <Label htmlFor="sound-notes">{t("form.soundNotes")}</Label>
               <Textarea
                 id="sound-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                placeholder="z. B. Upbeat, gut für Sommerkampagnen."
+                placeholder={t("form.soundNotesPlaceholder")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Abbrechen
+              {t("action.cancel")}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={createSound.isPending || updateSound.isPending}
             >
-              {editSound ? "Speichern" : "Anlegen"}
+              {editSound ? t("action.save") : t("action.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -376,18 +378,18 @@ export function SoundsView() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Sound löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.soundTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Der Sound wird aus allen Promos entfernt, in denen er verwendet wird.
+              {t("delete.soundDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              Löschen
+              {t("action.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -34,6 +34,7 @@ import {
   Link2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useI18n } from "@/components/language-provider";
 import {
   useCreatePromo,
   useUpdatePromo,
@@ -75,11 +76,11 @@ interface FormTikTok {
   soundId: string;
 }
 
-const STATUS_OPTIONS: { value: PromoStatus; label: string }[] = [
-  { value: "GEPLANT", label: "Geplant" },
-  { value: "AKTIV", label: "Aktiv" },
-  { value: "ABGESCHLOSSEN", label: "Abgeschlossen" },
-  { value: "STORNIERT", label: "Storniert" },
+const STATUS_OPTIONS: PromoStatus[] = [
+  "GEPLANT",
+  "AKTIV",
+  "ABGESCHLOSSEN",
+  "STORNIERT",
 ];
 
 let keyCounter = 0;
@@ -98,6 +99,7 @@ export function PromoFormDialog({
   promo?: Promo | null;
   onSaved?: (promo: Promo) => void;
 }) {
+  const { t } = useI18n();
   const { data: customers = [] } = useCustomers();
   const { data: sounds = [] } = useSounds();
   const createPromo = useCreatePromo();
@@ -254,7 +256,7 @@ export function PromoFormDialog({
     setNewCustomerName("");
     setNewCustomerCompany("");
     setNewCustomerOpen(false);
-    toast.success("Kunde angelegt");
+    toast.success(t("form.toast.customerCreated"));
   }
 
   async function handleCreateSound(addToRowKey?: string) {
@@ -269,16 +271,16 @@ export function PromoFormDialog({
     setNewSoundArtist("");
     setNewSoundUrl("");
     setNewSoundOpen(false);
-    toast.success("Sound angelegt");
+    toast.success(t("form.toast.soundCreated"));
   }
 
   function buildPayload(): PromoInput | null {
     if (!name.trim()) {
-      toast.error("Promo-Name ist erforderlich");
+      toast.error(t("form.error.nameRequired"));
       return null;
     }
     if (!date) {
-      toast.error("Datum ist erforderlich");
+      toast.error(t("form.error.dateRequired"));
       return null;
     }
     const cleanSounds = formSounds
@@ -332,17 +334,17 @@ export function PromoFormDialog({
           id: promo.id,
           data: payload,
         });
-        toast.success("Promo aktualisiert");
+        toast.success(t("form.toast.promoUpdated"));
         onSaved?.(updated);
         onOpenChange(false);
       } else {
         const created = await createPromo.mutateAsync(payload);
-        toast.success("Promo angelegt");
+        toast.success(t("form.toast.promoCreated"));
         onSaved?.(created);
         onOpenChange(false);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Fehler beim Speichern");
+      toast.error(e instanceof Error ? e.message : t("form.toast.saveError"));
     }
   }
 
@@ -353,50 +355,47 @@ export function PromoFormDialog({
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6 pb-4 sticky top-0 bg-background z-10 border-b">
           <DialogTitle>
-            {mode === "edit" ? "Promo bearbeiten" : "Neue Promo anlegen"}
+            {mode === "edit" ? t("form.editTitle") : t("form.createTitle")}
           </DialogTitle>
-          <DialogDescription>
-            Einheitliche Erfassung aller Promo-Daten – Sounds, Vergütung und
-            Kunde an einem Ort.
-          </DialogDescription>
+          <DialogDescription>{t("form.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-5 space-y-7">
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Allgemeine Informationen
+              {t("form.general")}
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="promo-name">Promo-Name *</Label>
+                <Label htmlFor="promo-name">{t("form.promoName")}</Label>
                 <Input
                   id="promo-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="z. B. Nike Summer Campaign"
+                  placeholder={t("form.promoNamePlaceholder")}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label>Kunde / Firma</Label>
+                  <Label>{t("form.customer")}</Label>
                   <button
                     type="button"
                     onClick={() => setNewCustomerOpen((v) => !v)}
                     className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
                   >
-                    <UserPlus className="h-3 w-3" /> Neuer Kunde
+                    <UserPlus className="h-3 w-3" /> {t("form.newCustomer")}
                   </button>
                 </div>
                 {newCustomerOpen ? (
                   <div className="space-y-2 rounded-lg border p-2.5">
                     <Input
-                      placeholder="Kundenname"
+                      placeholder={t("form.customerNamePlaceholder")}
                       value={newCustomerName}
                       onChange={(e) => setNewCustomerName(e.target.value)}
                     />
                     <Input
-                      placeholder="Firma (optional)"
+                      placeholder={t("form.companyPlaceholder")}
                       value={newCustomerCompany}
                       onChange={(e) => setNewCustomerCompany(e.target.value)}
                     />
@@ -407,7 +406,7 @@ export function PromoFormDialog({
                         onClick={handleCreateCustomer}
                         disabled={!newCustomerName.trim()}
                       >
-                        Anlegen
+                        {t("action.create")}
                       </Button>
                       <Button
                         size="sm"
@@ -415,17 +414,17 @@ export function PromoFormDialog({
                         variant="ghost"
                         onClick={() => setNewCustomerOpen(false)}
                       >
-                        Abbrechen
+                        {t("action.cancel")}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <Select value={customerId} onValueChange={setCustomerId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Kunde auswählen" />
+                      <SelectValue placeholder={t("form.selectCustomer")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">— Kein Kunde —</SelectItem>
+                      <SelectItem value="none">{t("form.noCustomer")}</SelectItem>
                       {customers.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -438,7 +437,7 @@ export function PromoFormDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="promo-date">Datum *</Label>
+                <Label htmlFor="promo-date">{t("form.date")}</Label>
                 <Input
                   id="promo-date"
                   type="date"
@@ -448,7 +447,7 @@ export function PromoFormDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>{t("form.status")}</Label>
                 <Select
                   value={status}
                   onValueChange={(v) => setStatus(v as PromoStatus)}
@@ -458,8 +457,8 @@ export function PromoFormDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
+                      <SelectItem key={s} value={s}>
+                        {t(`status.${s}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -473,7 +472,7 @@ export function PromoFormDialog({
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <Music2 className="h-4 w-4" /> Sounds
+                <Music2 className="h-4 w-4" /> {t("form.sounds")}
               </h3>
               <div className="flex gap-2">
                 <Button
@@ -482,7 +481,7 @@ export function PromoFormDialog({
                   size="sm"
                   onClick={() => setNewSoundOpen((v) => !v)}
                 >
-                  <Plus className="h-3.5 w-3.5" /> Neuer Sound
+                  <Plus className="h-3.5 w-3.5" /> {t("form.newSound")}
                 </Button>
                 <Button
                   type="button"
@@ -490,7 +489,7 @@ export function PromoFormDialog({
                   size="sm"
                   onClick={addSound}
                 >
-                  <Plus className="h-3.5 w-3.5" /> Sound hinzufügen
+                  <Plus className="h-3.5 w-3.5" /> {t("form.addSound")}
                 </Button>
               </div>
             </div>
@@ -499,18 +498,18 @@ export function PromoFormDialog({
               <div className="space-y-2 rounded-lg border p-2.5 bg-muted/30">
                 <div className="grid gap-2 sm:grid-cols-2">
                   <Input
-                    placeholder="Soundname"
+                    placeholder={t("form.soundNamePlaceholder")}
                     value={newSoundName}
                     onChange={(e) => setNewSoundName(e.target.value)}
                   />
                   <Input
-                    placeholder="Artist (optional)"
+                    placeholder={t("form.artist")}
                     value={newSoundArtist}
                     onChange={(e) => setNewSoundArtist(e.target.value)}
                   />
                 </div>
                 <Input
-                  placeholder="Sound-Link (TikTok/SoundCloud/…) – optional"
+                  placeholder={t("form.soundUrlPlaceholder")}
                   value={newSoundUrl}
                   onChange={(e) => setNewSoundUrl(e.target.value)}
                 />
@@ -521,7 +520,7 @@ export function PromoFormDialog({
                     onClick={() => handleCreateSound()}
                     disabled={!newSoundName.trim()}
                   >
-                    Sound anlegen
+                    {t("form.createSound")}
                   </Button>
                   <Button
                     size="sm"
@@ -529,7 +528,7 @@ export function PromoFormDialog({
                     variant="ghost"
                     onClick={() => setNewSoundOpen(false)}
                   >
-                    Abbrechen
+                    {t("action.cancel")}
                   </Button>
                 </div>
               </div>
@@ -537,7 +536,7 @@ export function PromoFormDialog({
 
             {formSounds.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Noch keine Sounds hinzugefügt.
+                {t("form.noSounds")}
               </p>
             ) : (
               <div className="space-y-2">
@@ -550,13 +549,13 @@ export function PromoFormDialog({
                       className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-end"
                     >
                       <div className="space-y-1.5">
-                        <Label className="text-xs">Sound</Label>
+                        <Label className="text-xs">{t("form.sound")}</Label>
                         <Select
                           value={s.soundId}
                           onValueChange={(v) => updateSound(s.key, { soundId: v })}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Sound wählen" />
+                            <SelectValue placeholder={t("form.selectSound")} />
                           </SelectTrigger>
                           <SelectContent>
                             {sounds.map((snd) => (
@@ -569,7 +568,7 @@ export function PromoFormDialog({
                         </Select>
                       </div>
                       <div className="space-y-1.5 w-24">
-                        <Label className="text-xs">Gebucht</Label>
+                        <Label className="text-xs">{t("form.booked")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -582,7 +581,7 @@ export function PromoFormDialog({
                         />
                       </div>
                       <div className="space-y-1.5 w-24">
-                        <Label className="text-xs">Verwendet</Label>
+                        <Label className="text-xs">{t("form.used")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -597,7 +596,7 @@ export function PromoFormDialog({
                       </div>
                       <div className="w-20 text-center pb-2.5">
                         <p className="text-[10px] text-muted-foreground uppercase">
-                          Übrig
+                          {t("form.remaining")}
                         </p>
                         <p
                           className={`text-sm font-semibold tabular-nums ${
@@ -619,8 +618,10 @@ export function PromoFormDialog({
                       {over && (
                         <p className="sm:col-span-5 text-xs text-rose-600 flex items-center gap-1.5">
                           <AlertTriangle className="h-3.5 w-3.5" />
-                          Mehr verwendet als gebucht ({s.quantityUsed}/
-                          {s.quantityTotal}).
+                          {t("form.overbooked", {
+                            used: s.quantityUsed,
+                            total: s.quantityTotal,
+                          })}
                         </p>
                       )}
                     </div>
@@ -635,7 +636,7 @@ export function PromoFormDialog({
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <Wallet className="h-4 w-4" /> Vergütung / Zahlungen
+                <Wallet className="h-4 w-4" /> {t("form.payments")}
               </h3>
               <Button
                 type="button"
@@ -643,7 +644,7 @@ export function PromoFormDialog({
                 size="sm"
                 onClick={addPayment}
               >
-                <Plus className="h-3.5 w-3.5" /> Zahlung hinzufügen
+                <Plus className="h-3.5 w-3.5" /> {t("form.addPayment")}
               </Button>
             </div>
 
@@ -652,7 +653,7 @@ export function PromoFormDialog({
                 <div key={p.key} className="rounded-lg border p-3 space-y-3">
                   <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Betrag (€)</Label>
+                      <Label className="text-xs">{t("form.amount")}</Label>
                       <Input
                         type="text"
                         inputMode="decimal"
@@ -660,7 +661,7 @@ export function PromoFormDialog({
                         onChange={(e) =>
                           updatePayment(p.key, { amount: e.target.value })
                         }
-                        placeholder="0,00"
+                        placeholder={t("form.amountPlaceholder")}
                       />
                     </div>
                     <div className="flex gap-4 pb-2.5">
@@ -671,7 +672,7 @@ export function PromoFormDialog({
                             updatePayment(p.key, { paidOut: !!v })
                           }
                         />
-                        Ausgezahlt
+                        {t("form.paidOut")}
                       </label>
                       <label className="flex items-center gap-2 text-sm">
                         <Checkbox
@@ -680,7 +681,7 @@ export function PromoFormDialog({
                             updatePayment(p.key, { received: !!v })
                           }
                         />
-                        Angekommen
+                        {t("form.received")}
                       </label>
                     </div>
                     <Button
@@ -695,7 +696,7 @@ export function PromoFormDialog({
                   </div>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Erwartetes Datum</Label>
+                      <Label className="text-xs">{t("form.expectedDate")}</Label>
                       <Input
                         type="date"
                         value={p.expectedDate}
@@ -705,7 +706,7 @@ export function PromoFormDialog({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Ausgezahlt am</Label>
+                      <Label className="text-xs">{t("form.payoutDate")}</Label>
                       <Input
                         type="date"
                         value={p.payoutDate}
@@ -715,7 +716,7 @@ export function PromoFormDialog({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Eingangsdatum</Label>
+                      <Label className="text-xs">{t("form.receivedDate")}</Label>
                       <Input
                         type="date"
                         value={p.receivedDate}
@@ -726,13 +727,13 @@ export function PromoFormDialog({
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Notizen zur Zahlung</Label>
+                    <Label className="text-xs">{t("form.paymentNotes")}</Label>
                     <Input
                       value={p.notes}
                       onChange={(e) =>
                         updatePayment(p.key, { notes: e.target.value })
                       }
-                      placeholder="z. B. PayPal, Rechnung folgt"
+                      placeholder={t("form.paymentNotesPlaceholder")}
                     />
                   </div>
                 </div>
@@ -740,7 +741,7 @@ export function PromoFormDialog({
             </div>
 
             <div className="flex items-center justify-end gap-2 text-sm">
-              <span className="text-muted-foreground">Gesamtbetrag:</span>
+              <span className="text-muted-foreground">{t("form.totalAmount")}</span>
               <Badge variant="secondary" className="text-base font-semibold tabular-nums">
                 {formatCurrency(totalAmount)}
               </Badge>
@@ -753,7 +754,7 @@ export function PromoFormDialog({
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <Video className="h-4 w-4" /> TikToks
+                <Video className="h-4 w-4" /> {t("form.tiktoks")}
               </h3>
               <Button
                 type="button"
@@ -761,24 +762,24 @@ export function PromoFormDialog({
                 size="sm"
                 onClick={addTiktok}
               >
-                <Plus className="h-3.5 w-3.5" /> TikTok hinzufügen
+                <Plus className="h-3.5 w-3.5" /> {t("form.addTiktok")}
               </Button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="text-xs">Ziel-Anzahl TikToks für diese Promo</Label>
+                <Label className="text-xs">{t("form.tiktokTarget")}</Label>
                 <Input
                   type="number"
                   min={0}
                   value={tiktokTarget}
                   onChange={(e) => setTiktokTarget(Number(e.target.value) || 0)}
-                  placeholder="z. B. 10"
+                  placeholder={t("form.tiktokTargetPlaceholder")}
                 />
               </div>
               <div className="flex items-end">
                 <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm w-full">
-                  <span className="text-muted-foreground">Fortschritt: </span>
+                  <span className="text-muted-foreground">{t("form.tiktokProgress")} </span>
                   <span className="font-semibold tabular-nums">
                     {formTiktoks.filter((t) => t.url.trim()).length}/{tiktokTarget || 0}
                   </span>
@@ -798,51 +799,51 @@ export function PromoFormDialog({
 
             {formTiktoks.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Noch keine TikTok-Links hinzugefügt.
+                {t("form.noTiktoks")}
               </p>
             ) : (
               <div className="space-y-2">
-                {formTiktoks.map((t) => (
+                {formTiktoks.map((tk) => (
                   <div
-                    key={t.key}
+                    key={tk.key}
                     className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end"
                   >
                     <div className="space-y-1.5">
                       <Label className="text-xs flex items-center gap-1">
-                        <Link2 className="h-3 w-3" /> TikTok-URL
+                        <Link2 className="h-3 w-3" /> {t("form.tiktokUrl")}
                       </Label>
                       <Input
                         type="url"
-                        value={t.url}
+                        value={tk.url}
                         onChange={(e) =>
-                          updateTiktok(t.key, { url: e.target.value })
+                          updateTiktok(tk.key, { url: e.target.value })
                         }
-                        placeholder="https://www.tiktok.com/@user/video/…"
+                        placeholder={t("form.tiktokUrlPlaceholder")}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Titel (optional)</Label>
+                      <Label className="text-xs">{t("form.tiktokTitle")}</Label>
                       <Input
-                        value={t.title}
+                        value={tk.title}
                         onChange={(e) =>
-                          updateTiktok(t.key, { title: e.target.value })
+                          updateTiktok(tk.key, { title: e.target.value })
                         }
-                        placeholder="z. B. Spot 1 – Beach"
+                        placeholder={t("form.tiktokTitlePlaceholder")}
                       />
                     </div>
                     <div className="space-y-1.5 sm:w-40">
-                      <Label className="text-xs">Sound (optional)</Label>
+                      <Label className="text-xs">{t("form.tiktokSound")}</Label>
                       <Select
-                        value={t.soundId}
+                        value={tk.soundId}
                         onValueChange={(v) =>
-                          updateTiktok(t.key, { soundId: v === "none" ? "" : v })
+                          updateTiktok(tk.key, { soundId: v === "none" ? "" : v })
                         }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="—" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">— Kein Sound —</SelectItem>
+                          <SelectItem value="none">{t("form.tiktokNoSound")}</SelectItem>
                           {sounds.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {s.name}
@@ -855,7 +856,7 @@ export function PromoFormDialog({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeTiktok(t.key)}
+                      onClick={() => removeTiktok(tk.key)}
                       className="text-muted-foreground hover:text-rose-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -869,27 +870,27 @@ export function PromoFormDialog({
           <Separator />
 
           <section className="space-y-2">
-            <Label htmlFor="promo-notes">Notizen zur Promo</Label>
+            <Label htmlFor="promo-notes">{t("form.notesLabel")}</Label>
             <Textarea
               id="promo-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="z. B. Kunde möchte Rechnung erst am Monatsende."
+              placeholder={t("form.notesPlaceholder")}
             />
           </section>
         </div>
 
         <DialogFooter className="px-6 py-4 border-t sticky bottom-0 bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Abbrechen
+            {t("action.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={saving}>
             {saving
-              ? "Speichern…"
+              ? t("action.saving")
               : mode === "edit"
-              ? "Änderungen speichern"
-              : "Promo anlegen"}
+              ? t("form.editSubmit")
+              : t("form.createSubmit")}
           </Button>
         </DialogFooter>
       </DialogContent>

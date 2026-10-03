@@ -1,0 +1,899 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import {
+     5→  Dialog,
+     6→  DialogContent,
+     7→  DialogHeader,
+     8→  DialogTitle,
+     9→  DialogFooter,
+    10→  DialogDescription,
+    11→} from "@/components/ui/dialog";
+    12→import { Button } from "@/components/ui/button";
+    13→import { Input } from "@/components/ui/input";
+    14→import { Label } from "@/components/ui/label";
+    15→import { Textarea } from "@/components/ui/textarea";
+    16→import {
+    17→  Select,
+    18→  SelectContent,
+    19→  SelectItem,
+    20→  SelectTrigger,
+    21→  SelectValue,
+    22→} from "@/components/ui/select";
+    23→import { Checkbox } from "@/components/ui/checkbox";
+    24→import { Separator } from "@/components/ui/separator";
+    25→import { Badge } from "@/components/ui/badge";
+    26→import {
+    27→  Plus,
+    28→  Trash2,
+    29→  Music2,
+    30→  Wallet,
+    31→  AlertTriangle,
+    32→  UserPlus,
+    33→  Video,
+    34→  Link2,
+    35→} from "lucide-react";
+    36→import { toast } from "sonner";
+    37→import {
+    38→  useCreatePromo,
+    39→  useUpdatePromo,
+    40→  useCustomers,
+    41→  useSounds,
+    42→  useCreateCustomer,
+    43→  useCreateSound,
+    44→} from "@/hooks/use-data";
+    45→import type { Promo, PromoInput, PromoStatus } from "@/lib/types";
+    46→import {
+    47→  formatDateInput,
+    48→  toISODate,
+    49→  parseCurrencyInput,
+    50→  formatCurrency,
+    51→} from "@/lib/format";
+    52→
+    53→interface FormSound {
+    54→  key: string;
+    55→  soundId: string;
+    56→  quantityTotal: number;
+    57→  quantityUsed: number;
+    58→}
+    59→interface FormPayment {
+    60→  id?: string;
+    61→  key: string;
+    62→  amount: string;
+    63→  expectedDate: string;
+    64→  payoutDate: string;
+    65→  receivedDate: string;
+    66→  paidOut: boolean;
+    67→  received: boolean;
+    68→  notes: string;
+    69→}
+    70→interface FormTikTok {
+    71→  id?: string;
+    72→  key: string;
+    73→  url: string;
+    74→  title: string;
+    75→  soundId: string;
+    76→}
+    77→
+    78→const STATUS_OPTIONS: { value: PromoStatus; label: string }[] = [
+    79→  { value: "GEPLANT", label: "Geplant" },
+    80→  { value: "AKTIV", label: "Aktiv" },
+    81→  { value: "ABGESCHLOSSEN", label: "Abgeschlossen" },
+    82→  { value: "STORNIERT", label: "Storniert" },
+    83→];
+    84→
+    85→let keyCounter = 0;
+    86→const nextKey = () => `k${++keyCounter}`;
+    87→
+    88→export function PromoFormDialog({
+    89→  open,
+    90→  onOpenChange,
+    91→  mode,
+    92→  promo,
+    93→  onSaved,
+    94→}: {
+    95→  open: boolean;
+    96→  onOpenChange: (v: boolean) => void;
+    97→  mode: "create" | "edit";
+    98→  promo?: Promo | null;
+    99→  onSaved?: (promo: Promo) => void;
+   100→}) {
+   101→  const { data: customers = [] } = useCustomers();
+   102→  const { data: sounds = [] } = useSounds();
+   103→  const createPromo = useCreatePromo();
+   104→  const updatePromo = useUpdatePromo();
+   105→  const createCustomer = useCreateCustomer();
+   106→  const createSound = useCreateSound();
+   107→
+   108→  const [name, setName] = React.useState("");
+   109→  const [customerId, setCustomerId] = React.useState<string>("");
+   110→  const [date, setDate] = React.useState(formatDateInput(new Date()));
+   111→  const [status, setStatus] = React.useState<PromoStatus>("GEPLANT");
+   112→  const [notes, setNotes] = React.useState("");
+   113→  const [tiktokTarget, setTiktokTarget] = React.useState(0);
+   114→  const [formSounds, setFormSounds] = React.useState<FormSound[]>([]);
+   115→  const [formPayments, setFormPayments] = React.useState<FormPayment[]>([]);
+   116→  const [formTiktoks, setFormTiktoks] = React.useState<FormTikTok[]>([]);
+   117→
+   118→  const [newCustomerOpen, setNewCustomerOpen] = React.useState(false);
+   119→  const [newCustomerName, setNewCustomerName] = React.useState("");
+   120→  const [newCustomerCompany, setNewCustomerCompany] = React.useState("");
+   121→  const [newSoundOpen, setNewSoundOpen] = React.useState(false);
+   122→  const [newSoundName, setNewSoundName] = React.useState("");
+   123→  const [newSoundArtist, setNewSoundArtist] = React.useState("");
+   124→  const [newSoundUrl, setNewSoundUrl] = React.useState("");
+   125→
+   126→  React.useEffect(() => {
+   127→    if (!open) return;
+   128→    if (mode === "edit" && promo) {
+   129→      setName(promo.name);
+   130→      setCustomerId(promo.customerId || "none");
+   131→      setDate(formatDateInput(promo.date));
+   132→      setStatus(promo.status);
+   133→      setNotes(promo.notes || "");
+   134→      setTiktokTarget(promo.tiktokTarget || 0);
+   135→      setFormSounds(
+   136→        promo.sounds.map((s) => ({
+   137→          key: nextKey(),
+   138→          soundId: s.soundId,
+   139→          quantityTotal: s.quantityTotal,
+   140→          quantityUsed: s.quantityUsed,
+   141→        }))
+   142→      );
+   143→      setFormPayments(
+   144→        promo.payments.map((p) => ({
+   145→          id: p.id,
+   146→          key: nextKey(),
+   147→          amount: String(p.amount),
+   148→          expectedDate: formatDateInput(p.expectedDate),
+   149→          payoutDate: formatDateInput(p.payoutDate),
+   150→          receivedDate: formatDateInput(p.receivedDate),
+   151→          paidOut: p.paidOut,
+   152→          received: p.received,
+   153→          notes: p.notes || "",
+   154→        }))
+   155→      );
+   156→      setFormTiktoks(
+   157→        (promo.tiktoks || []).map((t) => ({
+   158→          id: t.id,
+   159→          key: nextKey(),
+   160→          url: t.url,
+   161→          title: t.title || "",
+   162→          soundId: t.soundId || "",
+   163→        }))
+   164→      );
+   165→    } else {
+   166→      setName("");
+   167→      setCustomerId("none");
+   168→      setDate(formatDateInput(new Date()));
+   169→      setStatus("GEPLANT");
+   170→      setNotes("");
+   171→      setTiktokTarget(0);
+   172→      setFormSounds([]);
+   173→      setFormPayments([{ key: nextKey(), amount: "", expectedDate: "", payoutDate: "", receivedDate: "", paidOut: false, received: false, notes: "" }]);
+   174→      setFormTiktoks([]);
+   175→    }
+   176→    setNewCustomerOpen(false);
+   177→    setNewCustomerName("");
+   178→    setNewCustomerCompany("");
+   179→    setNewSoundOpen(false);
+   180→    setNewSoundName("");
+   181→    setNewSoundArtist("");
+   182→    setNewSoundUrl("");
+   183→  }, [open, mode, promo]);
+   184→
+   185→  const totalAmount = formPayments.reduce(
+   186→    (s, p) => s + parseCurrencyInput(p.amount),
+   187→    0
+   188→  );
+   189→
+   190→  function addSound() {
+   191→    setFormSounds((prev) => [
+   192→      ...prev,
+   193→      { key: nextKey(), soundId: "", quantityTotal: 1, quantityUsed: 0 },
+   194→    ]);
+   195→  }
+   196→  function updateSound(key: string, patch: Partial<FormSound>) {
+   197→    setFormSounds((prev) =>
+   198→      prev.map((s) => (s.key === key ? { ...s, ...patch } : s))
+   199→    );
+   200→  }
+   201→  function removeSound(key: string) {
+   202→    setFormSounds((prev) => prev.filter((s) => s.key !== key));
+   203→  }
+   204→
+   205→  function addPayment() {
+   206→    setFormPayments((prev) => [
+   207→      ...prev,
+   208→      { key: nextKey(), amount: "", expectedDate: "", payoutDate: "", receivedDate: "", paidOut: false, received: false, notes: "" },
+   209→    ]);
+   210→  }
+   211→  function updatePayment(key: string, patch: Partial<FormPayment>) {
+   212→    setFormPayments((prev) =>
+   213→      prev.map((p) => {
+   214→        if (p.key !== key) return p;
+   215→        const next = { ...p, ...patch };
+   216→        if (patch.received === true && !p.receivedDate) {
+   217→          next.receivedDate = formatDateInput(new Date());
+   218→        }
+   219→        if (patch.received === false) next.receivedDate = "";
+   220→        if (patch.paidOut === true && !p.payoutDate) {
+   221→          next.payoutDate = formatDateInput(new Date());
+   222→        }
+   223→        if (patch.paidOut === false) next.payoutDate = "";
+   224→        return next;
+   225→      })
+   226→    );
+   227→  }
+   228→  function removePayment(key: string) {
+   229→    setFormPayments((prev) => prev.filter((p) => p.key !== key));
+   230→  }
+   231→
+   232→  function addTiktok() {
+   233→    setFormTiktoks((prev) => [
+   234→      ...prev,
+   235→      { key: nextKey(), url: "", title: "", soundId: "" },
+   236→    ]);
+   237→  }
+   238→  function updateTiktok(key: string, patch: Partial<FormTikTok>) {
+   239→    setFormTiktoks((prev) =>
+   240→      prev.map((t) => (t.key === key ? { ...t, ...patch } : t))
+   241→    );
+   242→  }
+   243→  function removeTiktok(key: string) {
+   244→    setFormTiktoks((prev) => prev.filter((t) => t.key !== key));
+   245→  }
+   246→
+   247→  async function handleCreateCustomer() {
+   248→    if (!newCustomerName.trim()) return;
+   249→    const c = await createCustomer.mutateAsync({
+   250→      name: newCustomerName.trim(),
+   251→      company: newCustomerCompany || null,
+   252→    });
+   253→    setCustomerId(c.id);
+   254→    setNewCustomerName("");
+   255→    setNewCustomerCompany("");
+   256→    setNewCustomerOpen(false);
+   257→    toast.success("Kunde angelegt");
+   258→  }
+   259→
+   260→  async function handleCreateSound(addToRowKey?: string) {
+   261→    if (!newSoundName.trim()) return;
+   262→    const s = await createSound.mutateAsync({
+   263→      name: newSoundName.trim(),
+   264→      artist: newSoundArtist || null,
+   265→      url: newSoundUrl || null,
+   266→    });
+   267→    if (addToRowKey) updateSound(addToRowKey, { soundId: s.id });
+   268→    setNewSoundName("");
+   269→    setNewSoundArtist("");
+   270→    setNewSoundUrl("");
+   271→    setNewSoundOpen(false);
+   272→    toast.success("Sound angelegt");
+   273→  }
+   274→
+   275→  function buildPayload(): PromoInput | null {
+   276→    if (!name.trim()) {
+   277→      toast.error("Promo-Name ist erforderlich");
+   278→      return null;
+   279→    }
+   280→    if (!date) {
+   281→      toast.error("Datum ist erforderlich");
+   282→      return null;
+   283→    }
+   284→    const cleanSounds = formSounds
+   285→      .filter((s) => s.soundId)
+   286→      .map((s) => ({
+   287→        soundId: s.soundId,
+   288→        quantityTotal: Number(s.quantityTotal) || 0,
+   289→        quantityUsed: Number(s.quantityUsed) || 0,
+   290→      }));
+   291→    const cleanPayments = formPayments
+   292→      .filter((p) => parseCurrencyInput(p.amount) > 0 || p.notes)
+   293→      .map((p) => ({
+   294→        id: p.id,
+   295→        amount: parseCurrencyInput(p.amount),
+   296→        expectedDate: toISODate(p.expectedDate),
+   297→        payoutDate: toISODate(p.payoutDate),
+   298→        receivedDate: toISODate(p.receivedDate),
+   299→        paidOut: p.paidOut,
+   300→        received: p.received,
+   301→        notes: p.notes || null,
+   302→      }));
+   303→
+   304→    const cleanTiktoks = formTiktoks
+   305→      .filter((t) => t.url.trim())
+   306→      .map((t) => ({
+   307→        id: t.id,
+   308→        url: t.url.trim(),
+   309→        title: t.title || null,
+   310→        soundId: t.soundId || null,
+   311→      }));
+   312→
+   313→    return {
+   314→      name: name.trim(),
+   315→      customerId: customerId === "none" ? null : customerId,
+   316→      date: toISODate(date)!,
+   317→      status,
+   318→      notes: notes || null,
+   319→      tiktokTarget: Number(tiktokTarget) || 0,
+   320→      sounds: cleanSounds,
+   321→      payments: cleanPayments,
+   322→      tiktoks: cleanTiktoks,
+   323→    };
+   324→  }
+   325→
+   326→  async function handleSubmit() {
+   327→    const payload = buildPayload();
+   328→    if (!payload) return;
+   329→    try {
+   330→      if (mode === "edit" && promo) {
+   331→        const updated = await updatePromo.mutateAsync({
+   332→          id: promo.id,
+   333→          data: payload,
+   334→        });
+   335→        toast.success("Promo aktualisiert");
+   336→        onSaved?.(updated);
+   337→        onOpenChange(false);
+   338→      } else {
+   339→        const created = await createPromo.mutateAsync(payload);
+   340→        toast.success("Promo angelegt");
+   341→        onSaved?.(created);
+   342→        onOpenChange(false);
+   343→      }
+   344→    } catch (e) {
+   345→      toast.error(e instanceof Error ? e.message : "Fehler beim Speichern");
+   346→    }
+   347→  }
+   348→
+   349→  const saving = createPromo.isPending || updatePromo.isPending;
+   350→
+   351→  return (
+   352→    <Dialog open={open} onOpenChange={onOpenChange}>
+   353→      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
+   354→        <DialogHeader className="px-6 pt-6 pb-4 sticky top-0 bg-background z-10 border-b">
+   355→          <DialogTitle>
+   356→            {mode === "edit" ? "Promo bearbeiten" : "Neue Promo anlegen"}
+   357→          </DialogTitle>
+   358→          <DialogDescription>
+   359→            Einheitliche Erfassung aller Promo-Daten – Sounds, Vergütung und
+   360→            Kunde an einem Ort.
+   361→          </DialogDescription>
+   362→        </DialogHeader>
+   363→
+   364→        <div className="px-6 py-5 space-y-7">
+   365→          <section className="space-y-4">
+   366→            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+   367→              Allgemeine Informationen
+   368→            </h3>
+   369→            <div className="grid gap-4 sm:grid-cols-2">
+   370→              <div className="space-y-1.5 sm:col-span-2">
+   371→                <Label htmlFor="promo-name">Promo-Name *</Label>
+   372→                <Input
+   373→                  id="promo-name"
+   374→                  value={name}
+   375→                  onChange={(e) => setName(e.target.value)}
+   376→                  placeholder="z. B. Nike Summer Campaign"
+   377→                />
+   378→              </div>
+   379→
+   380→              <div className="space-y-1.5">
+   381→                <div className="flex items-center justify-between">
+   382→                  <Label>Kunde / Firma</Label>
+   383→                  <button
+   384→                    type="button"
+   385→                    onClick={() => setNewCustomerOpen((v) => !v)}
+   386→                    className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+   387→                  >
+   388→                    <UserPlus className="h-3 w-3" /> Neuer Kunde
+   389→                  </button>
+   390→                </div>
+   391→                {newCustomerOpen ? (
+   392→                  <div className="space-y-2 rounded-lg border p-2.5">
+   393→                    <Input
+   394→                      placeholder="Kundenname"
+   395→                      value={newCustomerName}
+   396→                      onChange={(e) => setNewCustomerName(e.target.value)}
+   397→                    />
+   398→                    <Input
+   399→                      placeholder="Firma (optional)"
+   400→                      value={newCustomerCompany}
+   401→                      onChange={(e) => setNewCustomerCompany(e.target.value)}
+   402→                    />
+   403→                    <div className="flex gap-2">
+   404→                      <Button
+   405→                        size="sm"
+   406→                        type="button"
+   407→                        onClick={handleCreateCustomer}
+   408→                        disabled={!newCustomerName.trim()}
+   409→                      >
+   410→                        Anlegen
+   411→                      </Button>
+   412→                      <Button
+   413→                        size="sm"
+   414→                        type="button"
+   415→                        variant="ghost"
+   416→                        onClick={() => setNewCustomerOpen(false)}
+   417→                      >
+   418→                        Abbrechen
+   419→                      </Button>
+   420→                    </div>
+   421→                  </div>
+   422→                ) : (
+   423→                  <Select value={customerId} onValueChange={setCustomerId}>
+   424→                    <SelectTrigger>
+   425→                      <SelectValue placeholder="Kunde auswählen" />
+   426→                    </SelectTrigger>
+   427→                    <SelectContent>
+   428→                      <SelectItem value="none">— Kein Kunde —</SelectItem>
+   429→                      {customers.map((c) => (
+   430→                        <SelectItem key={c.id} value={c.id}>
+   431→                          {c.name}
+   432→                          {c.company ? ` · ${c.company}` : ""}
+   433→                        </SelectItem>
+   434→                      ))}
+   435→                    </SelectContent>
+   436→                  </Select>
+   437→                )}
+   438→              </div>
+   439→
+   440→              <div className="space-y-1.5">
+   441→                <Label htmlFor="promo-date">Datum *</Label>
+   442→                <Input
+   443→                  id="promo-date"
+   444→                  type="date"
+   445→                  value={date}
+   446→                  onChange={(e) => setDate(e.target.value)}
+   447→                />
+   448→              </div>
+   449→
+   450→              <div className="space-y-1.5">
+   451→                <Label>Status</Label>
+   452→                <Select
+   453→                  value={status}
+   454→                  onValueChange={(v) => setStatus(v as PromoStatus)}
+   455→                >
+   456→                  <SelectTrigger>
+   457→                    <SelectValue />
+   458→                  </SelectTrigger>
+   459→                  <SelectContent>
+   460→                    {STATUS_OPTIONS.map((s) => (
+   461→                      <SelectItem key={s.value} value={s.value}>
+   462→                        {s.label}
+   463→                      </SelectItem>
+   464→                    ))}
+   465→                  </SelectContent>
+   466→                </Select>
+   467→              </div>
+   468→            </div>
+   469→          </section>
+   470→
+   471→          <Separator />
+   472→
+   473→          <section className="space-y-4">
+   474→            <div className="flex items-center justify-between gap-2 flex-wrap">
+   475→              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+   476→                <Music2 className="h-4 w-4" /> Sounds
+   477→              </h3>
+   478→              <div className="flex gap-2">
+   479→                <Button
+   480→                  type="button"
+   481→                  variant="outline"
+   482→                  size="sm"
+   483→                  onClick={() => setNewSoundOpen((v) => !v)}
+   484→                >
+   485→                  <Plus className="h-3.5 w-3.5" /> Neuer Sound
+   486→                </Button>
+   487→                <Button
+   488→                  type="button"
+   489→                  variant="outline"
+   490→                  size="sm"
+   491→                  onClick={addSound}
+   492→                >
+   493→                  <Plus className="h-3.5 w-3.5" /> Sound hinzufügen
+   494→                </Button>
+   495→              </div>
+   496→            </div>
+   497→
+   498→            {newSoundOpen && (
+   499→              <div className="space-y-2 rounded-lg border p-2.5 bg-muted/30">
+   500→                <div className="grid gap-2 sm:grid-cols-2">
+   501→                  <Input
+   502→                    placeholder="Soundname"
+   503→                    value={newSoundName}
+   504→                    onChange={(e) => setNewSoundName(e.target.value)}
+   505→                  />
+   506→                  <Input
+   507→                    placeholder="Artist (optional)"
+   508→                    value={newSoundArtist}
+   509→                    onChange={(e) => setNewSoundArtist(e.target.value)}
+   510→                  />
+   511→                </div>
+   512→                <Input
+   513→                  placeholder="Sound-Link (TikTok/SoundCloud/…) – optional"
+   514→                  value={newSoundUrl}
+   515→                  onChange={(e) => setNewSoundUrl(e.target.value)}
+   516→                />
+   517→                <div className="flex gap-2">
+   518→                  <Button
+   519→                    size="sm"
+   520→                    type="button"
+   521→                    onClick={() => handleCreateSound()}
+   522→                    disabled={!newSoundName.trim()}
+   523→                  >
+   524→                    Sound anlegen
+   525→                  </Button>
+   526→                  <Button
+   527→                    size="sm"
+   528→                    type="button"
+   529→                    variant="ghost"
+   530→                    onClick={() => setNewSoundOpen(false)}
+   531→                  >
+   532→                    Abbrechen
+   533→                  </Button>
+   534→                </div>
+   535→              </div>
+   536→            )}
+   537→
+   538→            {formSounds.length === 0 ? (
+   539→              <p className="text-sm text-muted-foreground py-2">
+   540→                Noch keine Sounds hinzugefügt.
+   541→              </p>
+   542→            ) : (
+   543→              <div className="space-y-2">
+   544→                {formSounds.map((s) => {
+   545→                  const over = s.quantityUsed > s.quantityTotal;
+   546→                  const remaining = s.quantityTotal - s.quantityUsed;
+   547→                  return (
+   548→                    <div
+   549→                      key={s.key}
+   550→                      className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-end"
+   551→                    >
+   552→                      <div className="space-y-1.5">
+   553→                        <Label className="text-xs">Sound</Label>
+   554→                        <Select
+   555→                          value={s.soundId}
+   556→                          onValueChange={(v) => updateSound(s.key, { soundId: v })}
+   557→                        >
+   558→                          <SelectTrigger>
+   559→                            <SelectValue placeholder="Sound wählen" />
+   560→                          </SelectTrigger>
+   561→                          <SelectContent>
+   562→                            {sounds.map((snd) => (
+   563→                              <SelectItem key={snd.id} value={snd.id}>
+   564→                                {snd.name}
+   565→                                {snd.artist ? ` · ${snd.artist}` : ""}
+   566→                              </SelectItem>
+   567→                            ))}
+   568→                          </SelectContent>
+   569→                        </Select>
+   570→                      </div>
+   571→                      <div className="space-y-1.5 w-24">
+   572→                        <Label className="text-xs">Gebucht</Label>
+   573→                        <Input
+   574→                          type="number"
+   575→                          min={0}
+   576→                          value={s.quantityTotal}
+   577→                          onChange={(e) =>
+   578→                            updateSound(s.key, {
+   579→                              quantityTotal: Number(e.target.value) || 0,
+   580→                            })
+   581→                          }
+   582→                        />
+   583→                      </div>
+   584→                      <div className="space-y-1.5 w-24">
+   585→                        <Label className="text-xs">Verwendet</Label>
+   586→                        <Input
+   587→                          type="number"
+   588→                          min={0}
+   589→                          value={s.quantityUsed}
+   590→                          onChange={(e) =>
+   591→                            updateSound(s.key, {
+   592→                              quantityUsed: Number(e.target.value) || 0,
+   593→                            })
+   594→                          }
+   595→                          className={over ? "border-rose-400 focus-visible:ring-rose-400" : ""}
+   596→                        />
+   597→                      </div>
+   598→                      <div className="w-20 text-center pb-2.5">
+   599→                        <p className="text-[10px] text-muted-foreground uppercase">
+   600→                          Übrig
+   601→                        </p>
+   602→                        <p
+   603→                          className={`text-sm font-semibold tabular-nums ${
+   604→                            over ? "text-rose-600" : "text-foreground"
+   605→                          }`}
+   606→                        >
+   607→                          {remaining}
+   608→                        </p>
+   609→                      </div>
+   610→                      <Button
+   611→                        type="button"
+   612→                        variant="ghost"
+   613→                        size="icon"
+   614→                        onClick={() => removeSound(s.key)}
+   615→                        className="text-muted-foreground hover:text-rose-600"
+   616→                      >
+   617→                        <Trash2 className="h-4 w-4" />
+   618→                      </Button>
+   619→                      {over && (
+   620→                        <p className="sm:col-span-5 text-xs text-rose-600 flex items-center gap-1.5">
+   621→                          <AlertTriangle className="h-3.5 w-3.5" />
+   622→                          Mehr verwendet als gebucht ({s.quantityUsed}/
+   623→                          {s.quantityTotal}).
+   624→                        </p>
+   625→                      )}
+   626→                    </div>
+   627→                  );
+   628→                })}
+   629→              </div>
+   630→            )}
+   631→          </section>
+   632→
+   633→          <Separator />
+   634→
+   635→          <section className="space-y-4">
+   636→            <div className="flex items-center justify-between gap-2 flex-wrap">
+   637→              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+   638→                <Wallet className="h-4 w-4" /> Vergütung / Zahlungen
+   639→              </h3>
+   640→              <Button
+   641→                type="button"
+   642→                variant="outline"
+   643→                size="sm"
+   644→                onClick={addPayment}
+   645→              >
+   646→                <Plus className="h-3.5 w-3.5" /> Zahlung hinzufügen
+   647→              </Button>
+   648→            </div>
+   649→
+   650→            <div className="space-y-2">
+   651→              {formPayments.map((p) => (
+   652→                <div key={p.key} className="rounded-lg border p-3 space-y-3">
+   653→                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+   654→                    <div className="space-y-1.5">
+   655→                      <Label className="text-xs">Betrag (€)</Label>
+   656→                      <Input
+   657→                        type="text"
+   658→                        inputMode="decimal"
+   659→                        value={p.amount}
+   660→                        onChange={(e) =>
+   661→                          updatePayment(p.key, { amount: e.target.value })
+   662→                        }
+   663→                        placeholder="0,00"
+   664→                      />
+   665→                    </div>
+   666→                    <div className="flex gap-4 pb-2.5">
+   667→                      <label className="flex items-center gap-2 text-sm">
+   668→                        <Checkbox
+   669→                          checked={p.paidOut}
+   670→                          onCheckedChange={(v) =>
+   671→                            updatePayment(p.key, { paidOut: !!v })
+   672→                          }
+   673→                        />
+   674→                        Ausgezahlt
+   675→                      </label>
+   676→                      <label className="flex items-center gap-2 text-sm">
+   677→                        <Checkbox
+   678→                          checked={p.received}
+   679→                          onCheckedChange={(v) =>
+   680→                            updatePayment(p.key, { received: !!v })
+   681→                          }
+   682→                        />
+   683→                        Angekommen
+   684→                      </label>
+   685→                    </div>
+   686→                    <Button
+   687→                      type="button"
+   688→                      variant="ghost"
+   689→                      size="icon"
+   690→                      onClick={() => removePayment(p.key)}
+   691→                      className="text-muted-foreground hover:text-rose-600"
+   692→                    >
+   693→                      <Trash2 className="h-4 w-4" />
+   694→                    </Button>
+   695→                  </div>
+   696→                  <div className="grid gap-3 sm:grid-cols-3">
+   697→                    <div className="space-y-1.5">
+   698→                      <Label className="text-xs">Erwartetes Datum</Label>
+   699→                      <Input
+   700→                        type="date"
+   701→                        value={p.expectedDate}
+   702→                        onChange={(e) =>
+   703→                          updatePayment(p.key, { expectedDate: e.target.value })
+   704→                        }
+   705→                      />
+   706→                    </div>
+   707→                    <div className="space-y-1.5">
+   708→                      <Label className="text-xs">Ausgezahlt am</Label>
+   709→                      <Input
+   710→                        type="date"
+   711→                        value={p.payoutDate}
+   712→                        onChange={(e) =>
+   713→                          updatePayment(p.key, { payoutDate: e.target.value })
+   714→                        }
+   715→                      />
+   716→                    </div>
+   717→                    <div className="space-y-1.5">
+   718→                      <Label className="text-xs">Eingangsdatum</Label>
+   719→                      <Input
+   720→                        type="date"
+   721→                        value={p.receivedDate}
+   722→                        onChange={(e) =>
+   723→                          updatePayment(p.key, { receivedDate: e.target.value })
+   724→                        }
+   725→                      />
+   726→                    </div>
+   727→                  </div>
+   728→                  <div className="space-y-1.5">
+   729→                    <Label className="text-xs">Notizen zur Zahlung</Label>
+   730→                    <Input
+   731→                      value={p.notes}
+   732→                      onChange={(e) =>
+   733→                        updatePayment(p.key, { notes: e.target.value })
+   734→                      }
+   735→                      placeholder="z. B. PayPal, Rechnung folgt"
+   736→                    />
+   737→                  </div>
+   738→                </div>
+   739→              ))}
+   740→            </div>
+   741→
+   742→            <div className="flex items-center justify-end gap-2 text-sm">
+   743→              <span className="text-muted-foreground">Gesamtbetrag:</span>
+   744→              <Badge variant="secondary" className="text-base font-semibold tabular-nums">
+   745→                {formatCurrency(totalAmount)}
+   746→              </Badge>
+   747→            </div>
+   748→          </section>
+   749→
+   750→          <Separator />
+   751→
+   752→          {/* TikTok Section */}
+   753→          <section className="space-y-4">
+   754→            <div className="flex items-center justify-between gap-2 flex-wrap">
+   755→              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+   756→                <Video className="h-4 w-4" /> TikToks
+   757→              </h3>
+   758→              <Button
+   759→                type="button"
+   760→                variant="outline"
+   761→                size="sm"
+   762→                onClick={addTiktok}
+   763→              >
+   764→                <Plus className="h-3.5 w-3.5" /> TikTok hinzufügen
+   765→              </Button>
+   766→            </div>
+   767→
+   768→            <div className="grid gap-3 sm:grid-cols-2">
+   769→              <div className="space-y-1.5">
+   770→                <Label className="text-xs">Ziel-Anzahl TikToks für diese Promo</Label>
+   771→                <Input
+   772→                  type="number"
+   773→                  min={0}
+   774→                  value={tiktokTarget}
+   775→                  onChange={(e) => setTiktokTarget(Number(e.target.value) || 0)}
+   776→                  placeholder="z. B. 10"
+   777→                />
+   778→              </div>
+   779→              <div className="flex items-end">
+   780→                <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm w-full">
+   781→                  <span className="text-muted-foreground">Fortschritt: </span>
+   782→                  <span className="font-semibold tabular-nums">
+   783→                    {formTiktoks.filter((t) => t.url.trim()).length}/{tiktokTarget || 0}
+   784→                  </span>
+   785→                  {tiktokTarget > 0 && (
+   786→                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+   787→                      <div
+   788→                        className="h-full bg-emerald-500 rounded-full transition-all"
+   789→                        style={{
+   790→                          width: `${Math.min(100, (formTiktoks.filter((t) => t.url.trim()).length / tiktokTarget) * 100)}%`,
+   791→                        }}
+   792→                      />
+   793→                    </div>
+   794→                  )}
+   795→                </div>
+   796→              </div>
+   797→            </div>
+   798→
+   799→            {formTiktoks.length === 0 ? (
+   800→              <p className="text-sm text-muted-foreground py-2">
+   801→                Noch keine TikTok-Links hinzugefügt.
+   802→              </p>
+   803→            ) : (
+   804→              <div className="space-y-2">
+   805→                {formTiktoks.map((t) => (
+   806→                  <div
+   807→                    key={t.key}
+   808→                    className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end"
+   809→                  >
+   810→                    <div className="space-y-1.5">
+   811→                      <Label className="text-xs flex items-center gap-1">
+   812→                        <Link2 className="h-3 w-3" /> TikTok-URL
+   813→                      </Label>
+   814→                      <Input
+   815→                        type="url"
+   816→                        value={t.url}
+   817→                        onChange={(e) =>
+   818→                          updateTiktok(t.key, { url: e.target.value })
+   819→                        }
+   820→                        placeholder="https://www.tiktok.com/@user/video/…"
+   821→                      />
+   822→                    </div>
+   823→                    <div className="space-y-1.5">
+   824→                      <Label className="text-xs">Titel (optional)</Label>
+   825→                      <Input
+   826→                        value={t.title}
+   827→                        onChange={(e) =>
+   828→                          updateTiktok(t.key, { title: e.target.value })
+   829→                        }
+   830→                        placeholder="z. B. Spot 1 – Beach"
+   831→                      />
+   832→                    </div>
+   833→                    <div className="space-y-1.5 sm:w-40">
+   834→                      <Label className="text-xs">Sound (optional)</Label>
+   835→                      <Select
+   836→                        value={t.soundId}
+   837→                        onValueChange={(v) =>
+   838→                          updateTiktok(t.key, { soundId: v === "none" ? "" : v })
+   839→                        }
+   840→                      >
+   841→                        <SelectTrigger>
+   842→                          <SelectValue placeholder="—" />
+   843→                        </SelectTrigger>
+   844→                        <SelectContent>
+   845→                          <SelectItem value="none">— Kein Sound —</SelectItem>
+   846→                          {sounds.map((s) => (
+   847→                            <SelectItem key={s.id} value={s.id}>
+   848→                              {s.name}
+   849→                            </SelectItem>
+   850→                          ))}
+   851→                        </SelectContent>
+   852→                      </Select>
+   853→                    </div>
+   854→                    <Button
+   855→                      type="button"
+   856→                      variant="ghost"
+   857→                      size="icon"
+   858→                      onClick={() => removeTiktok(t.key)}
+   859→                      className="text-muted-foreground hover:text-rose-600"
+   860→                    >
+   861→                      <Trash2 className="h-4 w-4" />
+   862→                    </Button>
+   863→                  </div>
+   864→                ))}
+   865→              </div>
+   866→            )}
+   867→          </section>
+   868→
+   869→          <Separator />
+   870→
+   871→          <section className="space-y-2">
+   872→            <Label htmlFor="promo-notes">Notizen zur Promo</Label>
+   873→            <Textarea
+   874→              id="promo-notes"
+   875→              value={notes}
+   876→              onChange={(e) => setNotes(e.target.value)}
+   877→              rows={3}
+   878→              placeholder="z. B. Kunde möchte Rechnung erst am Monatsende."
+   879→            />
+   880→          </section>
+   881→        </div>
+   882→
+   883→        <DialogFooter className="px-6 py-4 border-t sticky bottom-0 bg-background">
+   884→          <Button variant="outline" onClick={() => onOpenChange(false)}>
+   885→            Abbrechen
+   886→          </Button>
+   887→          <Button onClick={handleSubmit} disabled={saving}>
+   888→            {saving
+   889→              ? "Speichern…"
+   890→              : mode === "edit"
+   891→              ? "Änderungen speichern"
+   892→              : "Promo anlegen"}
+   893→          </Button>
+   894→        </DialogFooter>
+   895→      </DialogContent>
+   896→    </Dialog>
+   897→  );
+   898→}
+   899→

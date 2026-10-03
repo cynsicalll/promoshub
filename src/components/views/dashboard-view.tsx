@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useI18n } from "@/components/language-provider";
 import {
   ResponsiveContainer,
   BarChart,
@@ -38,6 +39,7 @@ import {
 } from "recharts";
 
 export function DashboardView() {
+  const { t } = useI18n();
   const { data, isLoading } = useDashboard();
   const openPromo = useAppStore((s) => s.openPromo);
   const setView = useAppStore((s) => s.setView);
@@ -61,42 +63,42 @@ export function DashboardView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("dashboard.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Überblick über deine Promos, Sounds und Zahlungen.
+          {t("dashboard.subtitle")}
         </p>
       </div>
 
       {/* Promos KPIs */}
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Promos
+          {t("dashboard.promos")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Promos gesamt"
+            label={t("dashboard.totalPromos")}
             value={counts.total}
-            hint={`${counts.aktiv} aktiv · ${counts.geplant} geplant`}
+            hint={t("dashboard.activePlannedHint", { aktiv: counts.aktiv, geplant: counts.geplant })}
             icon={Megaphone}
           />
           <StatCard
-            label="Aktive / Offene"
+            label={t("dashboard.activeOpen")}
             value={counts.aktiv + counts.geplant}
-            hint={`${counts.abgeschlossen} abgeschlossen`}
+            hint={t("dashboard.completedHint", { count: counts.abgeschlossen })}
             icon={Clock}
             tone="amber"
           />
           <StatCard
-            label="Abgeschlossen"
+            label={t("dashboard.completed")}
             value={counts.abgeschlossen}
-            hint={`${counts.storniert} storniert`}
+            hint={t("dashboard.cancelledHint", { count: counts.storniert })}
             icon={CheckCircle2}
             tone="teal"
           />
           <StatCard
-            label="Sounds übrig"
+            label={t("dashboard.soundsRemaining")}
             value={counts.openSoundsRemaining}
-            hint="Verbleibende Nutzungen"
+            hint={t("dashboard.remainingUses")}
             icon={Music2}
             tone="emerald"
           />
@@ -106,33 +108,33 @@ export function DashboardView() {
       {/* Money KPIs */}
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Geld
+          {t("dashboard.money")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Gesamtverdienst"
+            label={t("dashboard.totalEarnings")}
             value={formatCurrency(money.totalEarned)}
-            hint="Summe aller Promos"
+            hint={t("dashboard.sumAllPromos")}
             icon={Wallet}
           />
           <StatCard
-            label="Bereits erhalten"
+            label={t("dashboard.received")}
             value={formatCurrency(money.received)}
-            hint="Angekommene Zahlungen"
+            hint={t("dashboard.receivedPayments")}
             icon={TrendingUp}
             tone="emerald"
           />
           <StatCard
-            label="Noch ausstehend"
+            label={t("dashboard.outstanding")}
             value={formatCurrency(money.outstanding)}
-            hint="Noch nicht angekommen"
+            hint={t("dashboard.notReceivedYet")}
             icon={TrendingDown}
             tone="rose"
           />
           <StatCard
-            label="Ausgezahlt, nicht angekommen"
+            label={t("dashboard.paidOutNotReceived")}
             value={formatCurrency(money.paidOut - money.received > 0 ? money.paidOut - money.received : 0)}
-            hint={`Ausgezahlt: ${formatCurrency(money.paidOut)}`}
+            hint={t("dashboard.paidOutHint", { amount: formatCurrency(money.paidOut) })}
             icon={Banknote}
             tone="amber"
           />
@@ -144,8 +146,8 @@ export function DashboardView() {
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold">Verdienst & Eingänge</h3>
-              <p className="text-xs text-muted-foreground">Letzte 6 Monate</p>
+              <h3 className="font-semibold">{t("dashboard.earningsChart")}</h3>
+              <p className="text-xs text-muted-foreground">{t("dashboard.last6Months")}</p>
             </div>
           </div>
           <div className="h-64">
@@ -163,8 +165,8 @@ export function DashboardView() {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="earned" name="Verdienst" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="received" name="Erhalten" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="earned" name={t("dashboard.chart.earned")} fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="received" name={t("dashboard.chart.received")} fill="#0d9488" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -173,13 +175,13 @@ export function DashboardView() {
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="h-4 w-4 text-rose-500" />
-            <h3 className="font-semibold">Überfällige Zahlungen</h3>
+            <h3 className="font-semibold">{t("dashboard.overduePayments")}</h3>
           </div>
           {overduePayments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <CircleSlash className="h-8 w-8 text-muted-foreground/40 mb-2" />
               <p className="text-sm text-muted-foreground">
-                Keine überfälligen Zahlungen.
+                {t("dashboard.noOverdue")}
               </p>
             </div>
           ) : (
@@ -204,7 +206,7 @@ export function DashboardView() {
                         {p.promo.customer?.name || "—"}
                       </span>
                       <span className="text-xs text-rose-600">
-                        seit {formatDate(p.expectedDate)}
+                        {t("dashboard.since")} {formatDate(p.expectedDate)}
                       </span>
                     </div>
                   </button>
@@ -219,20 +221,20 @@ export function DashboardView() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">Letzte Promos</h3>
+            <h3 className="font-semibold">{t("dashboard.recentPromos")}</h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setView("promos")}
               className="gap-1 text-muted-foreground"
             >
-              Alle <ArrowRight className="h-3.5 w-3.5" />
+              {t("action.all")} <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
           <div className="divide-y">
             {recentPromos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
-                Noch keine Promos angelegt.
+                {t("dashboard.noPromos")}
               </p>
             ) : (
               recentPromos.map((p) => (
@@ -263,20 +265,20 @@ export function DashboardView() {
 
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">Letzte Zahlungen</h3>
+            <h3 className="font-semibold">{t("dashboard.recentPayments")}</h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setView("money")}
               className="gap-1 text-muted-foreground"
             >
-              Alle <ArrowRight className="h-3.5 w-3.5" />
+              {t("action.all")} <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
           <div className="divide-y">
             {recentPayments.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
-                Noch keine Zahlungen eingegangen.
+                {t("dashboard.noPayments")}
               </p>
             ) : (
               recentPayments.map((p) => (
@@ -290,7 +292,7 @@ export function DashboardView() {
                       {p.promo.name}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      Eingang {formatDate(p.receivedDate)}
+                      {t("dashboard.receivedOn", { date: formatDate(p.receivedDate) })}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

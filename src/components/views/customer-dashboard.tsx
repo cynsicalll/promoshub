@@ -4,7 +4,6 @@ import * as React from "react";
 import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { PromoStatusBadge } from "@/components/status-badges";
 import type { ShareData } from "@/lib/types";
 import {
@@ -21,8 +20,11 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
+import { useI18n } from "@/components/language-provider";
+import { LanguageToggle } from "@/components/language-toggle";
 
 export function CustomerDashboard() {
+  const { t } = useI18n();
   const { user, logout } = useAuth();
   const [promos, setPromos] = React.useState<ShareData[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -57,44 +59,47 @@ export function CustomerDashboard() {
               <AudioLines className="h-5 w-5" />
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-semibold tracking-tight">PromoHub</p>
+              <p className="text-sm font-semibold tracking-tight">{t("app.name")}</p>
               <p className="text-[11px] text-muted-foreground">
                 {user?.displayName || user?.username}
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={logout}
-            className="gap-2"
-          >
-            <LogOut className="h-4 w-4" /> Abmelden
-          </Button>
+          <div className="flex items-center gap-2">
+            <LanguageToggle />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" /> {t("customer.logout")}
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-6 space-y-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Willkommen, {user?.displayName || user?.username}!
+            {t("customer.welcome", {
+              name: user?.displayName || user?.username || "",
+            })}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Hier sehen Sie den Status Ihrer Promos, Sounds und TikTok-Videos.
+            {t("customer.subtitle")}
           </p>
         </div>
 
         {loading ? (
           <Card className="p-10 text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-emerald-500" />
-            <p className="mt-3 text-sm text-muted-foreground">Lade…</p>
+            <p className="mt-3 text-sm text-muted-foreground">{t("action.loading")}</p>
           </Card>
         ) : promos.length === 0 ? (
           <Card className="p-10 text-center">
             <Music2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-muted-foreground">
-              Ihnen sind aktuell keine Promos zugewiesen.
-            </p>
+            <p className="text-muted-foreground">{t("customer.noPromos")}</p>
           </Card>
         ) : (
           <div className="space-y-4">
@@ -169,7 +174,7 @@ export function CustomerDashboard() {
                         <div className="flex items-center gap-2 mb-1">
                           <Music2 className="h-3.5 w-3.5 text-emerald-600" />
                           <span className="text-xs font-medium text-muted-foreground">
-                            Sounds
+                            {t("customer.sounds")}
                           </span>
                         </div>
                         <p className="text-xl font-bold tabular-nums">
@@ -189,7 +194,7 @@ export function CustomerDashboard() {
                         <div className="flex items-center gap-2 mb-1">
                           <Video className="h-3.5 w-3.5 text-pink-600" />
                           <span className="text-xs font-medium text-muted-foreground">
-                            TikToks
+                            {t("customer.tiktoks")}
                           </span>
                         </div>
                         <p className="text-xl font-bold tabular-nums">
@@ -215,11 +220,11 @@ export function CustomerDashboard() {
                       <div>
                         <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
                           <Music2 className="h-4 w-4 text-muted-foreground" />
-                          Sound-Details
+                          {t("customer.soundDetails")}
                         </h3>
                         {promo.sounds.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
-                            Keine Sounds zugeordnet.
+                            {t("customer.noSounds")}
                           </p>
                         ) : (
                           <div className="space-y-2">
@@ -263,7 +268,7 @@ export function CustomerDashboard() {
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="tabular-nums">
                                       {s.quantityUsed} / {s.quantityTotal}{" "}
-                                      verwendet
+                                      {t("customer.used2")}
                                     </span>
                                     <span
                                       className={
@@ -272,7 +277,7 @@ export function CustomerDashboard() {
                                           : "text-muted-foreground"
                                       }
                                     >
-                                      {s.quantityRemaining} übrig
+                                      {s.quantityRemaining} {t("customer.left")}
                                     </span>
                                   </div>
                                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -294,21 +299,21 @@ export function CustomerDashboard() {
                       <div>
                         <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
                           <Video className="h-4 w-4 text-muted-foreground" />
-                          TikTok-Videos
+                          {t("customer.tiktokVideos")}
                         </h3>
                         {promo.tiktoks.length === 0 ? (
                           <div className="text-center py-4">
                             <Video className="h-6 w-6 mx-auto mb-1.5 text-muted-foreground/40" />
                             <p className="text-sm text-muted-foreground">
-                              Noch keine Videos veröffentlicht.
+                              {t("customer.noTiktoks")}
                             </p>
                           </div>
                         ) : (
                           <div className="grid gap-2 sm:grid-cols-2">
-                            {promo.tiktoks.map((t, i) => (
+                            {promo.tiktoks.map((tt, i) => (
                               <a
                                 key={i}
-                                href={normalizeUrl(t.url)}
+                                href={normalizeUrl(tt.url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="group flex items-center gap-3 rounded-lg border p-3 hover:border-pink-400 hover:bg-pink-50/40 dark:hover:bg-pink-950/20 transition-colors"
@@ -318,10 +323,11 @@ export function CustomerDashboard() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium truncate">
-                                    {t.title || `Video ${i + 1}`}
+                                    {tt.title ||
+                                      t("share.videoNum", { n: i + 1 })}
                                   </p>
                                   <p className="text-xs text-muted-foreground truncate">
-                                    {domainFromUrl(t.url)}
+                                    {domainFromUrl(tt.url)}
                                   </p>
                                 </div>
                                 <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-pink-600 shrink-0" />
@@ -330,21 +336,6 @@ export function CustomerDashboard() {
                           </div>
                         )}
                       </div>
-
-                      {/* Notes */}
-                      {promo.notes && (
-                        <>
-                          <Separator />
-                          <div>
-                            <h3 className="text-sm font-semibold mb-1">
-                              Notizen
-                            </h3>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                              {promo.notes}
-                            </p>
-                          </div>
-                        </>
-                      )}
                     </div>
                   )}
                 </Card>
@@ -355,7 +346,7 @@ export function CustomerDashboard() {
       </main>
 
       <footer className="border-t mt-10 py-4 text-center text-xs text-muted-foreground">
-        PromoHub · Kunden-Ansicht
+        {t("app.name")} · {t("customer.customerView")}
       </footer>
     </div>
   );

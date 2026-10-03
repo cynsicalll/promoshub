@@ -26,6 +26,7 @@ import {
   PaymentStatusBadge,
 } from "@/components/status-badges";
 import { PromoFormDialog } from "./promo-form-dialog";
+import { useI18n } from "@/components/language-provider";
 import {
   formatCurrency,
   formatDate,
@@ -71,6 +72,7 @@ type SortKey =
   | "status";
 
 export function PromosView() {
+  const { t } = useI18n();
   const { data: promos = [], isLoading } = usePromos();
   const { data: customers = [] } = useCustomers();
   const openPromo = useAppStore((s) => s.openPromo);
@@ -166,16 +168,16 @@ export function PromosView() {
 
   function handleExport() {
     window.open("/api/export?type=promos&format=csv", "_blank");
-    toast.success("Promos werden exportiert");
+    toast.success(t("settings.exportStarted"));
   }
 
   async function handleDelete() {
     if (!deleteId) return;
     try {
       await deletePromo.mutateAsync(deleteId);
-      toast.success("Promo gelöscht");
+      toast.success(t("promos.deletedToast"));
     } catch (e) {
-      toast.error("Löschen fehlgeschlagen");
+      toast.error(t("action.deleteFailed"));
     } finally {
       setDeleteId(null);
     }
@@ -208,14 +210,14 @@ export function PromosView() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Promos</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("promos.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {filtered.length} von {promos.length} Promos
+            {t("promos.subtitle", { count: filtered.length, total: promos.length })}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" /> Export
+            <Download className="h-4 w-4" /> {t("action.export")}
           </Button>
           <Button
             size="sm"
@@ -225,7 +227,7 @@ export function PromosView() {
             }}
             className="gap-2"
           >
-            <Plus className="h-4 w-4" /> Neue Promo
+            <Plus className="h-4 w-4" /> {t("action.newPromo")}
           </Button>
         </div>
       </div>
@@ -236,7 +238,7 @@ export function PromosView() {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Promo, Kunde, Sound suchen…"
+              placeholder={t("promos.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
@@ -247,12 +249,12 @@ export function PromosView() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="alle">Alle Status</SelectItem>
-              <SelectItem value="offen">Offen</SelectItem>
-              <SelectItem value="GEPLANT">Geplant</SelectItem>
-              <SelectItem value="AKTIV">Aktiv</SelectItem>
-              <SelectItem value="ABGESCHLOSSEN">Abgeschlossen</SelectItem>
-              <SelectItem value="STORNIERT">Storniert</SelectItem>
+              <SelectItem value="alle">{t("promos.filter.allStatus")}</SelectItem>
+              <SelectItem value="offen">{t("promos.filter.open")}</SelectItem>
+              <SelectItem value="GEPLANT">{t("status.GEPLANT")}</SelectItem>
+              <SelectItem value="AKTIV">{t("status.AKTIV")}</SelectItem>
+              <SelectItem value="ABGESCHLOSSEN">{t("status.ABGESCHLOSSEN")}</SelectItem>
+              <SelectItem value="STORNIERT">{t("status.STORNIERT")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={customerFilter} onValueChange={setCustomerFilter}>
@@ -260,8 +262,8 @@ export function PromosView() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="alle">Alle Kunden</SelectItem>
-              <SelectItem value="ohne">Ohne Kunde</SelectItem>
+              <SelectItem value="alle">{t("promos.filter.allCustomers")}</SelectItem>
+              <SelectItem value="ohne">{t("promos.filter.noCustomer")}</SelectItem>
               {customers.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -278,15 +280,15 @@ export function PromosView() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="min-w-[180px]"><SortHeader label="Promo" k="name" /></TableHead>
-                <TableHead className="min-w-[140px]"><SortHeader label="Kunde" k="customer" /></TableHead>
-                <TableHead className="w-[110px]"><SortHeader label="Datum" k="date" /></TableHead>
-                <TableHead className="text-center w-[90px]">Sounds</TableHead>
-                <TableHead className="text-center w-[90px]"><SortHeader label="Übrig" k="soundsRemaining" /></TableHead>
-                <TableHead className="text-right w-[110px]"><SortHeader label="Vergütung" k="amount" /></TableHead>
-                <TableHead className="w-[130px]">Zahlung</TableHead>
-                <TableHead className="w-[130px]"><SortHeader label="Status" k="status" /></TableHead>
-                <TableHead className="w-[80px] text-right">Aktion</TableHead>
+                <TableHead className="min-w-[180px]"><SortHeader label={t("promos.col.promo")} k="name" /></TableHead>
+                <TableHead className="min-w-[140px]"><SortHeader label={t("promos.col.customer")} k="customer" /></TableHead>
+                <TableHead className="w-[110px]"><SortHeader label={t("promos.col.date")} k="date" /></TableHead>
+                <TableHead className="text-center w-[90px]">{t("promos.col.sounds")}</TableHead>
+                <TableHead className="text-center w-[90px]"><SortHeader label={t("promos.col.remaining")} k="soundsRemaining" /></TableHead>
+                <TableHead className="text-right w-[110px]"><SortHeader label={t("promos.col.amount")} k="amount" /></TableHead>
+                <TableHead className="w-[130px]">{t("promos.col.payment")}</TableHead>
+                <TableHead className="w-[130px]"><SortHeader label={t("promos.col.status")} k="status" /></TableHead>
+                <TableHead className="w-[80px] text-right">{t("promos.col.action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -304,7 +306,7 @@ export function PromosView() {
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
                     <Music2 className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    Keine Promos gefunden.
+                    {t("promos.noResults")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -361,7 +363,7 @@ export function PromosView() {
                         {formatCurrency(amount)}
                         {received < amount && received > 0 && (
                           <div className="text-xs text-muted-foreground">
-                            {formatCurrency(received)} erhalten
+                            {formatCurrency(received)} {t("promos.received")}
                           </div>
                         )}
                       </TableCell>
@@ -432,20 +434,18 @@ export function PromosView() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Promo löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.promoTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Aktion kann nicht rückgängig gemacht werden. Alle
-              verknüpften Zahlungen und Sound-Zuordnungen werden ebenfalls
-              gelöscht.
+              {t("delete.promoDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              Löschen
+              {t("action.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -34,6 +34,7 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/format";
 import { StatCard } from "@/components/stat-card";
+import { useI18n } from "@/components/language-provider";
 import {
   TrendingUp,
   TrendingDown,
@@ -46,6 +47,7 @@ import {
 } from "lucide-react";
 
 export function MonthlyView() {
+  const { t } = useI18n();
   const now = new Date();
   const [year, setYear] = React.useState<number>(now.getFullYear());
   const { data, isLoading } = useMonthly(year);
@@ -69,11 +71,11 @@ export function MonthlyView() {
 
   const chartData = entries.map((e) => ({
     label: e.label,
-    Verdienst: e.earned,
-    Erhalten: e.received,
-    Offen: e.outstanding,
-    Promos: e.promos,
-    TikToks: e.tiktoks,
+    [t("monthly.col.earnings")]: e.earned,
+    [t("monthly.col.received")]: e.received,
+    [t("monthly.col.open")]: e.outstanding,
+    [t("monthly.col.promos")]: e.promos,
+    [t("monthly.col.tiktoks")]: e.tiktoks,
   }));
 
   function changeYear(delta: number) {
@@ -86,10 +88,10 @@ export function MonthlyView() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
             <CalendarRange className="h-6 w-6 text-muted-foreground" />
-            Monatsübersicht
+            {t("monthly.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Verdienst, Eingänge, Promos und TikToks pro Monat im Jahr {year}.
+            {t("monthly.subtitle", { year })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -97,7 +99,7 @@ export function MonthlyView() {
             variant="outline"
             size="icon"
             onClick={() => changeYear(-1)}
-            aria-label="Vorheriges Jahr"
+            aria-label={t("monthly.prevYear")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -117,7 +119,7 @@ export function MonthlyView() {
             variant="outline"
             size="icon"
             onClick={() => changeYear(1)}
-            aria-label="Nächstes Jahr"
+            aria-label={t("monthly.nextYear")}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -127,26 +129,29 @@ export function MonthlyView() {
       {/* Year KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label={`Gesamtverdienst ${year}`}
+          label={t("monthly.totalEarnings", { year })}
           value={formatCurrency(yearTotals.earned)}
           icon={Wallet}
         />
         <StatCard
-          label="Erhalten"
+          label={t("monthly.received")}
           value={formatCurrency(yearTotals.received)}
           icon={TrendingUp}
           tone="emerald"
         />
         <StatCard
-          label="Offen"
+          label={t("monthly.open")}
           value={formatCurrency(yearTotals.outstanding)}
           icon={TrendingDown}
           tone={yearTotals.outstanding > 0 ? "amber" : "default"}
         />
         <StatCard
-          label="Promos / TikToks"
+          label={t("monthly.promosTiktoks")}
           value={`${yearTotals.promos} / ${yearTotals.tiktoks}`}
-          hint={`${yearTotals.promos} Promos · ${yearTotals.tiktoks} TikToks`}
+          hint={t("monthly.promosHint", {
+            promos: yearTotals.promos,
+            tiktoks: yearTotals.tiktoks,
+          })}
           icon={Video}
           tone="teal"
         />
@@ -156,9 +161,9 @@ export function MonthlyView() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold">Geldfluss pro Monat</h3>
+            <h3 className="font-semibold">{t("monthly.cashFlow")}</h3>
             <p className="text-xs text-muted-foreground">
-              Verdienst, erhaltene und offene Beträge
+              {t("monthly.cashFlowSubtitle")}
             </p>
           </div>
         </div>
@@ -190,9 +195,9 @@ export function MonthlyView() {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Verdienst" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Erhalten" fill="#0d9488" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Offen" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              <Bar dataKey={t("monthly.col.earnings")} fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey={t("monthly.col.received")} fill="#0d9488" radius={[4, 4, 0, 0]} />
+              <Bar dataKey={t("monthly.col.open")} fill="#f59e0b" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -202,9 +207,9 @@ export function MonthlyView() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold">Aktivität pro Monat</h3>
+            <h3 className="font-semibold">{t("monthly.activity")}</h3>
             <p className="text-xs text-muted-foreground">
-              Anzahl Promos und produzierter TikToks
+              {t("monthly.activitySubtitle")}
             </p>
           </div>
         </div>
@@ -235,8 +240,8 @@ export function MonthlyView() {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Promos" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={18} />
-              <Bar dataKey="TikToks" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={18} />
+              <Bar dataKey={t("monthly.col.promos")} fill="#6366f1" radius={[4, 4, 0, 0]} barSize={18} />
+              <Bar dataKey={t("monthly.col.tiktoks")} fill="#ec4899" radius={[4, 4, 0, 0]} barSize={18} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -248,20 +253,20 @@ export function MonthlyView() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="w-[110px]">Monat</TableHead>
-                <TableHead className="text-center w-[80px]">Promos</TableHead>
-                <TableHead className="text-center w-[90px]">TikToks</TableHead>
-                <TableHead className="text-right w-[130px]">Verdienst</TableHead>
-                <TableHead className="text-right w-[130px]">Erhalten</TableHead>
-                <TableHead className="text-right w-[130px]">Offen</TableHead>
-                <TableHead className="w-[160px]">Verteilung</TableHead>
+                <TableHead className="w-[110px]">{t("monthly.col.month")}</TableHead>
+                <TableHead className="text-center w-[80px]">{t("monthly.col.promos")}</TableHead>
+                <TableHead className="text-center w-[90px]">{t("monthly.col.tiktoks")}</TableHead>
+                <TableHead className="text-right w-[130px]">{t("monthly.col.earnings")}</TableHead>
+                <TableHead className="text-right w-[130px]">{t("monthly.col.received")}</TableHead>
+                <TableHead className="text-right w-[130px]">{t("monthly.col.open")}</TableHead>
+                <TableHead className="w-[160px]">{t("monthly.col.distribution")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                    Lade…
+                    {t("action.loading")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -310,7 +315,7 @@ export function MonthlyView() {
               )}
               {/* Total row */}
               <TableRow className="bg-muted/30 font-semibold border-t-2">
-                <TableCell>Summe {year}</TableCell>
+                <TableCell>{t("monthly.sum", { year })}</TableCell>
                 <TableCell className="text-center tabular-nums">
                   {yearTotals.promos}
                 </TableCell>
@@ -328,7 +333,7 @@ export function MonthlyView() {
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="text-xs">
-                    {yearTotals.promos} Promos
+                    {yearTotals.promos} {t("monthly.col.promos")}
                   </Badge>
                 </TableCell>
               </TableRow>

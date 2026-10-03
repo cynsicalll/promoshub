@@ -11,7 +11,7 @@ const SECRET =
 
 // Admin credentials (hardcoded for the personal app)
 const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "CarDay123!";
+const ADMIN_PASSWORD = "CarDay123!.";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,7 +113,17 @@ export function getSessionFromRequest(req: NextRequest): SessionUser | null {
 
 export async function ensureAdminUser(): Promise<void> {
   const existing = await db.user.findFirst({ where: { role: "ADMIN" } });
-  if (existing) return;
+  if (existing) {
+    // Update password if it has changed
+    if (!verifyPassword(ADMIN_PASSWORD, existing.passwordHash)) {
+      await db.user.update({
+        where: { id: existing.id },
+        data: { passwordHash: hashPassword(ADMIN_PASSWORD) },
+      });
+      console.log("Admin password updated.");
+    }
+    return;
+  }
   await db.user.create({
     data: {
       username: ADMIN_USERNAME,

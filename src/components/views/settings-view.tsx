@@ -33,8 +33,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { CustomerAccessSection } from "@/components/views/customer-access-section";
+import { useI18n } from "@/components/language-provider";
+import { LANGS } from "@/lib/i18n";
 
 export function SettingsView() {
+  const { t } = useI18n();
   const { theme, setTheme } = useTheme();
   const importMut = useImport();
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -58,14 +61,14 @@ export function SettingsView() {
       try {
         const rows = parseCsv(String(reader.result));
         if (rows.length === 0) {
-          toast.error("Die Datei enthält keine Daten");
+          toast.error(t("settings.toast.noData"));
           return;
         }
         setPendingRows(rows);
         setPendingPreview({ headers: Object.keys(rows[0]), count: rows.length });
-        toast.info(`${rows.length} Zeilen erkannt – bitte Import bestätigen`);
+        toast.info(t("settings.toast.rowsDetected", { count: rows.length }));
       } catch {
-        toast.error("CSV konnte nicht gelesen werden");
+        toast.error(t("settings.toast.csvReadFailed"));
       }
     };
     reader.readAsText(file);
@@ -81,29 +84,34 @@ export function SettingsView() {
         type: importType,
       });
       toast.success(
-        `${res.imported} importiert, ${res.skipped} übersprungen` +
-          (res.errors.length ? `, ${res.errors.length} Fehler` : "")
+        t("settings.toast.importResult", {
+          imported: res.imported,
+          skipped: res.skipped,
+        }) +
+          (res.errors.length
+            ? t("settings.toast.importErrors", { count: res.errors.length })
+            : "")
       );
       setPendingRows(null);
       setPendingPreview(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Import fehlgeschlagen");
+      toast.error(e instanceof Error ? e.message : t("settings.toast.importFailed"));
     }
   }
 
   function exportData(type: string) {
     window.open(`/api/export?type=${type}&format=csv`, "_blank");
-    toast.success("Export gestartet");
+    toast.success(t("settings.exportStarted"));
   }
 
   async function reseed() {
     try {
       const res = await fetch("/api/seed", { method: "POST" });
       if (!res.ok) throw new Error("Seed fehlgeschlagen");
-      toast.success("Beispieldaten wurden neu geladen");
+      toast.success(t("settings.toast.sampleReloaded"));
       setTimeout(() => window.location.reload(), 600);
     } catch {
-      toast.error("Fehler beim Laden der Beispieldaten");
+      toast.error(t("settings.toast.sampleReloadFailed"));
     }
   }
 
@@ -111,19 +119,19 @@ export function SettingsView() {
     try {
       const res = await fetch("/api/seed?mode=clear", { method: "POST" });
       if (!res.ok) throw new Error();
-      toast.success("Alle Daten wurden gelöscht");
+      toast.success(t("settings.toast.allDeleted"));
       setTimeout(() => window.location.reload(), 600);
     } catch {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("settings.toast.deleteFailed"));
     }
   }
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Einstellungen</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("settings.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Datenverwaltung, Import/Export und Darstellung.
+          {t("settings.subtitle")}
         </p>
       </div>
 
@@ -131,13 +139,13 @@ export function SettingsView() {
       <Card className="p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Palette className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-semibold">Darstellung</h2>
+          <h2 className="font-semibold">{t("settings.appearance")}</h2>
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Design</p>
+            <p className="text-sm font-medium">{t("settings.theme")}</p>
             <p className="text-xs text-muted-foreground">
-              Zwischen hellem und dunklem Design wechseln.
+              {t("settings.themeDesc")}
             </p>
           </div>
           <Button
@@ -148,14 +156,23 @@ export function SettingsView() {
           >
             {theme === "dark" ? (
               <>
-                <Sun className="h-4 w-4" /> Hell
+                <Sun className="h-4 w-4" /> {t("settings.light")}
               </>
             ) : (
               <>
-                <Moon className="h-4 w-4" /> Dunkel
+                <Moon className="h-4 w-4" /> {t("settings.dark")}
               </>
             )}
           </Button>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">{t("settings.language")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.languageDesc")}
+            </p>
+          </div>
+          <LanguageSwitcher />
         </div>
       </Card>
 
@@ -166,31 +183,29 @@ export function SettingsView() {
       <Card className="p-5 space-y-4">
         <div className="flex items-center gap-2">
           <FileUp className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-semibold">Daten importieren</h2>
+          <h2 className="font-semibold">{t("settings.import")}</h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          Importiere ein Google-Sheet oder eine CSV-Datei. Spalten wie „Promo",
-          „Kunde", „Datum", „Betrag", „Sound" werden automatisch zugeordnet.
-          Bestehende Daten werden nicht überschrieben.
+          {t("settings.importDesc")}
         </p>
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label>Import-Typ</Label>
+            <Label>{t("settings.importType")}</Label>
             <div className="flex gap-2">
               <Button
                 variant={importType === "promos" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setImportType("promos")}
               >
-                Promos
+                {t("settings.importPromos")}
               </Button>
               <Button
                 variant={importType === "payments" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setImportType("payments")}
               >
-                Zahlungen
+                {t("settings.importPayments")}
               </Button>
             </div>
           </div>
@@ -207,7 +222,7 @@ export function SettingsView() {
             className="gap-2"
             onClick={() => fileRef.current?.click()}
           >
-            <Upload className="h-4 w-4" /> Datei auswählen
+            <Upload className="h-4 w-4" /> {t("settings.importSelectFile")}
           </Button>
         </div>
 
@@ -215,7 +230,7 @@ export function SettingsView() {
           <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="text-sm font-medium">
-                {pendingPreview.count} Zeilen erkannt
+                {t("settings.importRowsDetected", { count: pendingPreview.count })}
               </p>
               <Button
                 variant="ghost"
@@ -225,7 +240,7 @@ export function SettingsView() {
                   setPendingPreview(null);
                 }}
               >
-                Verwerfen
+                {t("settings.importDiscard")}
               </Button>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -238,26 +253,27 @@ export function SettingsView() {
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
               <AlertDialogTrigger asChild>
                 <Button size="sm" className="gap-2">
-                  <Upload className="h-4 w-4" /> Import bestätigen
+                  <Upload className="h-4 w-4" /> {t("settings.importConfirm")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    {pendingPreview.count}{" "}
-                    {importType === "promos" ? "Promos" : "Zahlungen"}{" "}
-                    importieren?
+                    {t("settings.importConfirmTitle", {
+                      count: pendingPreview.count,
+                      type: importType === "promos"
+                        ? t("settings.importPromos")
+                        : t("settings.importPayments"),
+                    })}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Die Daten werden hinzugefügt. Bestehende Einträge bleiben
-                    unberührt. Kunden und Sounds werden automatisch angelegt,
-                    falls sie noch nicht existieren.
+                    {t("settings.importConfirmDesc")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
                   <AlertDialogAction onClick={confirmImport}>
-                    Importieren
+                    {t("settings.import")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -270,7 +286,7 @@ export function SettingsView() {
       <Card className="p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Download className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-semibold">Daten exportieren</h2>
+          <h2 className="font-semibold">{t("settings.export")}</h2>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
           <Button
@@ -278,28 +294,28 @@ export function SettingsView() {
             className="justify-start gap-2"
             onClick={() => exportData("promos")}
           >
-            <FileSpreadsheet className="h-4 w-4" /> Alle Promos (CSV)
+            <FileSpreadsheet className="h-4 w-4" /> {t("settings.exportPromos")}
           </Button>
           <Button
             variant="outline"
             className="justify-start gap-2"
             onClick={() => exportData("payments")}
           >
-            <FileSpreadsheet className="h-4 w-4" /> Alle Zahlungen (CSV)
+            <FileSpreadsheet className="h-4 w-4" /> {t("settings.exportPayments")}
           </Button>
           <Button
             variant="outline"
             className="justify-start gap-2"
             onClick={() => exportData("customers")}
           >
-            <FileSpreadsheet className="h-4 w-4" /> Alle Kunden (CSV)
+            <FileSpreadsheet className="h-4 w-4" /> {t("settings.exportCustomers")}
           </Button>
           <Button
             variant="outline"
             className="justify-start gap-2"
             onClick={() => exportData("sounds")}
           >
-            <FileSpreadsheet className="h-4 w-4" /> Alle Sounds (CSV)
+            <FileSpreadsheet className="h-4 w-4" /> {t("settings.exportSounds")}
           </Button>
         </div>
       </Card>
@@ -308,31 +324,31 @@ export function SettingsView() {
       <Card className="p-5 space-y-4">
         <div className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-semibold">Datenverwaltung</h2>
+          <h2 className="font-semibold">{t("settings.dataManagement")}</h2>
         </div>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <p className="text-sm font-medium">Beispieldaten neu laden</p>
+            <p className="text-sm font-medium">{t("settings.reloadSample")}</p>
             <p className="text-xs text-muted-foreground">
-              Setzt die Datenbank auf realistische Beispiel-Promos zurück.
+              {t("settings.reloadSampleDesc")}
             </p>
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
-                <RefreshCw className="h-4 w-4" /> Neu laden
+                <RefreshCw className="h-4 w-4" /> {t("action.save")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Beispieldaten laden?</AlertDialogTitle>
+                <AlertDialogTitle>{t("settings.reloadTitle")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Alle aktuellen Daten werden durch Beispieldaten ersetzt.
+                  {t("settings.reloadDesc")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction onClick={reseed}>Laden</AlertDialogAction>
+                <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={reseed}>{t("settings.reloadAction")}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -341,10 +357,10 @@ export function SettingsView() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="text-sm font-medium text-rose-600">
-              Alle Daten löschen
+              {t("settings.clearAll")}
             </p>
             <p className="text-xs text-muted-foreground">
-              Entfernt sämtliche Promos, Zahlungen, Kunden und Sounds.
+              {t("settings.clearAllDesc")}
             </p>
           </div>
           <AlertDialog>
@@ -354,25 +370,23 @@ export function SettingsView() {
                 size="sm"
                 className="gap-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
               >
-                <Trash2 className="h-4 w-4" /> Alles löschen
+                <Trash2 className="h-4 w-4" /> {t("settings.clearAll")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Wirklich alle Daten löschen?</AlertDialogTitle>
+                <AlertDialogTitle>{t("settings.clearAllTitle")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Diese Aktion kann nicht rückgängig gemacht werden. Es werden
-                  alle Promos, Zahlungen, Kunden und Sounds unwiderruflich
-                  entfernt.
+                  {t("settings.clearAllDesc2")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={clearAll}
                   className="bg-rose-600 hover:bg-rose-700 text-white"
                 >
-                  Endgültig löschen
+                  {t("settings.deletePermanently")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -381,8 +395,25 @@ export function SettingsView() {
       </Card>
 
       <p className="text-center text-xs text-muted-foreground py-2">
-        PromoHub · Daten werden lokal in einer SQLite-Datenbank gespeichert.
+        {t("settings.dataStoredLocally")}
       </p>
     </div>
+  );
+}
+
+function LanguageSwitcher() {
+  const { lang, setLang } = useI18n();
+  const current = LANGS.find((l) => l.value === lang) || LANGS[0];
+  const next = LANGS.find((l) => l.value !== lang) || LANGS[0];
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-2"
+      onClick={() => setLang(next.value)}
+    >
+      <span className="text-base leading-none">{current.flag}</span>
+      {current.label}
+    </Button>
   );
 }

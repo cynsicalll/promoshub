@@ -46,6 +46,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useI18n } from "@/components/language-provider";
 import {
   startOfWeek,
   startOfMonth,
@@ -66,6 +67,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function MoneyView() {
+  const { t } = useI18n();
   const { data: payments = [], isLoading } = usePayments();
   const updatePayment = useUpdatePayment();
   const deletePayment = useDeletePayment();
@@ -159,22 +161,22 @@ export function MoneyView() {
     try {
       await updatePayment.mutateAsync({ id, data: patch as never });
     } catch {
-      toast.error("Fehler beim Aktualisieren");
+      toast.error(t("money.toast.updateError"));
     }
   }
 
   function handleExport() {
     window.open("/api/export?type=payments&format=csv", "_blank");
-    toast.success("Zahlungen werden exportiert");
+    toast.success(t("settings.exportStarted"));
   }
 
   async function handleDelete() {
     if (!deleteId) return;
     try {
       await deletePayment.mutateAsync(deleteId);
-      toast.success("Zahlung gelöscht");
+      toast.success(t("money.toast.paymentDeleted"));
     } catch {
-      toast.error("Löschen fehlgeschlagen");
+      toast.error(t("money.toast.deleteFailed"));
     } finally {
       setDeleteId(null);
     }
@@ -184,37 +186,37 @@ export function MoneyView() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Geld</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("money.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Zahlungen verfolgen – per Klick als ausgezahlt oder angekommen markieren.
+            {t("money.subtitle")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-          <Download className="h-4 w-4" /> Export
+          <Download className="h-4 w-4" /> {t("action.export")}
         </Button>
       </div>
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Gesamt (gefiltert)"
+          label={t("money.total")}
           value={formatCurrency(totals.total)}
           icon={Wallet}
         />
         <StatCard
-          label="Erhalten"
+          label={t("money.received")}
           value={formatCurrency(totals.received)}
           icon={TrendingUp}
           tone="emerald"
         />
         <StatCard
-          label="Ausstehend"
+          label={t("money.outstanding")}
           value={formatCurrency(totals.outstanding)}
           icon={TrendingDown}
           tone="amber"
         />
         <StatCard
-          label="Überfällig"
+          label={t("money.overdue")}
           value={formatCurrency(totals.overdue)}
           icon={AlertTriangle}
           tone={totals.overdue > 0 ? "rose" : "default"}
@@ -227,7 +229,7 @@ export function MoneyView() {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Promo, Kunde, Betrag suchen…"
+              placeholder={t("money.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
@@ -238,11 +240,11 @@ export function MoneyView() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="alle">Alle Status</SelectItem>
-              <SelectItem value="offen">Offen</SelectItem>
-              <SelectItem value="ausgezahlt">Ausgezahlt</SelectItem>
-              <SelectItem value="angekommen">Angekommen</SelectItem>
-              <SelectItem value="ueberfaellig">Überfällig</SelectItem>
+              <SelectItem value="alle">{t("money.filter.allStatus")}</SelectItem>
+              <SelectItem value="offen">{t("money.filter.open")}</SelectItem>
+              <SelectItem value="ausgezahlt">{t("money.filter.paidOut")}</SelectItem>
+              <SelectItem value="angekommen">{t("money.filter.received")}</SelectItem>
+              <SelectItem value="ueberfaellig">{t("money.filter.overdue")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={periodFilter} onValueChange={setPeriodFilter}>
@@ -250,11 +252,11 @@ export function MoneyView() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="alle">Gesamter Zeitraum</SelectItem>
-              <SelectItem value="heute">Heute</SelectItem>
-              <SelectItem value="woche">Diese Woche</SelectItem>
-              <SelectItem value="monat">Dieser Monat</SelectItem>
-              <SelectItem value="letzter">Letzter Monat</SelectItem>
+              <SelectItem value="alle">{t("money.filter.allPeriod")}</SelectItem>
+              <SelectItem value="heute">{t("money.filter.today")}</SelectItem>
+              <SelectItem value="woche">{t("money.filter.thisWeek")}</SelectItem>
+              <SelectItem value="monat">{t("money.filter.thisMonth")}</SelectItem>
+              <SelectItem value="letzter">{t("money.filter.lastMonth")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -266,14 +268,14 @@ export function MoneyView() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="min-w-[180px]">Promo</TableHead>
-                <TableHead className="min-w-[140px]">Kunde</TableHead>
-                <TableHead className="text-right w-[110px]">Betrag</TableHead>
-                <TableHead className="w-[120px]">Erwartet</TableHead>
-                <TableHead className="w-[120px]">Eingang</TableHead>
-                <TableHead className="text-center w-[90px]">Ausgezahlt</TableHead>
-                <TableHead className="text-center w-[110px]">Angekommen</TableHead>
-                <TableHead className="w-[120px]">Status</TableHead>
+                <TableHead className="min-w-[180px]">{t("money.col.promo")}</TableHead>
+                <TableHead className="min-w-[140px]">{t("money.col.customer")}</TableHead>
+                <TableHead className="text-right w-[110px]">{t("money.col.amount")}</TableHead>
+                <TableHead className="w-[120px]">{t("money.col.expected")}</TableHead>
+                <TableHead className="w-[120px]">{t("money.col.received")}</TableHead>
+                <TableHead className="text-center w-[90px]">{t("money.col.paidOut")}</TableHead>
+                <TableHead className="text-center w-[110px]">{t("money.col.received2")}</TableHead>
+                <TableHead className="w-[120px]">{t("money.col.status")}</TableHead>
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -292,7 +294,7 @@ export function MoneyView() {
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
                     <Wallet className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    Keine Zahlungen gefunden.
+                    {t("money.noResults")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -391,18 +393,18 @@ export function MoneyView() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Zahlung löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.paymentTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Die Zahlung wird entfernt. Die zugehörige Promo bleibt erhalten.
+              {t("delete.paymentDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              Löschen
+              {t("action.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
