@@ -23,12 +23,26 @@ import {
   AlertTriangle,
   LogOut,
   Eye,
+  BarChart3,
 } from "lucide-react";
 import {
   formatCurrency,
   formatDate,
   computePaymentStatus,
 } from "@/lib/format";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 
@@ -148,6 +162,93 @@ export function MoneyViewerDashboard() {
                 icon={AlertTriangle}
                 tone={data.totals.totalOverdue > 0 ? "rose" : "default"}
               />
+            </div>
+
+            {/* Charts */}
+            <div className="grid gap-4 lg:grid-cols-3">
+              {/* Monthly bar chart */}
+              <Card className="lg:col-span-2 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-semibold">{t("viewer.chartTitle")}</h3>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={(() => {
+                        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                        const months = new Map<string, { label: string; earned: number; received: number }>();
+                        for (const p of data.payments) {
+                          const d = new Date(p.date);
+                          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                          const label = `${monthNames[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
+                          if (!months.has(key)) months.set(key, { label, earned: 0, received: 0 });
+                          const entry = months.get(key)!;
+                          entry.earned += p.amount;
+                          if (p.received) entry.received += p.amount;
+                        }
+                        return Array.from(months.values()).sort((a, b) => a.label.localeCompare(b.label));
+                      })()}
+                      barGap={4}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                      <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} className="fill-muted-foreground" />
+                      <YAxis tickLine={false} axisLine={false} fontSize={11} className="fill-muted-foreground" width={48} tickFormatter={(v) => `${v}€`} />
+                      <Tooltip
+                        formatter={(v: number) => formatCurrency(v)}
+                        contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Bar dataKey="earned" name={t("viewer.earned")} fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="received" name={t("viewer.received")} fill="#0d9488" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Status pie chart */}
+              <Card className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-semibold">{t("viewer.statusChart")}</h3>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    {(() => {
+                      const statusCounts = { OFFEN: 0, AUSGEZAHLT: 0, ANGEKOMMEN: 0, UEBERFAELLIG: 0 };
+                      for (const p of data.payments) {
+                        const s = computePaymentStatus(p.paidOut, p.received, p.expectedDate) as keyof typeof statusCounts;
+                        statusCounts[s]++;
+                      }
+                      const chartData = [
+                        { name: t("payStatus.OFFEN"), value: statusCounts.OFFEN, color: "#94a3b8" },
+                        { name: t("payStatus.AUSGEZAHLT"), value: statusCounts.AUSGEZAHLT, color: "#f59e0b" },
+                        { name: t("payStatus.ANGEKOMMEN"), value: statusCounts.ANGEKOMMEN, color: "#10b981" },
+                        { name: t("payStatus.UEBERFAELLIG"), value: statusCounts.UEBERFAELLIG, color: "#f43f5e" },
+                      ].filter(d => d.value > 0);
+
+                      if (chartData.length === 0) {
+                        return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t("viewer.noPayments")}</div>;
+                      }
+
+                      return (
+                        <PieChart>
+                          <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} paddingAngle={2}>
+                            {chartData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(v: number) => `${v} ${t("viewer.payments")}`}
+                            contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                        </PieChart>
+                      );
+                    })()}
+                  </ResponsiveContainer>
+                </div>
+              </Card>
             </div>
 
             {/* Payments table */}

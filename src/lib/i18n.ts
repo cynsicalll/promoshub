@@ -523,6 +523,9 @@ const en: Dict = {
   "viewer.col.received": "Received",
   "viewer.col.receivedDate": "Received On",
   "viewer.col.status": "Status",
+  "viewer.chartTitle": "Earnings & Receipts",
+  "viewer.statusChart": "Payment Status",
+  "viewer.earned": "Earned",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "PromoHub · Sound Promo Manager · Data is stored locally in SQLite",
@@ -1087,6 +1090,9 @@ const de: Dict = {
   "viewer.col.received": "Angekommen",
   "viewer.col.receivedDate": "Eingang am",
   "viewer.col.status": "Status",
+  "viewer.chartTitle": "Verdienst & Eingänge",
+  "viewer.statusChart": "Zahlungsstatus",
+  "viewer.earned": "Verdienst",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "PromoHub · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",
