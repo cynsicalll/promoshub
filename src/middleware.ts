@@ -7,6 +7,7 @@ const PUBLIC_API_PATHS = [
   "/api/auth/me",
   "/api/share/",
   "/api/customer-link/",
+  "/api/tiktok-resolve",
 ];
 
 // Admin API routes that require admin role
