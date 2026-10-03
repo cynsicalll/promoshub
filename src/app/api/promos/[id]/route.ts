@@ -9,6 +9,7 @@ function promoInclude() {
     customer: true,
     sounds: { include: { sound: true } },
     payments: { orderBy: { createdAt: "asc" } },
+    tiktoks: { orderBy: { createdAt: "desc" } },
   } as const;
 }
 
@@ -38,7 +39,7 @@ export async function PUT(
 
   const existing = await db.promo.findUnique({
     where: { id },
-    include: { sounds: true, payments: true },
+    include: { sounds: true, payments: true, tiktoks: true },
   });
   if (!existing) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
 
@@ -49,6 +50,14 @@ export async function PUT(
     .filter((p) => !keptPaymentIds.has(p.id))
     .map((p) => p.id);
 
+  // TikToks: replace entirely based on payload (each entry has id = existing to keep)
+  const keptTiktokIds = new Set(
+    (data.tiktoks || []).filter((t) => t.id).map((t) => t.id!)
+  );
+  const tiktoksToDelete = existing.tiktoks
+    .filter((t) => !keptTiktokIds.has(t.id))
+    .map((t) => t.id);
+
   await db.$transaction([
     db.promo.update({
       where: { id },
@@ -58,11 +67,15 @@ export async function PUT(
         date: new Date(data.date),
         status: data.status || "GEPLANT",
         notes: data.notes || null,
+        tiktokTarget: Number(data.tiktokTarget) || 0,
       },
     }),
     db.promoSound.deleteMany({ where: { promoId: id } }),
     ...(paymentsToDelete.length
       ? [db.payment.deleteMany({ where: { id: { in: paymentsToDelete } } })]
+      : []),
+    ...(tiktoksToDelete.length
+      ? [db.tikTok.deleteMany({ where: { id: { in: tiktoksToDelete } } })]
       : []),
   ]);
 
@@ -105,6 +118,29 @@ export async function PUT(
         },
       });
     }
+  }
+
+  // Create new TikToks (those without id)
+  for (const t of (data.tiktoks || []).filter((t) => t.url.trim() && !t.id)) {
+    await db.tikTok.create({
+      data: {
+        promoId: id,
+        url: t.url.trim(),
+        title: t.title || null,
+        soundId: t.soundId || null,
+      },
+    });
+  }
+  // Update existing TikToks
+  for (const t of (data.tiktoks || []).filter((t) => t.id && t.url.trim())) {
+    await db.tikTok.update({
+      where: { id: t.id },
+      data: {
+        url: t.url.trim(),
+        title: t.title || null,
+        soundId: t.soundId || null,
+      },
+    });
   }
 
   const promo = await db.promo.findUnique({

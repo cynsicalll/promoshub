@@ -169,3 +169,51 @@ export function promoSoundsRemaining(promo: {
     0
   );
 }
+
+export function promoTiktokDone(promo: {
+  tiktoks?: { id: string }[];
+}): number {
+  return promo.tiktoks?.length || 0;
+}
+
+export function promoTiktokRemaining(promo: {
+  tiktokTarget: number;
+  tiktoks?: { id: string }[];
+}): number {
+  const target = promo.tiktokTarget || 0;
+  const done = promoTiktokDone(promo);
+  return Math.max(0, target - done);
+}
+
+export function isValidUrl(s: string): boolean {
+  try {
+    const u = new URL(s);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+export function normalizeUrl(s: string): string {
+  const t = s.trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t}`;
+}
+
+export function domainFromUrl(s: string): string {
+  try {
+    return new URL(normalizeUrl(s)).hostname.replace(/^www\./, "");
+  } catch {
+    return s;
+  }
+}
+
+export function genShareCode(): string {
+  // 8 char alphanumeric, ambiguous chars removed
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 8; i++)
+    out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}

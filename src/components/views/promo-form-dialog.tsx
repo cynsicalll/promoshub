@@ -30,6 +30,8 @@ import {
   Wallet,
   AlertTriangle,
   UserPlus,
+  Video,
+  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -64,6 +66,13 @@ interface FormPayment {
   paidOut: boolean;
   received: boolean;
   notes: string;
+}
+interface FormTikTok {
+  id?: string;
+  key: string;
+  url: string;
+  title: string;
+  soundId: string;
 }
 
 const STATUS_OPTIONS: { value: PromoStatus; label: string }[] = [
@@ -101,8 +110,10 @@ export function PromoFormDialog({
   const [date, setDate] = React.useState(formatDateInput(new Date()));
   const [status, setStatus] = React.useState<PromoStatus>("GEPLANT");
   const [notes, setNotes] = React.useState("");
+  const [tiktokTarget, setTiktokTarget] = React.useState(0);
   const [formSounds, setFormSounds] = React.useState<FormSound[]>([]);
   const [formPayments, setFormPayments] = React.useState<FormPayment[]>([]);
+  const [formTiktoks, setFormTiktoks] = React.useState<FormTikTok[]>([]);
 
   const [newCustomerOpen, setNewCustomerOpen] = React.useState(false);
   const [newCustomerName, setNewCustomerName] = React.useState("");
@@ -110,6 +121,7 @@ export function PromoFormDialog({
   const [newSoundOpen, setNewSoundOpen] = React.useState(false);
   const [newSoundName, setNewSoundName] = React.useState("");
   const [newSoundArtist, setNewSoundArtist] = React.useState("");
+  const [newSoundUrl, setNewSoundUrl] = React.useState("");
 
   React.useEffect(() => {
     if (!open) return;
@@ -119,6 +131,7 @@ export function PromoFormDialog({
       setDate(formatDateInput(promo.date));
       setStatus(promo.status);
       setNotes(promo.notes || "");
+      setTiktokTarget(promo.tiktokTarget || 0);
       setFormSounds(
         promo.sounds.map((s) => ({
           key: nextKey(),
@@ -140,14 +153,25 @@ export function PromoFormDialog({
           notes: p.notes || "",
         }))
       );
+      setFormTiktoks(
+        (promo.tiktoks || []).map((t) => ({
+          id: t.id,
+          key: nextKey(),
+          url: t.url,
+          title: t.title || "",
+          soundId: t.soundId || "",
+        }))
+      );
     } else {
       setName("");
       setCustomerId("none");
       setDate(formatDateInput(new Date()));
       setStatus("GEPLANT");
       setNotes("");
+      setTiktokTarget(0);
       setFormSounds([]);
       setFormPayments([{ key: nextKey(), amount: "", expectedDate: "", payoutDate: "", receivedDate: "", paidOut: false, received: false, notes: "" }]);
+      setFormTiktoks([]);
     }
     setNewCustomerOpen(false);
     setNewCustomerName("");
@@ -155,6 +179,7 @@ export function PromoFormDialog({
     setNewSoundOpen(false);
     setNewSoundName("");
     setNewSoundArtist("");
+    setNewSoundUrl("");
   }, [open, mode, promo]);
 
   const totalAmount = formPayments.reduce(
@@ -204,6 +229,21 @@ export function PromoFormDialog({
     setFormPayments((prev) => prev.filter((p) => p.key !== key));
   }
 
+  function addTiktok() {
+    setFormTiktoks((prev) => [
+      ...prev,
+      { key: nextKey(), url: "", title: "", soundId: "" },
+    ]);
+  }
+  function updateTiktok(key: string, patch: Partial<FormTikTok>) {
+    setFormTiktoks((prev) =>
+      prev.map((t) => (t.key === key ? { ...t, ...patch } : t))
+    );
+  }
+  function removeTiktok(key: string) {
+    setFormTiktoks((prev) => prev.filter((t) => t.key !== key));
+  }
+
   async function handleCreateCustomer() {
     if (!newCustomerName.trim()) return;
     const c = await createCustomer.mutateAsync({
@@ -222,10 +262,12 @@ export function PromoFormDialog({
     const s = await createSound.mutateAsync({
       name: newSoundName.trim(),
       artist: newSoundArtist || null,
+      url: newSoundUrl || null,
     });
     if (addToRowKey) updateSound(addToRowKey, { soundId: s.id });
     setNewSoundName("");
     setNewSoundArtist("");
+    setNewSoundUrl("");
     setNewSoundOpen(false);
     toast.success("Sound angelegt");
   }
@@ -259,14 +301,25 @@ export function PromoFormDialog({
         notes: p.notes || null,
       }));
 
+    const cleanTiktoks = formTiktoks
+      .filter((t) => t.url.trim())
+      .map((t) => ({
+        id: t.id,
+        url: t.url.trim(),
+        title: t.title || null,
+        soundId: t.soundId || null,
+      }));
+
     return {
       name: name.trim(),
       customerId: customerId === "none" ? null : customerId,
       date: toISODate(date)!,
       status,
       notes: notes || null,
+      tiktokTarget: Number(tiktokTarget) || 0,
       sounds: cleanSounds,
       payments: cleanPayments,
+      tiktoks: cleanTiktoks,
     };
   }
 
@@ -456,6 +509,11 @@ export function PromoFormDialog({
                     onChange={(e) => setNewSoundArtist(e.target.value)}
                   />
                 </div>
+                <Input
+                  placeholder="Sound-Link (TikTok/SoundCloud/…) – optional"
+                  value={newSoundUrl}
+                  onChange={(e) => setNewSoundUrl(e.target.value)}
+                />
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -687,6 +745,125 @@ export function PromoFormDialog({
                 {formatCurrency(totalAmount)}
               </Badge>
             </div>
+          </section>
+
+          <Separator />
+
+          {/* TikTok Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                <Video className="h-4 w-4" /> TikToks
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addTiktok}
+              >
+                <Plus className="h-3.5 w-3.5" /> TikTok hinzufügen
+              </Button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Ziel-Anzahl TikToks für diese Promo</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={tiktokTarget}
+                  onChange={(e) => setTiktokTarget(Number(e.target.value) || 0)}
+                  placeholder="z. B. 10"
+                />
+              </div>
+              <div className="flex items-end">
+                <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm w-full">
+                  <span className="text-muted-foreground">Fortschritt: </span>
+                  <span className="font-semibold tabular-nums">
+                    {formTiktoks.filter((t) => t.url.trim()).length}/{tiktokTarget || 0}
+                  </span>
+                  {tiktokTarget > 0 && (
+                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, (formTiktoks.filter((t) => t.url.trim()).length / tiktokTarget) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {formTiktoks.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                Noch keine TikTok-Links hinzugefügt.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {formTiktoks.map((t) => (
+                  <div
+                    key={t.key}
+                    className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end"
+                  >
+                    <div className="space-y-1.5">
+                      <Label className="text-xs flex items-center gap-1">
+                        <Link2 className="h-3 w-3" /> TikTok-URL
+                      </Label>
+                      <Input
+                        type="url"
+                        value={t.url}
+                        onChange={(e) =>
+                          updateTiktok(t.key, { url: e.target.value })
+                        }
+                        placeholder="https://www.tiktok.com/@user/video/…"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Titel (optional)</Label>
+                      <Input
+                        value={t.title}
+                        onChange={(e) =>
+                          updateTiktok(t.key, { title: e.target.value })
+                        }
+                        placeholder="z. B. Spot 1 – Beach"
+                      />
+                    </div>
+                    <div className="space-y-1.5 sm:w-40">
+                      <Label className="text-xs">Sound (optional)</Label>
+                      <Select
+                        value={t.soundId}
+                        onValueChange={(v) =>
+                          updateTiktok(t.key, { soundId: v === "none" ? "" : v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">— Kein Sound —</SelectItem>
+                          {sounds.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeTiktok(t.key)}
+                      className="text-muted-foreground hover:text-rose-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           <Separator />

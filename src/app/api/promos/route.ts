@@ -9,6 +9,7 @@ function promoInclude() {
     customer: true,
     sounds: { include: { sound: true } },
     payments: { orderBy: { createdAt: "asc" } },
+    tiktoks: { orderBy: { createdAt: "desc" } },
   } as const;
 }
 
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
       date: new Date(data.date),
       status: data.status || "GEPLANT",
       notes: data.notes || null,
+      tiktokTarget: Number(data.tiktokTarget) || 0,
       sounds: data.sounds?.length
         ? {
             create: data.sounds.map((s) => ({
@@ -57,6 +59,17 @@ export async function POST(req: NextRequest) {
               received: !!p.received,
               notes: p.notes || null,
             })),
+          }
+        : undefined,
+      tiktoks: data.tiktoks?.filter((t) => t.url.trim()).length
+        ? {
+            create: data.tiktoks
+              .filter((t) => t.url.trim())
+              .map((t) => ({
+                url: t.url.trim(),
+                title: t.title || null,
+                soundId: t.soundId || null,
+              })),
           }
         : undefined,
     },

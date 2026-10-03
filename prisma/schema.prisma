@@ -29,6 +29,7 @@ model Sound {
   name       String
   artist     String?
   internalRef String?
+  url        String?
   notes      String?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
@@ -38,17 +39,21 @@ model Sound {
 }
 
 model Promo {
-  id         String        @id @default(cuid())
-  name       String
-  customerId String?
-  date       DateTime
-  status     String        @default("GEPLANT") // GEPLANT | AKTIV | ABGESCHLOSSEN | STORNIERT
-  notes      String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  sounds     PromoSound[]
-  payments   Payment[]
+  id            String        @id @default(cuid())
+  name          String
+  customerId    String?
+  date          DateTime
+  status        String        @default("GEPLANT") // GEPLANT | AKTIV | ABGESCHLOSSEN | STORNIERT
+  notes         String?
+  tiktokTarget  Int           @default(0) // how many TikToks must be produced for this promo
+  shareCode     String?       @unique // access code for the customer-facing share page
+  shareEnabled  Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  sounds        PromoSound[]
+  payments      Payment[]
+  tiktoks       TikTok[]
 
   @@map("promos")
 }
@@ -82,6 +87,18 @@ model Payment {
   promo        Promo     @relation(fields: [promoId], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+model TikTok {
+  id        String   @id @default(cuid())
+  promoId   String
+  soundId   String?
+  url       String
+  title     String?
+  createdAt DateTime @default(now())
+  promo     Promo    @relation(fields: [promoId], references: [id], onDelete: Cascade)
+
+  @@map("tiktoks")
 }
 
 model Setting {

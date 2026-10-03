@@ -32,6 +32,7 @@ export async function PUT(
       name: data.name.trim(),
       artist: data.artist || null,
       internalRef: data.internalRef || null,
+      url: data.url || null,
       notes: data.notes || null,
     },
     include: { _count: { select: { promoSounds: true } } },

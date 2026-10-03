@@ -20,6 +20,8 @@ export const qk = {
   sounds: ["sounds"] as const,
   payments: ["payments"] as const,
   dashboard: ["dashboard"] as const,
+  monthly: (year?: number) => ["monthly", year ?? "all"] as const,
+  share: (code: string) => ["share", code] as const,
 };
 
 export function usePromos() {
@@ -53,6 +55,7 @@ function useRefresh() {
     qc.invalidateQueries({ queryKey: qk.dashboard });
     qc.invalidateQueries({ queryKey: qk.customers });
     qc.invalidateQueries({ queryKey: qk.sounds });
+    qc.invalidateQueries({ queryKey: ["monthly"] });
   };
 }
 
@@ -159,3 +162,37 @@ export function useImport() {
     onSuccess: refresh,
   });
 }
+
+export function useEnableShare() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (id: string) => api.enableShare(id),
+    onSuccess: refresh,
+  });
+}
+
+export function useDisableShare() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (id: string) => api.disableShare(id),
+    onSuccess: refresh,
+  });
+}
+
+export function useShare(code: string | null) {
+  return useQuery({
+    queryKey: code ? qk.share(code) : ["share", "none"],
+    queryFn: () => api.getShare(code!),
+    enabled: !!code,
+    retry: false,
+  });
+}
+
+export function useMonthly(year?: number) {
+  return useQuery({
+    queryKey: qk.monthly(year),
+    queryFn: () => api.getMonthly(year),
+  });
+}
+// re-export the type for the consumer
+export type MonthlyResponse = Awaited<ReturnType<typeof api.getMonthly>>;

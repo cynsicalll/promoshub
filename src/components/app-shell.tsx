@@ -21,6 +21,7 @@ import {
   AudioLines,
   Moon,
   Sun,
+  CalendarRange,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { GlobalSearch, SearchTrigger } from "@/components/global-search";
@@ -38,6 +39,7 @@ const NAV: NavItem[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "promos", label: "Promos", icon: Megaphone },
   { key: "money", label: "Geld", icon: Wallet },
+  { key: "monthly", label: "Monatsübersicht", icon: CalendarRange },
   { key: "sounds", label: "Sounds", icon: Music2 },
   { key: "customers", label: "Kunden", icon: Users },
   { key: "settings", label: "Einstellungen", icon: Settings },

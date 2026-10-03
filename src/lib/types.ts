@@ -25,6 +25,7 @@ export interface Sound {
   name: string;
   artist: string | null;
   internalRef: string | null;
+  url: string | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -53,6 +54,15 @@ export interface Payment {
   updatedAt: string;
 }
 
+export interface TikTok {
+  id: string;
+  promoId: string;
+  soundId: string | null;
+  url: string;
+  title: string | null;
+  createdAt: string;
+}
+
 export interface Promo {
   id: string;
   name: string;
@@ -60,11 +70,15 @@ export interface Promo {
   date: string;
   status: PromoStatus;
   notes: string | null;
+  tiktokTarget: number;
+  shareCode: string | null;
+  shareEnabled: boolean;
   createdAt: string;
   updatedAt: string;
   customer: Customer | null;
   sounds: PromoSound[];
   payments: Payment[];
+  tiktoks: TikTok[];
 }
 
 // Payloads
@@ -74,6 +88,7 @@ export interface PromoInput {
   date: string;
   status: PromoStatus;
   notes: string | null;
+  tiktokTarget: number;
   sounds: {
     soundId: string;
     quantityTotal: number;
@@ -88,6 +103,12 @@ export interface PromoInput {
     paidOut: boolean;
     received: boolean;
     notes: string | null;
+  }[];
+  tiktoks: {
+    id?: string;
+    url: string;
+    title: string | null;
+    soundId: string | null;
   }[];
 }
 
@@ -104,6 +125,7 @@ export interface SoundInput {
   name: string;
   artist?: string | null;
   internalRef?: string | null;
+  url?: string | null;
   notes?: string | null;
 }
 
@@ -116,6 +138,42 @@ export interface PaymentInput {
   paidOut?: boolean;
   received?: boolean;
   notes?: string | null;
+}
+
+// Customer-facing share payload (no sensitive data)
+export interface ShareData {
+  name: string;
+  customerName: string | null;
+  customerCompany: string | null;
+  date: string;
+  status: PromoStatus;
+  notes: string | null;
+  tiktokTarget: number;
+  tiktokDone: number;
+  sounds: {
+    name: string;
+    artist: string | null;
+    url: string | null;
+    quantityTotal: number;
+    quantityUsed: number;
+    quantityRemaining: number;
+  }[];
+  tiktoks: {
+    url: string;
+    title: string | null;
+    createdAt: string;
+  }[];
+}
+
+// Monthly aggregation entry
+export interface MonthlyEntry {
+  key: string; // yyyy-MM
+  label: string; // e.g. "Okt 26"
+  promos: number;
+  earned: number;
+  received: number;
+  outstanding: number;
+  tiktoks: number;
 }
 
 // Dashboard aggregate

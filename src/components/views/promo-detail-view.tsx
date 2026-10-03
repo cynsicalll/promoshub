@@ -21,6 +21,10 @@ import {
   promoSoundsRemaining,
   promoReceived,
   promoTotal,
+  promoTiktokDone,
+  promoTiktokRemaining,
+  normalizeUrl,
+  domainFromUrl,
   PROMO_STATUS_STYLES,
 } from "@/lib/format";
 import {
@@ -35,6 +39,13 @@ import {
   Clock,
   TrendingUp,
   StickyNote,
+  Video,
+  Link2,
+  ExternalLink,
+  Share2,
+  Copy,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -50,6 +61,8 @@ import { StatCard } from "@/components/stat-card";
 import { toast } from "sonner";
 import {
   useUpdatePayment,
+  useEnableShare,
+  useDisableShare,
 } from "@/hooks/use-data";
 import { formatDateInput, toISODate } from "@/lib/format";
 
@@ -59,6 +72,8 @@ export function PromoDetailView() {
   const { data: promos = [] } = usePromos();
   const deletePromo = useDeletePromo();
   const updatePayment = useUpdatePayment();
+  const enableShare = useEnableShare();
+  const disableShare = useDisableShare();
 
   const promo = promos.find((p) => p.id === promoId) || null;
   const [formOpen, setFormOpen] = React.useState(false);
@@ -114,6 +129,39 @@ export function PromoDetailView() {
     }
   }
 
+  async function handleEnableShare() {
+    try {
+      const res = await enableShare.mutateAsync(promo!.id);
+      const url = `${window.location.origin}/?share=${res.shareCode}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Freigabe aktiviert – Link kopiert!", {
+        description: url,
+      });
+    } catch {
+      toast.error("Freigabe konnte nicht aktiviert werden");
+    }
+  }
+
+  async function handleDisableShare() {
+    try {
+      await disableShare.mutateAsync(promo!.id);
+      toast.success("Kunden-Freigabe deaktiviert");
+    } catch {
+      toast.error("Deaktivieren fehlgeschlagen");
+    }
+  }
+
+  async function copyShareLink() {
+    if (!promo?.shareCode) return;
+    const url = `${window.location.origin}/?share=${promo.shareCode}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link kopiert", { description: url });
+    } catch {
+      toast.error("Kopieren fehlgeschlagen");
+    }
+  }
+
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
       {/* Header */}
@@ -145,7 +193,38 @@ export function PromoDetailView() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {promo.shareEnabled && promo.shareCode ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyShareLink}
+              className="gap-2"
+            >
+              <Share2 className="h-4 w-4" /> Link kopieren
+            </Button>
+          ) : null}
+          {promo.shareEnabled ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDisableShare}
+              className="gap-2"
+              disabled={disableShare.isPending}
+            >
+              <Lock className="h-4 w-4" /> Freigabe stoppen
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEnableShare}
+              className="gap-2"
+              disabled={enableShare.isPending}
+            >
+              <Unlock className="h-4 w-4" /> Kunden teilen
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -164,6 +243,40 @@ export function PromoDetailView() {
           </Button>
         </div>
       </div>
+
+      {/* Share banner when enabled */}
+      {promo.shareEnabled && promo.shareCode && (
+        <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/20 p-4 flex items-center gap-3 flex-wrap">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
+            <Share2 className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">Kunden-Ansicht aktiv</p>
+            <p className="text-xs text-muted-foreground truncate">
+              Link: {typeof window !== "undefined" ? window.location.origin : ""}/?share={promo.shareCode}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyShareLink}
+              className="gap-2"
+            >
+              <Copy className="h-3.5 w-3.5" /> Kopieren
+            </Button>
+            <a
+              href={`/?share=${promo.shareCode}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm" className="gap-2">
+                <ExternalLink className="h-3.5 w-3.5" /> Öffnen
+              </Button>
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -242,15 +355,29 @@ export function PromoDetailView() {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>
+                      <div className="flex justify-between items-center gap-2 text-xs text-muted-foreground">
+                        <span className="truncate">
                           {ps.sound.artist || "—"}
                           {ps.sound.internalRef ? ` · ${ps.sound.internalRef}` : ""}
                         </span>
-                        <span className={over ? "text-rose-600" : ""}>
-                          {remaining} übrig
-                          {over && " ⚠"}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {ps.sound.url && (
+                            <a
+                              href={normalizeUrl(ps.sound.url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-emerald-600 hover:underline dark:text-emerald-400"
+                            >
+                              <Link2 className="h-3 w-3" />
+                              {domainFromUrl(ps.sound.url)}
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
+                          <span className={over ? "text-rose-600" : ""}>
+                            {remaining} übrig
+                            {over && " ⚠"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -410,6 +537,73 @@ export function PromoDetailView() {
                 <span className="text-amber-600">{formatCurrency(outstanding)}</span>
               </span>
             </div>
+          </Card>
+
+          {/* TikTok card */}
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Video className="h-4 w-4 text-muted-foreground" /> TikToks
+              </h3>
+              <div className="text-right">
+                <p className="text-lg font-semibold tabular-nums">
+                  {promoTiktokDone(promo)}
+                  <span className="text-sm text-muted-foreground">
+                    /{promo.tiktokTarget || 0}
+                  </span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">erstellt / Ziel</p>
+              </div>
+            </div>
+
+            {(promo.tiktokTarget || 0) > 0 && (
+              <div className="mb-4 h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      (promoTiktokDone(promo) / (promo.tiktokTarget || 1)) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
+            )}
+
+            {promo.tiktoks.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                Noch keine TikTok-Links erfasst.
+              </p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {promo.tiktoks.map((t) => {
+                  const sound = promo.sounds.find((ps) => ps.soundId === t.soundId);
+                  return (
+                    <a
+                      key={t.id}
+                      href={normalizeUrl(t.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-3 rounded-lg border p-3 hover:border-pink-400 hover:bg-pink-50/40 dark:hover:bg-pink-950/20 transition-colors"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400">
+                        <Video className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">
+                          {t.title || "Ohne Titel"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {domainFromUrl(t.url)}
+                          {sound ? ` · ${sound.sound.name}` : ""}
+                        </p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-pink-600 shrink-0" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </Card>
 
           {(promo.notes || promo.customer?.notes) && (

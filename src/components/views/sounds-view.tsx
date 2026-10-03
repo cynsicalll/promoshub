@@ -39,10 +39,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Music2, Plus, Pencil, Trash2, Download, Search } from "lucide-react";
+import { Music2, Plus, Pencil, Trash2, Download, Search, Link2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import type { Sound, SoundInput } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
+import { normalizeUrl, domainFromUrl } from "@/lib/format";
 
 export function SoundsView() {
   const { data: sounds = [], isLoading } = useSounds();
@@ -60,6 +61,7 @@ export function SoundsView() {
   const [name, setName] = React.useState("");
   const [artist, setArtist] = React.useState("");
   const [internalRef, setInternalRef] = React.useState("");
+  const [url, setUrl] = React.useState("");
   const [notes, setNotes] = React.useState("");
 
   React.useEffect(() => {
@@ -67,6 +69,7 @@ export function SoundsView() {
       setName(editSound?.name || "");
       setArtist(editSound?.artist || "");
       setInternalRef(editSound?.internalRef || "");
+      setUrl(editSound?.url || "");
       setNotes(editSound?.notes || "");
     }
   }, [formOpen, editSound]);
@@ -108,6 +111,7 @@ export function SoundsView() {
       name: name.trim(),
       artist: artist || null,
       internalRef: internalRef || null,
+      url: url || null,
       notes: notes || null,
     };
     try {
@@ -188,6 +192,7 @@ export function SoundsView() {
                 <TableHead className="min-w-[180px]">Sound</TableHead>
                 <TableHead className="min-w-[140px]">Artist</TableHead>
                 <TableHead className="w-[140px]">Interne Bez.</TableHead>
+                <TableHead className="min-w-[140px]">Link</TableHead>
                 <TableHead className="text-center w-[100px]">Verwendungen</TableHead>
                 <TableHead className="text-center w-[110px]">Gebucht</TableHead>
                 <TableHead className="text-center w-[100px]">Verwendet</TableHead>
@@ -197,13 +202,13 @@ export function SoundsView() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                     Lade…
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                     <Music2 className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     Keine Sounds gefunden.
                   </TableCell>
@@ -230,6 +235,22 @@ export function SoundsView() {
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {s.internalRef || "—"}
+                      </TableCell>
+                      <TableCell>
+                        {s.url ? (
+                          <a
+                            href={normalizeUrl(s.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-emerald-600 hover:underline dark:text-emerald-400 text-sm"
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                            {domainFromUrl(s.url)}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="tabular-nums">{u.promoIds.size}</span>
@@ -311,6 +332,21 @@ export function SoundsView() {
                   placeholder="z. B. SVB-01"
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sound-url" className="flex items-center gap-1.5">
+                <Link2 className="h-3.5 w-3.5" /> Sound-Link
+              </Label>
+              <Input
+                id="sound-url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://www.tiktok.com/music/… oder Soundcloud-Link"
+              />
+              <p className="text-xs text-muted-foreground">
+                Wird auf der Kunden-Freigabeseite als klickbarer Link angezeigt.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="sound-notes">Notizen</Label>

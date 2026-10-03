@@ -1,0 +1,341 @@
+"use client";
+
+import * as React from "react";
+import { useMonthly } from "@/hooks/use-data";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+  ComposedChart,
+  Line,
+} from "recharts";
+import { formatCurrency } from "@/lib/format";
+import { StatCard } from "@/components/stat-card";
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Megaphone,
+  Video,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+
+export function MonthlyView() {
+  const now = new Date();
+  const [year, setYear] = React.useState<number>(now.getFullYear());
+  const { data, isLoading } = useMonthly(year);
+
+  const entries = data?.entries || [];
+  const years = data?.years || [now.getFullYear()];
+
+  const yearTotals = React.useMemo(() => {
+    return entries.reduce(
+      (acc, e) => {
+        acc.earned += e.earned;
+        acc.received += e.received;
+        acc.outstanding += e.outstanding;
+        acc.promos += e.promos;
+        acc.tiktoks += e.tiktoks;
+        return acc;
+      },
+      { earned: 0, received: 0, outstanding: 0, promos: 0, tiktoks: 0 }
+    );
+  }, [entries]);
+
+  const chartData = entries.map((e) => ({
+    label: e.label,
+    Verdienst: e.earned,
+    Erhalten: e.received,
+    Offen: e.outstanding,
+    Promos: e.promos,
+    TikToks: e.tiktoks,
+  }));
+
+  function changeYear(delta: number) {
+    setYear((y) => y + delta);
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <CalendarRange className="h-6 w-6 text-muted-foreground" />
+            Monatsübersicht
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Verdienst, Eingänge, Promos und TikToks pro Monat im Jahr {year}.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => changeYear(-1)}
+            aria-label="Vorheriges Jahr"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => changeYear(1)}
+            aria-label="Nächstes Jahr"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Year KPIs */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label={`Gesamtverdienst ${year}`}
+          value={formatCurrency(yearTotals.earned)}
+          icon={Wallet}
+        />
+        <StatCard
+          label="Erhalten"
+          value={formatCurrency(yearTotals.received)}
+          icon={TrendingUp}
+          tone="emerald"
+        />
+        <StatCard
+          label="Offen"
+          value={formatCurrency(yearTotals.outstanding)}
+          icon={TrendingDown}
+          tone={yearTotals.outstanding > 0 ? "amber" : "default"}
+        />
+        <StatCard
+          label="Promos / TikToks"
+          value={`${yearTotals.promos} / ${yearTotals.tiktoks}`}
+          hint={`${yearTotals.promos} Promos · ${yearTotals.tiktoks} TikToks`}
+          icon={Video}
+          tone="teal"
+        />
+      </div>
+
+      {/* Main chart: Verdienst/Erhalten/Offen bars */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold">Geldfluss pro Monat</h3>
+            <p className="text-xs text-muted-foreground">
+              Verdienst, erhaltene und offene Beträge
+            </p>
+          </div>
+        </div>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                className="fill-muted-foreground"
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                className="fill-muted-foreground"
+                width={48}
+                tickFormatter={(v) => `${v}€`}
+              />
+              <Tooltip
+                formatter={(v: number) => formatCurrency(v)}
+                contentStyle={{
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="Verdienst" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Erhalten" fill="#0d9488" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Offen" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {/* Secondary chart: Promos & TikToks as composed */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold">Aktivität pro Monat</h3>
+            <p className="text-xs text-muted-foreground">
+              Anzahl Promos und produzierter TikToks
+            </p>
+          </div>
+        </div>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                className="fill-muted-foreground"
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                className="fill-muted-foreground"
+                width={32}
+                allowDecimals={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  fontSize: 12,
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="Promos" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={18} />
+              <Bar dataKey="TikToks" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={18} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {/* Monthly table */}
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="w-[110px]">Monat</TableHead>
+                <TableHead className="text-center w-[80px]">Promos</TableHead>
+                <TableHead className="text-center w-[90px]">TikToks</TableHead>
+                <TableHead className="text-right w-[130px]">Verdienst</TableHead>
+                <TableHead className="text-right w-[130px]">Erhalten</TableHead>
+                <TableHead className="text-right w-[130px]">Offen</TableHead>
+                <TableHead className="w-[160px]">Verteilung</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                    Lade…
+                  </TableCell>
+                </TableRow>
+              ) : (
+                entries.map((e) => {
+                  const maxEarned = Math.max(...entries.map((x) => x.earned), 1);
+                  const pct = Math.min(100, (e.earned / maxEarned) * 100);
+                  return (
+                    <TableRow key={e.key} className="hover:bg-muted/40">
+                      <TableCell className="font-medium">{e.label}</TableCell>
+                      <TableCell className="text-center tabular-nums">
+                        {e.promos > 0 ? e.promos : "—"}
+                      </TableCell>
+                      <TableCell className="text-center tabular-nums">
+                        {e.tiktoks > 0 ? e.tiktoks : "—"}
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {e.earned > 0 ? formatCurrency(e.earned) : "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                        {e.received > 0 ? formatCurrency(e.received) : "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {e.outstanding > 0 ? (
+                          <span className="text-amber-600 dark:text-amber-400">
+                            {formatCurrency(e.outstanding)}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {e.earned > 0 ? (
+                          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+              {/* Total row */}
+              <TableRow className="bg-muted/30 font-semibold border-t-2">
+                <TableCell>Summe {year}</TableCell>
+                <TableCell className="text-center tabular-nums">
+                  {yearTotals.promos}
+                </TableCell>
+                <TableCell className="text-center tabular-nums">
+                  {yearTotals.tiktoks}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatCurrency(yearTotals.earned)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                  {formatCurrency(yearTotals.received)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">
+                  {formatCurrency(yearTotals.outstanding)}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="text-xs">
+                    {yearTotals.promos} Promos
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+    </div>
+  );
+}

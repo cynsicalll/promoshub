@@ -8,6 +8,8 @@ import type {
   SoundInput,
   PaymentInput,
   DashboardData,
+  ShareData,
+  MonthlyEntry,
 } from "./types";
 
 async function req<T>(
@@ -103,6 +105,23 @@ export const api = {
     req<{ imported: number; skipped: number; errors: string[] }>(
       `/api/import?type=${type}`,
       { method: "POST", body: JSON.stringify({ rows }) }
+    ),
+
+  // Share
+  enableShare: (id: string) =>
+    req<{ shareCode: string; shareUrl: string }>(
+      `/api/promos/${id}/share`,
+      { method: "POST" }
+    ),
+  disableShare: (id: string) =>
+    req<void>(`/api/promos/${id}/share`, { method: "DELETE" }),
+  getShare: (code: string) =>
+    req<ShareData>(`/api/share/${encodeURIComponent(code)}`),
+
+  // Monthly
+  getMonthly: (year?: number) =>
+    req<{ year: number; years: number[]; entries: MonthlyEntry[] }>(
+      `/api/monthly${year ? `?year=${year}` : ""}`
     ),
 };
 

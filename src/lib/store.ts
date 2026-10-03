@@ -5,6 +5,7 @@ export type ViewKey =
   | "promos"
   | "promo-detail"
   | "money"
+  | "monthly"
   | "sounds"
   | "customers"
   | "settings";

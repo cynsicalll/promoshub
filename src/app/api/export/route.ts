@@ -118,10 +118,11 @@ export async function GET(req: NextRequest) {
       s.name,
       s.artist || "",
       s.internalRef || "",
+      s.url || "",
       s._count.promoSounds,
       s.notes || "",
     ]);
-    csv = toCsv(rows, ["Name", "Artist", "Interne Bezeichnung", "Verwendungen", "Notizen"]);
+    csv = toCsv(rows, ["Name", "Artist", "Interne Bezeichnung", "Link", "Verwendungen", "Notizen"]);
     filename = "sounds.csv";
   }
 
