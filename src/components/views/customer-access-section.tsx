@@ -130,7 +130,7 @@ export function CustomerAccessSection() {
   });
 
   async function copyCustomerLink(token: string) {
-    const url = `${window.location.origin}/?customer=${token}`;
+    const url = `${window.location.origin}/c/${token}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success(t("settings.linkCopied"), { description: url });
@@ -312,7 +312,7 @@ export function CustomerAccessSection() {
                 <div className="rounded-md border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 p-2 flex items-center gap-2">
                   <Link2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                   <span className="text-xs text-muted-foreground truncate flex-1">
-                    {typeof window !== "undefined" ? window.location.origin : ""}/?customer={u.shareToken}
+                    {typeof window !== "undefined" ? window.location.origin : ""}/c/{u.shareToken}
                   </span>
                   <Button
                     variant="ghost"
@@ -323,7 +323,7 @@ export function CustomerAccessSection() {
                     {t("action.copy")}
                   </Button>
                   <a
-                    href={`/?customer=${u.shareToken}`}
+                    href={`/c/${u.shareToken}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

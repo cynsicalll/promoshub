@@ -43,7 +43,7 @@ export async function POST(
     data: { shareToken: token },
   });
 
-  const shareUrl = `/?customer=${token}`;
+  const shareUrl = `/c/${token}`;
   return NextResponse.json({ shareToken: token, shareUrl });
 }
 
