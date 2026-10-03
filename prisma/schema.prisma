@@ -1,0 +1,92 @@
+// Promo Management System - Prisma schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  company       String?
+  contactPerson String?
+  email         String?
+  phone         String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  promos        Promo[]
+
+  @@map("customers")
+}
+
+model Sound {
+  id         String       @id @default(cuid())
+  name       String
+  artist     String?
+  internalRef String?
+  notes      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  promoSounds PromoSound[]
+
+  @@map("sounds")
+}
+
+model Promo {
+  id         String        @id @default(cuid())
+  name       String
+  customerId String?
+  date       DateTime
+  status     String        @default("GEPLANT") // GEPLANT | AKTIV | ABGESCHLOSSEN | STORNIERT
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  sounds     PromoSound[]
+  payments   Payment[]
+
+  @@map("promos")
+}
+
+model PromoSound {
+  id            String   @id @default(cuid())
+  promoId       String
+  soundId       String
+  quantityTotal Int      @default(0)
+  quantityUsed  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  promo         Promo    @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  sound         Sound    @relation(fields: [soundId], references: [id], onDelete: Cascade)
+
+  @@map("promo_sounds")
+}
+
+model Payment {
+  id           String    @id @default(cuid())
+  promoId      String
+  amount       Float
+  expectedDate DateTime?
+  payoutDate   DateTime? // when the payout was initiated
+  receivedDate DateTime? // when the money actually arrived
+  paidOut      Boolean   @default(false)
+  received     Boolean   @default(false)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  promo        Promo     @relation(fields: [promoId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}
