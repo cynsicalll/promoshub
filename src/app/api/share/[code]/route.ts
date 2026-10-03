@@ -47,6 +47,8 @@ export async function GET(
         url: t.url,
         title: t.title,
         soundName: sound?.sound.name || null,
+        playCount: t.playCount,
+        likeCount: t.likeCount,
         createdAt: t.createdAt.toISOString(),
       };
     }),

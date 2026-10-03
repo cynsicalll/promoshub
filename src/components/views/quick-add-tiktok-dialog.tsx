@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Video, Link2, Check, Loader2, Plus } from "lucide-react";
+import { Video, Link2, Check, Loader2, Plus, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePromos, useSounds } from "@/hooks/use-data";
@@ -146,15 +146,25 @@ export function QuickAddTiktokDialog({
                   <SelectValue placeholder={t("quickAdd.selectPromoPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {promos.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      <span className="truncate">{p.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        · {formatDate(p.date)} · {p.tiktoks?.length || 0}/
-                        {p.tiktokTarget || 0}
-                      </span>
-                    </SelectItem>
-                  ))}
+                  {promos.map((p) => {
+                    const done = p.tiktokTarget > 0 && (p.tiktoks?.length || 0) >= p.tiktokTarget;
+                    const isActive = p.status === "AKTIV";
+                    return (
+                      <SelectItem key={p.id} value={p.id}>
+                        <span className="flex items-center gap-1.5 truncate">
+                          {done ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                          ) : isActive ? (
+                            <Circle className="h-3.5 w-3.5 text-amber-500 fill-amber-400 shrink-0" />
+                          ) : null}
+                          <span className="truncate">{p.name}</span>
+                          <span className="text-xs text-muted-foreground ml-1">
+                            · {p.tiktoks?.length || 0}/{p.tiktokTarget || 0}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {selectedPromo && (

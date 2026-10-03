@@ -19,11 +19,21 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  Eye,
+  Heart,
 } from "lucide-react";
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { TikTokThumbnail } from "@/components/tiktok-thumbnail";
+
+// Format large numbers (e.g. 1200 -> 1.2K, 1500000 -> 1.5M)
+function formatCount(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 
 export function CustomerDashboard({ token }: { token?: string } = {}) {
   const { t } = useI18n();
@@ -347,9 +357,28 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
 
                       {/* TikToks */}
                       <div>
-                        <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+                        <h3 className="text-sm font-semibold flex items-center gap-2 mb-2 flex-wrap">
                           <Video className="h-4 w-4 text-muted-foreground" />
                           {t("customer.tiktokVideos")}
+                          {(() => {
+                            const withViews = promo.tiktoks.filter((tt) => tt.playCount != null);
+                            if (withViews.length === 0) return null;
+                            const totalViews = withViews.reduce((s, tt) => s + (tt.playCount || 0), 0);
+                            const avgViews = Math.round(totalViews / withViews.length);
+                            const totalLikes = withViews.reduce((s, tt) => s + (tt.likeCount || 0), 0);
+                            return (
+                              <span className="text-xs font-normal text-muted-foreground flex items-center gap-2">
+                                <span className="flex items-center gap-0.5">
+                                  <Eye className="h-3 w-3" />
+                                  {t("stats.avgViews")}: {formatCount(avgViews)}
+                                </span>
+                                <span className="flex items-center gap-0.5">
+                                  <Heart className="h-3 w-3" />
+                                  {t("stats.totalLikes")}: {formatCount(totalLikes)}
+                                </span>
+                              </span>
+                            );
+                          })()}
                         </h3>
                         {promo.tiktoks.length === 0 ? (
                           <div className="text-center py-4">
@@ -366,6 +395,8 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
                                 url={tt.url}
                                 title={tt.title}
                                 soundName={tt.soundName}
+                                playCount={tt.playCount}
+                                likeCount={tt.likeCount}
                                 index={i + 1}
                                 fallbackLabel={t("share.videoNum", { n: i + 1 })}
                                 accentColor="pink"

@@ -38,5 +38,18 @@ export async function POST(
     },
   });
 
+  // Auto-increment the sound's quantityUsed if a sound was selected
+  if (body.soundId) {
+    const promoSound = await db.promoSound.findFirst({
+      where: { promoId: id, soundId: body.soundId },
+    });
+    if (promoSound) {
+      await db.promoSound.update({
+        where: { id: promoSound.id },
+        data: { quantityUsed: { increment: 1 } },
+      });
+    }
+  }
+
   return NextResponse.json(tiktok, { status: 201 });
 }

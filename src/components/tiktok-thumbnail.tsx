@@ -1,13 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { Video, ExternalLink, Play, Music2 } from "lucide-react";
+import { Video, ExternalLink, Play, Music2, Eye, Heart } from "lucide-react";
 import { normalizeUrl, domainFromUrl } from "@/lib/format";
+
+// Format large numbers (e.g. 1200 -> 1.2K, 1500000 -> 1.5M)
+function formatCount(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 
 interface TikTokThumbnailProps {
   url: string;
   title: string | null;
   soundName?: string | null;
+  playCount?: number | null;
+  likeCount?: number | null;
   index?: number;
   fallbackLabel?: string;
   accentColor?: "pink" | "emerald";
@@ -31,6 +41,8 @@ export function TikTokThumbnail({
   url,
   title,
   soundName,
+  playCount,
+  likeCount,
   index,
   fallbackLabel,
   accentColor = "pink",
@@ -154,6 +166,21 @@ export function TikTokThumbnail({
           </div>
           <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
         </div>
+        {/* View & like counts */}
+        {playCount != null && (
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <Eye className="h-2.5 w-2.5" />
+              {formatCount(playCount)}
+            </span>
+            {likeCount != null && (
+              <span className="flex items-center gap-0.5">
+                <Heart className="h-2.5 w-2.5" />
+                {formatCount(likeCount)}
+              </span>
+            )}
+          </div>
+        )}
         {/* Sound name — clickable to scroll to sound */}
         {soundName && (
           <button

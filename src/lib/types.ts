@@ -60,6 +60,11 @@ export interface TikTok {
   soundId: string | null;
   url: string;
   title: string | null;
+  playCount: number | null;
+  likeCount: number | null;
+  commentCount: number | null;
+  shareCount: number | null;
+  statsSynced: string | null;
   createdAt: string;
 }
 
@@ -162,6 +167,8 @@ export interface ShareData {
     url: string;
     title: string | null;
     soundName: string | null;
+    playCount: number | null;
+    likeCount: number | null;
     createdAt: string;
   }[];
 }

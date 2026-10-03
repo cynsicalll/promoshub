@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
         url: t.url,
         title: t.title,
         soundName: sound?.sound.name || null,
+        playCount: t.playCount,
+        likeCount: t.likeCount,
         createdAt: t.createdAt.toISOString(),
       };
     }),

@@ -18,11 +18,21 @@ import {
   AlertCircle,
   Lock,
   ArrowLeft,
+  Eye,
+  Heart,
 } from "lucide-react";
 import type { ShareData } from "@/lib/types";
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
 import { TikTokThumbnail } from "@/components/tiktok-thumbnail";
 import Link from "next/link";
+
+// Format large numbers (e.g. 1200 -> 1.2K, 1500000 -> 1.5M)
+function formatCount(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 import { useI18n } from "@/components/language-provider";
 
 export function ShareView({ code }: { code: string }) {
@@ -295,9 +305,21 @@ function ShareContent({
 
       {/* TikToks list */}
       <Card className="p-5">
-        <h2 className="font-semibold flex items-center gap-2 mb-4">
+        <h2 className="font-semibold flex items-center gap-2 mb-4 flex-wrap">
           <Video className="h-4 w-4 text-muted-foreground" />{" "}
           {t("share.tiktokVideos")}
+          {(() => {
+            const withViews = data.tiktoks.filter((tt) => tt.playCount != null);
+            if (withViews.length === 0) return null;
+            const totalViews = withViews.reduce((s, tt) => s + (tt.playCount || 0), 0);
+            const avgViews = Math.round(totalViews / withViews.length);
+            return (
+              <span className="text-xs font-normal text-muted-foreground flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                {t("stats.avgViews")}: {formatCount(avgViews)}
+              </span>
+            );
+          })()}
         </h2>
         {data.tiktoks.length === 0 ? (
           <div className="text-center py-8">
@@ -314,6 +336,8 @@ function ShareContent({
                 url={tt.url}
                 title={tt.title}
                 soundName={tt.soundName}
+                playCount={tt.playCount}
+                likeCount={tt.likeCount}
                 index={i + 1}
                 fallbackLabel={t("share.videoNum", { n: i + 1 })}
                 accentColor="emerald"

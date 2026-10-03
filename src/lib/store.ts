@@ -8,6 +8,7 @@ export type ViewKey =
   | "monthly"
   | "sounds"
   | "customers"
+  | "stats"
   | "settings";
 
 interface AppState {

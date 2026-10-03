@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// Cache: url -> { videoId, cover, title, fetchedAt }
-const cache = new Map<
-  string,
-  { videoId: string | null; cover: string | null; title: string | null; fetchedAt: number }
->();
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+// Cache: url -> { videoId, cover, title, playCount, ..., fetchedAt }
+interface CacheEntry {
+  videoId: string | null;
+  cover: string | null;
+  title: string | null;
+  playCount: number | null;
+  likeCount: number | null;
+  commentCount: number | null;
+  shareCount: number | null;
+  fetchedAt: number;
+}
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for stats (shorter than thumbnail)
 
 // Extract video ID directly from URL
 function extractVideoId(url: string): string | null {
@@ -57,10 +64,10 @@ async function resolveShortUrl(url: string): Promise<string | null> {
   }
 }
 
-// Fetch thumbnail from tikwm.com API (with retry)
-async function fetchThumbnail(
+// Fetch video data from tikwm.com API (with retry)
+async function fetchVideoData(
   url: string
-): Promise<{ cover: string | null; title: string | null }> {
+): Promise<Omit<CacheEntry, "fetchedAt" | "videoId">> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`;
@@ -80,12 +87,23 @@ async function fetchThumbnail(
       return {
         cover: data.data.cover || data.data.origin_cover || null,
         title: data.data.title || null,
+        playCount: data.data.play_count ?? null,
+        likeCount: data.data.digg_count ?? null,
+        commentCount: data.data.comment_count ?? null,
+        shareCount: data.data.share_count ?? null,
       };
     } catch {
       await new Promise((r) => setTimeout(r, 1000));
     }
   }
-  return { cover: null, title: null };
+  return {
+    cover: null,
+    title: null,
+    playCount: null,
+    likeCount: null,
+    commentCount: null,
+    shareCount: null,
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -97,11 +115,7 @@ export async function GET(req: NextRequest) {
   // Check cache
   const cached = cache.get(url);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
-    return NextResponse.json({
-      videoId: cached.videoId,
-      cover: cached.cover,
-      title: cached.title,
-    });
+    return NextResponse.json(cached);
   }
 
   // Try direct extraction first (fast path)
@@ -112,10 +126,15 @@ export async function GET(req: NextRequest) {
     videoId = await resolveShortUrl(url);
   }
 
-  // Fetch thumbnail from tikwm.com
-  const { cover, title } = await fetchThumbnail(url);
+  // Fetch video data (thumbnail + stats)
+  const videoData = await fetchVideoData(url);
 
-  cache.set(url, { videoId, cover, title, fetchedAt: Date.now() });
+  const entry: CacheEntry = {
+    ...videoData,
+    videoId,
+    fetchedAt: Date.now(),
+  };
+  cache.set(url, entry);
 
-  return NextResponse.json({ videoId, cover, title });
+  return NextResponse.json(entry);
 }
