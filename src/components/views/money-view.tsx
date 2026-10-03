@@ -42,8 +42,10 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
-  Clock,
   AlertTriangle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/components/language-provider";
@@ -66,6 +68,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+type SortKey =
+  | "promo"
+  | "customer"
+  | "amount"
+  | "expectedDate"
+  | "receivedDate"
+  | "status";
+
 export function MoneyView() {
   const { t } = useI18n();
   const { data: payments = [], isLoading } = usePayments();
@@ -77,6 +87,17 @@ export function MoneyView() {
   const [statusFilter, setStatusFilter] = React.useState("alle");
   const [periodFilter, setPeriodFilter] = React.useState("alle");
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  const [sortKey, setSortKey] = React.useState<SortKey>("expectedDate");
+  const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
 
   function inPeriod(date: string | null, period: string): boolean {
     if (!date) return false;
@@ -127,8 +148,43 @@ export function MoneyView() {
         return inPeriod(date, periodFilter);
       });
     }
-    return list;
-  }, [payments, search, statusFilter, periodFilter]);
+
+    // Sort
+    const sorted = [...list].sort((a, b) => {
+      let av: number | string = 0;
+      let bv: number | string = 0;
+      switch (sortKey) {
+        case "promo":
+          av = (a.promo?.name || "").toLowerCase();
+          bv = (b.promo?.name || "").toLowerCase();
+          break;
+        case "customer":
+          av = (a.promo?.customer?.name || "").toLowerCase();
+          bv = (b.promo?.customer?.name || "").toLowerCase();
+          break;
+        case "amount":
+          av = a.amount;
+          bv = b.amount;
+          break;
+        case "expectedDate":
+          av = a.expectedDate ? new Date(a.expectedDate).getTime() : 0;
+          bv = b.expectedDate ? new Date(b.expectedDate).getTime() : 0;
+          break;
+        case "receivedDate":
+          av = a.receivedDate ? new Date(a.receivedDate).getTime() : 0;
+          bv = b.receivedDate ? new Date(b.receivedDate).getTime() : 0;
+          break;
+        case "status":
+          av = computePaymentStatus(a.paidOut, a.received, a.expectedDate);
+          bv = computePaymentStatus(b.paidOut, b.received, b.expectedDate);
+          break;
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [payments, search, statusFilter, periodFilter, sortKey, sortDir]);
 
   const totals = React.useMemo(() => {
     const total = filtered.reduce((s, p) => s + p.amount, 0);
@@ -180,6 +236,29 @@ export function MoneyView() {
     } finally {
       setDeleteId(null);
     }
+  }
+
+  function SortHeader({ label, k }: { label: string; k: SortKey }) {
+    const active = sortKey === k;
+    return (
+      <button
+        onClick={() => toggleSort(k)}
+        className={`inline-flex items-center gap-1 hover:text-foreground ${
+          active ? "text-foreground" : "text-muted-foreground"
+        }`}
+      >
+        {label}
+        {active ? (
+          sortDir === "asc" ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-40" />
+        )}
+      </button>
+    );
   }
 
   return (
@@ -268,14 +347,14 @@ export function MoneyView() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="min-w-[180px]">{t("money.col.promo")}</TableHead>
-                <TableHead className="min-w-[140px]">{t("money.col.customer")}</TableHead>
-                <TableHead className="text-right w-[110px]">{t("money.col.amount")}</TableHead>
-                <TableHead className="w-[120px]">{t("money.col.expected")}</TableHead>
-                <TableHead className="w-[120px]">{t("money.col.received")}</TableHead>
+                <TableHead className="min-w-[180px]"><SortHeader label={t("money.col.promo")} k="promo" /></TableHead>
+                <TableHead className="min-w-[140px]"><SortHeader label={t("money.col.customer")} k="customer" /></TableHead>
+                <TableHead className="text-right w-[110px]"><SortHeader label={t("money.col.amount")} k="amount" /></TableHead>
+                <TableHead className="w-[120px]"><SortHeader label={t("money.col.expected")} k="expectedDate" /></TableHead>
+                <TableHead className="w-[120px]"><SortHeader label={t("money.col.received")} k="receivedDate" /></TableHead>
                 <TableHead className="text-center w-[90px]">{t("money.col.paidOut")}</TableHead>
                 <TableHead className="text-center w-[110px]">{t("money.col.received2")}</TableHead>
-                <TableHead className="w-[120px]">{t("money.col.status")}</TableHead>
+                <TableHead className="w-[120px]"><SortHeader label={t("money.col.status")} k="status" /></TableHead>
                 <TableHead className="w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
