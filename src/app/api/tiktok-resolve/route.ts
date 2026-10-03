@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// Cache: url -> videoId (or null if unresolvable)
-const cache = new Map<string, { videoId: string | null; fetchedAt: number }>();
+// Cache: url -> { videoId, cover, title, fetchedAt }
+const cache = new Map<
+  string,
+  { videoId: string | null; cover: string | null; title: string | null; fetchedAt: number }
+>();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-// Try to extract video ID directly from URL
+// Extract video ID directly from URL
 function extractVideoId(url: string): string | null {
-  // Match /video/{id} pattern (full URLs)
   const m = url.match(/\/video\/(\d+)/);
   if (m) return m[1];
   return null;
 }
 
-// Resolve a TikTok short URL (vm.tiktok.com/...) by following redirects server-side
+// Resolve a TikTok short URL by following redirects server-side
 async function resolveShortUrl(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
@@ -27,7 +29,6 @@ async function resolveShortUrl(url: string): Promise<string | null> {
       signal: AbortSignal.timeout(8000),
     });
 
-    // Follow up to 3 redirects manually
     let location = res.headers.get("location") || "";
     let count = 0;
     while (location && count < 3) {
@@ -46,7 +47,6 @@ async function resolveShortUrl(url: string): Promise<string | null> {
       count++;
     }
 
-    // Final check on the last location
     if (location) {
       const id = extractVideoId(location);
       if (id) return id;
@@ -57,27 +57,65 @@ async function resolveShortUrl(url: string): Promise<string | null> {
   }
 }
 
+// Fetch thumbnail from tikwm.com API (with retry)
+async function fetchThumbnail(
+  url: string
+): Promise<{ cover: string | null; title: string | null }> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`;
+      const res = await fetch(apiUrl, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      const data = await res.json();
+      if (data.code !== 0 || !data.data) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      return {
+        cover: data.data.cover || data.data.origin_cover || null,
+        title: data.data.title || null,
+      };
+    } catch {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+  return { cover: null, title: null };
+}
+
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get("url");
   if (!url) {
     return NextResponse.json({ error: "URL parameter required" }, { status: 400 });
   }
 
-  // Check cache first
+  // Check cache
   const cached = cache.get(url);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
-    return NextResponse.json({ videoId: cached.videoId });
+    return NextResponse.json({
+      videoId: cached.videoId,
+      cover: cached.cover,
+      title: cached.title,
+    });
   }
 
-  // Try direct extraction first (fast path for full URLs)
-  const directId = extractVideoId(url);
-  if (directId) {
-    cache.set(url, { videoId: directId, fetchedAt: Date.now() });
-    return NextResponse.json({ videoId: directId });
-  }
+  // Try direct extraction first (fast path)
+  let videoId = extractVideoId(url);
 
   // For short URLs, resolve server-side
-  const resolvedId = await resolveShortUrl(url);
-  cache.set(url, { videoId: resolvedId, fetchedAt: Date.now() });
-  return NextResponse.json({ videoId: resolvedId });
+  if (!videoId && url.includes("tiktok.com")) {
+    videoId = await resolveShortUrl(url);
+  }
+
+  // Fetch thumbnail from tikwm.com
+  const { cover, title } = await fetchThumbnail(url);
+
+  cache.set(url, { videoId, cover, title, fetchedAt: Date.now() });
+
+  return NextResponse.json({ videoId, cover, title });
 }
