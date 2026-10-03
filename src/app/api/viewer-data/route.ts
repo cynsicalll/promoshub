@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     include: {
       promo: { select: { name: true, date: true } },
     },
-    orderBy: { expectedDate: "asc" },
+    orderBy: { expectedDate: "desc" },
   });
 
   const safePayments = payments.map((p) => {
