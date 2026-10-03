@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { ShareData } from "@/lib/types";
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
+import { TikTokThumbnail } from "@/components/tiktok-thumbnail";
 import Link from "next/link";
 import { useI18n } from "@/components/language-provider";
 
@@ -292,28 +293,16 @@ function ShareContent({
             </p>
           </div>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
             {data.tiktoks.map((tt, i) => (
-              <a
+              <TikTokThumbnail
                 key={i}
-                href={normalizeUrl(tt.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-3 rounded-lg border p-3 hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition-colors"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400">
-                  <Video className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">
-                    {tt.title || t("share.videoNum", { n: i + 1 })}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {domainFromUrl(tt.url)}
-                  </p>
-                </div>
-                <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 shrink-0" />
-              </a>
+                url={tt.url}
+                title={tt.title}
+                index={i + 1}
+                fallbackLabel={t("share.videoNum", { n: i + 1 })}
+                accentColor="emerald"
+              />
             ))}
           </div>
         )}

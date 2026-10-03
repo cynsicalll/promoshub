@@ -23,6 +23,7 @@ import {
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
+import { TikTokThumbnail } from "@/components/tiktok-thumbnail";
 
 export function CustomerDashboard({ token }: { token?: string } = {}) {
   const { t } = useI18n();
@@ -338,29 +339,16 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
                             </p>
                           </div>
                         ) : (
-                          <div className="grid gap-2 sm:grid-cols-2">
+                          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
                             {promo.tiktoks.map((tt, i) => (
-                              <a
+                              <TikTokThumbnail
                                 key={i}
-                                href={normalizeUrl(tt.url)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center gap-3 rounded-lg border p-3 hover:border-pink-400 hover:bg-pink-50/40 dark:hover:bg-pink-950/20 transition-colors"
-                              >
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400">
-                                  <Video className="h-4 w-4" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium truncate">
-                                    {tt.title ||
-                                      t("share.videoNum", { n: i + 1 })}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {domainFromUrl(tt.url)}
-                                  </p>
-                                </div>
-                                <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-pink-600 shrink-0" />
-                              </a>
+                                url={tt.url}
+                                title={tt.title}
+                                index={i + 1}
+                                fallbackLabel={t("share.videoNum", { n: i + 1 })}
+                                accentColor="pink"
+                              />
                             ))}
                           </div>
                         )}
