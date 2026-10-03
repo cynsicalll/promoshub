@@ -21,10 +21,12 @@ import {
   Moon,
   Sun,
   CalendarRange,
+  Video,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { GlobalSearch, SearchTrigger } from "@/components/global-search";
 import { PromoFormDialog } from "@/components/views/promo-form-dialog";
+import { QuickAddTiktokDialog } from "@/components/views/quick-add-tiktok-dialog";
 import { useDashboard } from "@/hooks/use-data";
 import { formatCurrency } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
@@ -133,6 +135,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [formOpen, setFormOpen] = React.useState(false);
+  const [uploadOpen, setUploadOpen] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -159,6 +162,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Plus className="h-4 w-4" />
             {t("action.newPromo")}
           </Button>
+          <Button
+            onClick={() => setUploadOpen(true)}
+            variant="outline"
+            className="w-full gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
+          >
+            <Video className="h-4 w-4" />
+            {t("action.upload")}
+          </Button>
         </div>
         <div className="mt-6">
           <MoneySummary />
@@ -173,7 +184,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="mt-6">
             <NavLinks onNavigate={() => setMobileOpen(false)} />
           </div>
-          <div className="mt-6">
+          <div className="mt-6 flex flex-col gap-2">
             <Button
               onClick={() => {
                 setMobileOpen(false);
@@ -183,6 +194,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <Plus className="h-4 w-4" />
               {t("action.newPromo")}
+            </Button>
+            <Button
+              onClick={() => {
+                setMobileOpen(false);
+                setUploadOpen(true);
+              }}
+              variant="outline"
+              className="w-full gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
+            >
+              <Video className="h-4 w-4" />
+              {t("action.upload")}
             </Button>
           </div>
           <div className="mt-6">
@@ -209,6 +231,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-2">
             <Button
+              onClick={() => setUploadOpen(true)}
+              size="sm"
+              variant="outline"
+              className="gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
+            >
+              <Video className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("action.upload")}</span>
+            </Button>
+            <Button
               onClick={() => setFormOpen(true)}
               size="sm"
               className="gap-2"
@@ -234,6 +265,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onOpenChange={setFormOpen}
         mode="create"
       />
+      <QuickAddTiktokDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </div>
   );
 }
