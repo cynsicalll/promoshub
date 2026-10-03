@@ -217,3 +217,13 @@ export function genShareCode(): string {
     out += chars[Math.floor(Math.random() * chars.length)];
   return out;
 }
+
+export function genShareToken(): string {
+  // 24 char URL-safe token for customer direct-access links
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < 24; i++)
+    out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}

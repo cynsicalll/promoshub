@@ -37,6 +37,8 @@ import {
   Check,
   X,
   Loader2,
+  Link2,
+  Link2Off,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
@@ -48,6 +50,7 @@ interface CustomerUser {
   displayName: string | null;
   role: string;
   createdAt: string;
+  shareToken: string | null;
   promoAccess: {
     promo: {
       id: string;
@@ -100,6 +103,41 @@ export function CustomerAccessSection() {
     },
     onError: () => toast.error(t("customerAccess.toast.deleteFailed")),
   });
+
+  const generateLink = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/users/${id}/link`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(t("settings.linkGenerated"));
+    },
+    onError: () => toast.error(t("settings.linkGenerateFailed")),
+  });
+
+  const revokeLink = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/users/${id}/link`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(t("settings.linkRevoked"));
+    },
+    onError: () => toast.error(t("settings.linkRevokeFailed")),
+  });
+
+  async function copyCustomerLink(token: string) {
+    const url = `${window.location.origin}/?customer=${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("settings.linkCopied"), { description: url });
+    } catch {
+      toast.error(t("settings.linkCopyFailed"));
+    }
+  }
 
   return (
     <Card className="p-5 space-y-4">
@@ -159,6 +197,61 @@ export function CustomerAccessSection() {
                   </p>
                 </div>
                 <div className="flex gap-1">
+                  {u.shareToken ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-emerald-600 hover:text-emerald-700"
+                        onClick={() => copyCustomerLink(u.shareToken!)}
+                        title={t("settings.copyLink")}
+                      >
+                        <Link2 className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-rose-600"
+                            title={t("settings.revokeLink")}
+                          >
+                            <Link2Off className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {t("settings.revokeLinkTitle")}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("settings.revokeLinkDesc")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => revokeLink.mutate(u.id)}
+                              className="bg-rose-600 hover:bg-rose-700 text-white"
+                            >
+                              {t("settings.revokeLink")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground"
+                      onClick={() => generateLink.mutate(u.id)}
+                      disabled={generateLink.isPending}
+                      title={t("settings.createLink")}
+                    >
+                      <Link2 className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -213,6 +306,31 @@ export function CustomerAccessSection() {
                       {pa.promo.name}
                     </Badge>
                   ))}
+                </div>
+              )}
+              {u.shareToken && (
+                <div className="rounded-md border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 p-2 flex items-center gap-2">
+                  <Link2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate flex-1">
+                    {typeof window !== "undefined" ? window.location.origin : ""}/?customer={u.shareToken}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs gap-1 shrink-0"
+                    onClick={() => copyCustomerLink(u.shareToken!)}
+                  >
+                    {t("action.copy")}
+                  </Button>
+                  <a
+                    href={`/?customer=${u.shareToken}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1 shrink-0">
+                      {t("action.open")}
+                    </Button>
+                  </a>
                 </div>
               )}
             </div>

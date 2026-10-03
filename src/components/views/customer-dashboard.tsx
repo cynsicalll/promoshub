@@ -18,27 +18,45 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
 } from "lucide-react";
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 
-export function CustomerDashboard() {
+export function CustomerDashboard({ token }: { token?: string } = {}) {
   const { t } = useI18n();
   const { user, logout } = useAuth();
   const [promos, setPromos] = React.useState<ShareData[]>([]);
+  const [displayName, setDisplayName] = React.useState<string>("");
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
 
   React.useEffect(() => {
-    fetch("/api/my-promos")
-      .then((r) => r.json())
+    const url = token
+      ? `/api/customer-link/${encodeURIComponent(token)}`
+      : "/api/my-promos";
+    fetch(url)
+      .then(async (r) => {
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          throw new Error(d.error || "Failed to load");
+        }
+        return r.json();
+      })
       .then((data) => {
         setPromos(data.promos || []);
+        setDisplayName(
+          token ? data.user?.displayName || data.user?.username || "" : user?.displayName || user?.username || ""
+        );
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
+  }, [token, user]);
 
   function toggleExpand(key: string) {
     setExpanded((prev) => {
@@ -61,29 +79,40 @@ export function CustomerDashboard() {
             <div className="leading-tight">
               <p className="text-sm font-semibold tracking-tight">{t("app.name")}</p>
               <p className="text-[11px] text-muted-foreground">
-                {user?.displayName || user?.username}
+                {displayName || user?.displayName || user?.username}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <LanguageToggle />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" /> {t("customer.logout")}
-            </Button>
+            {!token && user && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" /> {t("customer.logout")}
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-6 space-y-5">
+        {error ? (
+          <Card className="p-10 text-center">
+            <AlertCircle className="h-10 w-10 mx-auto mb-3 text-rose-500" />
+            <p className="text-sm text-muted-foreground">
+              {t("share.accessDenied")}
+            </p>
+          </Card>
+        ) : (
+        <>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             {t("customer.welcome", {
-              name: user?.displayName || user?.username || "",
+              name: displayName || user?.displayName || user?.username || "",
             })}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -342,6 +371,8 @@ export function CustomerDashboard() {
               );
             })}
           </div>
+        )}
+        </>
         )}
       </main>
 

@@ -115,6 +115,7 @@ model User {
   passwordHash String
   role         String             @default("CUSTOMER") // ADMIN | CUSTOMER
   displayName  String?
+  shareToken   String?            @unique // direct-access token for customer dashboard
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   promoAccess  UserPromoAccess[]

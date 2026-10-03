@@ -37,9 +37,13 @@ function AuthRouter() {
   const { user, loading } = useAuth();
   const searchParams = useSearchParams();
   const shareCode = searchParams.get("share");
+  const customerToken = searchParams.get("customer");
 
   // Public share view (no auth needed)
   if (shareCode) return <ShareView code={shareCode} />;
+
+  // Public customer direct-access link (no auth needed)
+  if (customerToken) return <CustomerDashboard token={customerToken} />;
 
   // Loading state
   if (loading) {
