@@ -1,15 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Video, ExternalLink, Play } from "lucide-react";
+import { Video, ExternalLink, Play, Music2 } from "lucide-react";
 import { normalizeUrl, domainFromUrl } from "@/lib/format";
 
 interface TikTokThumbnailProps {
   url: string;
   title: string | null;
+  soundName?: string | null;
   index?: number;
   fallbackLabel?: string;
   accentColor?: "pink" | "emerald";
+  onSoundClick?: (soundName: string) => void;
 }
 
 // Extract TikTok video ID from URL
@@ -23,9 +25,11 @@ function extractVideoId(url: string): string | null {
 export function TikTokThumbnail({
   url,
   title,
+  soundName,
   index,
   fallbackLabel,
   accentColor = "pink",
+  onSoundClick,
 }: TikTokThumbnailProps) {
   const [iframeLoaded, setIframeLoaded] = React.useState(false);
   const videoId = extractVideoId(url);
@@ -42,15 +46,22 @@ export function TikTokThumbnail({
       ? "bg-emerald-500/90"
       : "bg-pink-500/90";
 
+  const soundAccent =
+    accentColor === "emerald"
+      ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+      : "text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-950/30";
+
   return (
-    <a
-      href={normalizedUrl}
-      target="_blank"
-      rel="noopener noreferrer nofollow"
+    <div
       className={`group block overflow-hidden rounded-lg border bg-muted transition-colors ${accentClasses}`}
     >
-      {/* Thumbnail area (9:16 portrait for TikTok) */}
-      <div className="relative aspect-[9/16] bg-muted overflow-hidden">
+      {/* Thumbnail area (9:16 portrait for TikTok) — clickable to open video */}
+      <a
+        href={normalizedUrl}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="block relative aspect-[9/16] bg-muted overflow-hidden"
+      >
         {videoId ? (
           <>
             {/* TikTok embed iframe as thumbnail */}
@@ -93,17 +104,34 @@ export function TikTokThumbnail({
             </div>
           </div>
         )}
-      </div>
-      {/* Title bar */}
-      <div className="p-2 flex items-center gap-1.5 bg-background">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium truncate">{displayTitle}</p>
-          <p className="text-[10px] text-muted-foreground truncate">
-            {domainFromUrl(url)}
-          </p>
+      </a>
+      {/* Info bar */}
+      <div className="p-2 bg-background space-y-1">
+        <div className="flex items-center gap-1.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium truncate">{displayTitle}</p>
+            <p className="text-[10px] text-muted-foreground truncate">
+              {domainFromUrl(url)}
+            </p>
+          </div>
+          <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
         </div>
-        <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-foreground shrink-0" />
+        {/* Sound name — clickable to scroll to sound */}
+        {soundName && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSoundClick?.(soundName);
+            }}
+            className={`flex items-center gap-1 w-full text-left rounded px-1 py-0.5 text-[10px] font-medium transition-colors ${soundAccent}`}
+            title={soundName}
+          >
+            <Music2 className="h-2.5 w-2.5 shrink-0" />
+            <span className="truncate">{soundName}</span>
+          </button>
+        )}
       </div>
-    </a>
+    </div>
   );
 }

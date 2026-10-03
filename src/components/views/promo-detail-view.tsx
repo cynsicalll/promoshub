@@ -582,20 +582,15 @@ export function PromoDetailView() {
                 {promo.tiktoks.map((tk, i) => {
                   const sound = promo.sounds.find((ps) => ps.soundId === tk.soundId);
                   return (
-                    <div key={tk.id} className="space-y-1">
-                      <TikTokThumbnail
-                        url={tk.url}
-                        title={tk.title}
-                        index={i + 1}
-                        fallbackLabel={t("share.noTitle")}
-                        accentColor="pink"
-                      />
-                      {sound && (
-                        <p className="text-[10px] text-muted-foreground truncate px-1">
-                          {sound.sound.name}
-                        </p>
-                      )}
-                    </div>
+                    <TikTokThumbnail
+                      key={tk.id}
+                      url={tk.url}
+                      title={tk.title}
+                      soundName={sound?.sound.name || null}
+                      index={i + 1}
+                      fallbackLabel={t("share.noTitle")}
+                      accentColor="pink"
+                    />
                   );
                 })}
               </div>

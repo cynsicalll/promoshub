@@ -41,11 +41,15 @@ export async function GET(
       quantityUsed: ps.quantityUsed,
       quantityRemaining: ps.quantityTotal - ps.quantityUsed,
     })),
-    tiktoks: promo.tiktoks.map((t) => ({
-      url: t.url,
-      title: t.title,
-      createdAt: t.createdAt.toISOString(),
-    })),
+    tiktoks: promo.tiktoks.map((t) => {
+      const sound = promo.sounds.find((ps) => ps.soundId === t.soundId);
+      return {
+        url: t.url,
+        title: t.title,
+        soundName: sound?.sound.name || null,
+        createdAt: t.createdAt.toISOString(),
+      };
+    }),
   };
 
   return NextResponse.json(data);

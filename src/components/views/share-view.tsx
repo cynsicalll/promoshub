@@ -97,6 +97,19 @@ function ShareContent({
   const tiktokPct =
     tiktokTarget > 0 ? Math.min(100, (tiktokDone / tiktokTarget) * 100) : 0;
 
+  // Scroll to a sound card by name and highlight it
+  function handleSoundClick(soundName: string) {
+    const soundIdx = data.sounds.findIndex((s) => s.name === soundName);
+    if (soundIdx < 0) return;
+    const el = document.getElementById(`share-sound-${soundIdx}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-emerald-400", "bg-emerald-50/50", "dark:bg-emerald-950/20");
+    setTimeout(() => {
+      el.classList.remove("ring-2", "ring-emerald-400", "bg-emerald-50/50", "dark:bg-emerald-950/20");
+    }, 2000);
+  }
+
   const soundsRemaining = data.sounds.reduce(
     (s, x) => s + x.quantityRemaining,
     0
@@ -227,7 +240,8 @@ function ShareContent({
               return (
                 <div
                   key={i}
-                  className="rounded-lg border p-3 space-y-2"
+                  id={`share-sound-${i}`}
+                  className="rounded-lg border p-3 space-y-2 transition-all duration-300"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -299,9 +313,11 @@ function ShareContent({
                 key={i}
                 url={tt.url}
                 title={tt.title}
+                soundName={tt.soundName}
                 index={i + 1}
                 fallbackLabel={t("share.videoNum", { n: i + 1 })}
                 accentColor="emerald"
+                onSoundClick={handleSoundClick}
               />
             ))}
           </div>

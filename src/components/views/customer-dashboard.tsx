@@ -68,6 +68,25 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
     });
   }
 
+  // Scroll to a sound card by its element ID and highlight it
+  function scrollToSound(promoIdx: number, soundIdx: number) {
+    const el = document.getElementById(`sound-${promoIdx}-${soundIdx}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-emerald-400", "bg-emerald-50/50", "dark:bg-emerald-950/20");
+    setTimeout(() => {
+      el.classList.remove("ring-2", "ring-emerald-400", "bg-emerald-50/50", "dark:bg-emerald-950/20");
+    }, 2000);
+  }
+
+  // Find sound index by name within a promo and scroll to it
+  function handleSoundClick(promoIdx: number, soundName: string) {
+    const promo = promos[promoIdx];
+    if (!promo) return;
+    const soundIdx = promo.sounds.findIndex((s) => s.name === soundName);
+    if (soundIdx >= 0) scrollToSound(promoIdx, soundIdx);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-background to-teal-50/40 dark:from-emerald-950/10 dark:via-background dark:to-teal-950/10">
       {/* Header */}
@@ -271,7 +290,8 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
                               return (
                                 <div
                                   key={i}
-                                  className="rounded-lg border p-3 space-y-1.5"
+                                  id={`sound-${idx}-${i}`}
+                                  className="rounded-lg border p-3 space-y-1.5 transition-all duration-300"
                                 >
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0">
@@ -345,9 +365,11 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
                                 key={i}
                                 url={tt.url}
                                 title={tt.title}
+                                soundName={tt.soundName}
                                 index={i + 1}
                                 fallbackLabel={t("share.videoNum", { n: i + 1 })}
                                 accentColor="pink"
+                                onSoundClick={(name) => handleSoundClick(idx, name)}
                               />
                             ))}
                           </div>

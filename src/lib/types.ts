@@ -161,6 +161,7 @@ export interface ShareData {
   tiktoks: {
     url: string;
     title: string | null;
+    soundName: string | null;
     createdAt: string;
   }[];
 }
