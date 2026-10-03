@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { PromoInput } from "@/lib/types";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ function promoInclude() {
   } as const;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const promos = await db.promo.findMany({
     include: promoInclude(),
     orderBy: { date: "desc" },
@@ -22,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const data = (await req.json()) as PromoInput;
 
   if (!data.name || !data.name.trim()) {

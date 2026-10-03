@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { format } from "date-fns";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,9 @@ function toCsv(rows: (string | number | null | undefined)[][], headers: string[]
 }
 
 export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const type = req.nextUrl.searchParams.get("type") || "promos";
   const fmt = req.nextUrl.searchParams.get("format") || "csv";
 

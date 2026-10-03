@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { CustomerInput } from "@/lib/types";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const customers = await db.customer.findMany({
     include: { _count: { select: { promos: true } } },
     orderBy: { name: "asc" },
@@ -13,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const data = (await req.json()) as CustomerInput;
   if (!data.name || !data.name.trim()) {
     return NextResponse.json({ error: "Kundenname ist erforderlich" }, { status: 400 });

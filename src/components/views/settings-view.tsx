@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { CustomerAccessSection } from "@/components/views/customer-access-section";
 
 export function SettingsView() {
   const { theme, setTheme } = useTheme();
@@ -157,6 +158,9 @@ export function SettingsView() {
           </Button>
         </div>
       </Card>
+
+      {/* Customer Access Management */}
+      <CustomerAccessSection />
 
       {/* Import */}
       <Card className="p-5 space-y-4">

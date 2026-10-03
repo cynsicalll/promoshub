@@ -1,12 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { DashboardData, Payment, Promo } from "@/lib/types";
 import { computePaymentStatus } from "@/lib/format";
+import { requireAdmin } from "@/lib/auth";
 import { format, subMonths } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const promos = await db.promo.findMany({
     include: {
       customer: true,

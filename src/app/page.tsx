@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
 import { AppShell } from "@/components/app-shell";
 import { useAppStore } from "@/lib/store";
 import { DashboardView } from "@/components/views/dashboard-view";
@@ -13,8 +14,10 @@ import { SoundsView } from "@/components/views/sounds-view";
 import { CustomersView } from "@/components/views/customers-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { ShareView } from "@/components/views/share-view";
+import { LoginScreen } from "@/components/views/login-screen";
+import { CustomerDashboard } from "@/components/views/customer-dashboard";
 
-function AppContent() {
+function AdminApp() {
   const view = useAppStore((s) => s.view);
   return (
     <AppShell>
@@ -30,11 +33,31 @@ function AppContent() {
   );
 }
 
-function ShareRouter() {
+function AuthRouter() {
+  const { user, loading } = useAuth();
   const searchParams = useSearchParams();
   const shareCode = searchParams.get("share");
+
+  // Public share view (no auth needed)
   if (shareCode) return <ShareView code={shareCode} />;
-  return <AppContent />;
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-emerald-500" />
+      </div>
+    );
+  }
+
+  // Not logged in → show login
+  if (!user) return <LoginScreen />;
+
+  // Admin → full app
+  if (user.role === "ADMIN") return <AdminApp />;
+
+  // Customer → customer dashboard
+  return <CustomerDashboard />;
 }
 
 export default function Home() {
@@ -46,7 +69,7 @@ export default function Home() {
         </div>
       }
     >
-      <ShareRouter />
+      <AuthRouter />
     </React.Suspense>
   );
 }

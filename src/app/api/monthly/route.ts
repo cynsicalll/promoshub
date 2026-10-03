@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { MonthlyEntry } from "@/lib/types";
+import { requireAdmin } from "@/lib/auth";
 import { format } from "date-fns";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,9 @@ const monthNames = [
 ];
 
 export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const yearParam = req.nextUrl.searchParams.get("year");
   const now = new Date();
   const year = yearParam ? Number(yearParam) : now.getFullYear();

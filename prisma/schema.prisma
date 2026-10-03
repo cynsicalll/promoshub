@@ -54,6 +54,7 @@ model Promo {
   sounds        PromoSound[]
   payments      Payment[]
   tiktoks       TikTok[]
+  userAccess    UserPromoAccess[]
 
   @@map("promos")
 }
@@ -106,4 +107,28 @@ model Setting {
   value String
 
   @@map("settings")
+}
+
+model User {
+  id           String             @id @default(cuid())
+  username     String             @unique
+  passwordHash String
+  role         String             @default("CUSTOMER") // ADMIN | CUSTOMER
+  displayName  String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  promoAccess  UserPromoAccess[]
+
+  @@map("users")
+}
+
+model UserPromoAccess {
+  id      String @id @default(cuid())
+  userId  String
+  promoId String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promo   Promo  @relation(fields: [promoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promoId])
+  @@map("user_promo_access")
 }

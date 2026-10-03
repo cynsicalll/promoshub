@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,9 @@ function parseDate(v: string | undefined): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const type = req.nextUrl.searchParams.get("type") || "promos";
   const body = (await req.json()) as { rows: Record<string, string>[] };
   const rows = body.rows || [];

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { genShareCode } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,12 @@ function promoInclude() {
 
 // Enable sharing + (re)generate code
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const { id } = await params;
   const promo = await db.promo.findUnique({ where: { id } });
   if (!promo) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
@@ -47,9 +51,12 @@ export async function POST(
 
 // Disable sharing (keeps code for re-enabling but hides the page)
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const { id } = await params;
   await db.promo.update({
     where: { id },

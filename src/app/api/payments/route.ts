@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { PaymentInput } from "@/lib/types";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const payments = await db.payment.findMany({
     include: {
       promo: {
@@ -17,6 +21,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin-Rechte erforderlich" }, { status: 403 });
+  }
   const data = (await req.json()) as PaymentInput;
   if (!data.promoId) {
     return NextResponse.json({ error: "Promo ist erforderlich" }, { status: 400 });
