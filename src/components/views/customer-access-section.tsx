@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,12 +72,20 @@ interface Promo {
 export function CustomerAccessSection() {
   const { t } = useI18n();
   const qc = useQueryClient();
+  const { user: authUser } = useAuth();
+  const isDemo = authUser?.role === "DEMO";
   const [formOpen, setFormOpen] = React.useState(false);
   const [editUser, setEditUser] = React.useState<CustomerUser | null>(null);
 
   const { data: users = [], isLoading } = useQuery<CustomerUser[]>({
-    queryKey: ["users"],
+    queryKey: isDemo ? ["demo", "users"] : ["users"],
     queryFn: async () => {
+      if (isDemo) {
+        const res = await fetch("/api/demo-data");
+        if (!res.ok) throw new Error("Failed");
+        const d = await res.json();
+        return d.demoUsers || [];
+      }
       const res = await fetch("/api/users");
       if (!res.ok) throw new Error(t("customerAccess.toast.loadFailed"));
       return res.json();
@@ -84,8 +93,14 @@ export function CustomerAccessSection() {
   });
 
   const { data: promos = [] } = useQuery<Promo[]>({
-    queryKey: ["promos-for-access"],
+    queryKey: isDemo ? ["demo", "promos-for-access"] : ["promos-for-access"],
     queryFn: async () => {
+      if (isDemo) {
+        const res = await fetch("/api/demo-data");
+        if (!res.ok) throw new Error("Failed");
+        const d = await res.json();
+        return d.promos || [];
+      }
       const res = await fetch("/api/promos");
       if (!res.ok) throw new Error(t("common.error"));
       return res.json();

@@ -17,6 +17,20 @@ export async function generateMetadata({
   params: Promise<{ token: string }>;
 }): Promise<Metadata> {
   const { token } = await params;
+
+  // Demo token — return demo metadata without database lookup
+  if (token === "demo-customer-access") {
+    return {
+      title: "Promos – Demo Customer",
+      description: "View your promo campaign status, sounds and TikTok videos.",
+      openGraph: {
+        title: "Promos – Demo Customer",
+        description: "View your promo campaign status, sounds and TikTok videos.",
+        type: "website",
+      },
+    };
+  }
+
   const user = await getUser(token);
 
   if (!user) {

@@ -4,12 +4,70 @@ import type { ShareData } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+// Demo customer access link data
+const DEMO_TOKEN = "demo-customer-access";
+
+function getDemoCustomerData() {
+  const now = new Date();
+  const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOString();
+
+  const promos: ShareData[] = [
+    {
+      name: "Nike Summer Campaign",
+      customerName: "Nike Europe",
+      customerCompany: "Nike GmbH",
+      date: daysAgo(45),
+      status: "ABGESCHLOSSEN",
+      notes: null, // notes hidden from customers
+      tiktokTarget: 10,
+      tiktokDone: 3,
+      sounds: [
+        { name: "Summer Vibes Beat", artist: "DJ Lumo", url: "https://www.tiktok.com/music/summer-vibes-123", quantityTotal: 10, quantityUsed: 10, quantityRemaining: 0 },
+        { name: "Energetic Drop", artist: "BeatCo", url: "https://soundcloud.com/beatco/energetic-drop", quantityTotal: 5, quantityUsed: 5, quantityRemaining: 0 },
+      ],
+      tiktoks: [
+        { url: "https://www.tiktok.com/@user/video/7111111111111", title: "Spot 1 – Beach", soundName: "Summer Vibes Beat", playCount: 15420, likeCount: 980, createdAt: daysAgo(40) },
+        { url: "https://www.tiktok.com/@user/video/7222222222222", title: "Spot 2 – City", soundName: "Summer Vibes Beat", playCount: 22100, likeCount: 1450, createdAt: daysAgo(35) },
+        { url: "https://www.tiktok.com/@user/video/7333333333333", title: "Spot 3 – Studio", soundName: "Energetic Drop", playCount: 8900, likeCount: 520, createdAt: daysAgo(30) },
+      ],
+    },
+    {
+      name: "Spotify Q3 Audio Ads",
+      customerName: "Spotify Advertising",
+      customerCompany: "Spotify AB",
+      date: daysAgo(20),
+      status: "AKTIV",
+      notes: null,
+      tiktokTarget: 8,
+      tiktokDone: 2,
+      sounds: [
+        { name: "Urban Pulse", artist: "DJ Lumo", url: "https://soundcloud.com/djlumo/urban-pulse", quantityTotal: 8, quantityUsed: 3, quantityRemaining: 5 },
+        { name: "Night Drive", artist: "Nova", url: null, quantityTotal: 4, quantityUsed: 1, quantityRemaining: 3 },
+      ],
+      tiktoks: [
+        { url: "https://vm.tiktok.com/Zdemo1/", title: "Audio Teaser", soundName: "Urban Pulse", playCount: 5400, likeCount: 320, createdAt: daysAgo(18) },
+        { url: "https://vm.tiktok.com/Zdemo2/", title: "Behind the Scenes", soundName: "Urban Pulse", playCount: 8200, likeCount: 610, createdAt: daysAgo(15) },
+      ],
+    },
+  ];
+
+  return {
+    user: { displayName: "Demo Customer", username: "demo-customer" },
+    promos,
+  };
+}
+
 // Public endpoint: returns a customer's promos by direct-access token (no login)
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
+
+  // Special demo token — returns example data
+  if (token === DEMO_TOKEN) {
+    return NextResponse.json(getDemoCustomerData());
+  }
 
   const user = await db.user.findFirst({
     where: { shareToken: token, role: "CUSTOMER" },

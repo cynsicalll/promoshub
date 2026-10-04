@@ -252,5 +252,22 @@ export async function GET(req: NextRequest) {
       })),
       lastSynced: daysAgo(1),
     },
+    // Demo customer access link (works on /c/demo-customer-access)
+    demoCustomerLink: "/c/demo-customer-access",
+    // Demo users list (for settings page display)
+    demoUsers: [
+      {
+        id: "demo-u1",
+        username: "nike_lisa",
+        displayName: "Lisa Müller (Nike)",
+        role: "CUSTOMER",
+        createdAt: daysAgo(30),
+        shareToken: "demo-customer-access",
+        promoAccess: [
+          { promo: { id: "demo-p1", name: "Nike Summer Campaign", date: daysAgo(45), status: "ABGESCHLOSSEN" } },
+          { promo: { id: "demo-p2", name: "Spotify Q3 Audio Ads", date: daysAgo(20), status: "AKTIV" } },
+        ],
+      },
+    ],
   });
 }
