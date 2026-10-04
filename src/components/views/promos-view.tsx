@@ -285,6 +285,7 @@ export function PromosView() {
                 <TableHead className="w-[110px]"><SortHeader label={t("promos.col.date")} k="date" /></TableHead>
                 <TableHead className="text-center w-[90px]">{t("promos.col.sounds")}</TableHead>
                 <TableHead className="text-center w-[90px]"><SortHeader label={t("promos.col.remaining")} k="soundsRemaining" /></TableHead>
+                <TableHead className="text-center w-[90px]">{t("promos.col.tiktoks")}</TableHead>
                 <TableHead className="text-right w-[110px]"><SortHeader label={t("promos.col.amount")} k="amount" /></TableHead>
                 <TableHead className="w-[130px]">{t("promos.col.payment")}</TableHead>
                 <TableHead className="w-[130px]"><SortHeader label={t("promos.col.status")} k="status" /></TableHead>
@@ -295,7 +296,7 @@ export function PromosView() {
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 9 }).map((_, j) => (
+                    {Array.from({ length: 10 }).map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 w-full rounded bg-muted/50 animate-pulse" />
                       </TableCell>
@@ -304,7 +305,7 @@ export function PromosView() {
                 ))
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                     <Music2 className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     {t("promos.noResults")}
                   </TableCell>
@@ -358,6 +359,24 @@ export function PromosView() {
                         >
                           {remaining}
                         </span>
+                      </TableCell>
+                      <TableCell className="text-center tabular-nums">
+                        {(() => {
+                          const ttDone = p.tiktoks?.length || 0;
+                          const ttTarget = p.tiktokTarget || 0;
+                          if (ttTarget === 0) return <span className="text-muted-foreground">—</span>;
+                          const ttDonePct = Math.min(100, (ttDone / ttTarget) * 100);
+                          const ttDoneCls = ttDone >= ttTarget
+                            ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                            : ttDonePct >= 50
+                            ? "text-amber-600 dark:text-amber-400 font-medium"
+                            : "text-muted-foreground";
+                          return (
+                            <span className={ttDoneCls}>
+                              {ttDone}/{ttTarget}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
                         {formatCurrency(amount)}
