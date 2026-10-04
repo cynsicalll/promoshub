@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useI18n } from "@/components/language-provider";
+import { useAuth } from "@/components/auth-provider";
 import {
   Video,
   Eye,
@@ -71,10 +72,18 @@ interface StatsData {
 export function StatsView() {
   const { t } = useI18n();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isDemo = user?.role === "DEMO";
 
   const { data, isLoading } = useQuery<StatsData>({
-    queryKey: ["tiktok-stats"],
+    queryKey: isDemo ? ["demo", "stats"] : ["tiktok-stats"],
     queryFn: async () => {
+      if (isDemo) {
+        const res = await fetch("/api/demo-data");
+        if (!res.ok) throw new Error("Failed");
+        const d = await res.json();
+        return d.stats as StatsData;
+      }
       const res = await fetch("/api/tiktok-stats");
       if (!res.ok) throw new Error("Failed");
       return res.json();

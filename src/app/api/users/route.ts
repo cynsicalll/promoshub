@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   }
 
   const users = await db.user.findMany({
-    where: { role: { in: ["CUSTOMER", "VIEWER"] } },
+    where: { role: { in: ["CUSTOMER", "VIEWER", "DEMO"] } },
     include: {
       promoAccess: {
         include: {
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     data: {
       username: normalizedUsername,
       passwordHash: hashPassword(password),
-      role: role === "VIEWER" ? "VIEWER" : "CUSTOMER",
+      role: role === "VIEWER" ? "VIEWER" : role === "DEMO" ? "DEMO" : "CUSTOMER",
       displayName: displayName?.trim() || null,
       promoAccess: promoIds?.length
         ? {

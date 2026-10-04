@@ -63,6 +63,9 @@ function AuthRouter() {
   // Admin → full app
   if (user.role === "ADMIN") return <AdminApp />;
 
+  // Demo → full app UI but with example data (read-only)
+  if (user.role === "DEMO") return <AdminApp />;
+
   // Viewer → money viewer dashboard (only sees financial data)
   if (user.role === "VIEWER") return <MoneyViewerDashboard />;
 

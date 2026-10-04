@@ -6,11 +6,17 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useAuth } from "@/components/auth-provider";
 import type {
   PromoInput,
   CustomerInput,
   SoundInput,
   PaymentInput,
+  Promo,
+  Customer,
+  Sound,
+  Payment,
+  DashboardData,
 } from "@/lib/types";
 
 export const qk = {
@@ -22,29 +28,105 @@ export const qk = {
   dashboard: ["dashboard"] as const,
   monthly: (year?: number) => ["monthly", year ?? "all"] as const,
   share: (code: string) => ["share", code] as const,
+  demo: ["demo"] as const,
 };
 
+// Demo data cache
+let demoCache: Record<string, unknown> | null = null;
+async function getDemoData() {
+  if (demoCache) return demoCache;
+  const res = await fetch("/api/demo-data");
+  if (!res.ok) throw new Error("Failed to load demo data");
+  demoCache = await res.json();
+  return demoCache!;
+}
+
+function useIsDemo() {
+  const { user } = useAuth();
+  return user?.role === "DEMO";
+}
+
 export function usePromos() {
-  return useQuery({ queryKey: qk.promos, queryFn: api.listPromos });
+  const isDemo = useIsDemo();
+  return useQuery({
+    queryKey: isDemo ? ["demo", "promos"] : qk.promos,
+    queryFn: async () => {
+      if (isDemo) {
+        const data = await getDemoData();
+        return data.promos as Promo[];
+      }
+      return api.listPromos();
+    },
+  });
 }
 export function usePromo(id: string | null) {
+  const isDemo = useIsDemo();
   return useQuery({
-    queryKey: id ? qk.promo(id) : ["promos", "null"],
-    queryFn: () => api.getPromo(id!),
+    queryKey: id ? (isDemo ? ["demo", "promos", id] : qk.promo(id)) : ["promos", "null"],
+    queryFn: async () => {
+      if (isDemo && id) {
+        const data = await getDemoData();
+        return (data.promos as Promo[]).find((p) => p.id === id) || null;
+      }
+      return api.getPromo(id!);
+    },
     enabled: !!id,
   });
 }
 export function useCustomers() {
-  return useQuery({ queryKey: qk.customers, queryFn: api.listCustomers });
+  const isDemo = useIsDemo();
+  return useQuery({
+    queryKey: isDemo ? ["demo", "customers"] : qk.customers,
+    queryFn: async () => {
+      if (isDemo) {
+        const data = await getDemoData();
+        return data.customers as Customer[];
+      }
+      return api.listCustomers();
+    },
+  });
 }
 export function useSounds() {
-  return useQuery({ queryKey: qk.sounds, queryFn: api.listSounds });
+  const isDemo = useIsDemo();
+  return useQuery({
+    queryKey: isDemo ? ["demo", "sounds"] : qk.sounds,
+    queryFn: async () => {
+      if (isDemo) {
+        const data = await getDemoData();
+        return data.sounds as Sound[];
+      }
+      return api.listSounds();
+    },
+  });
 }
 export function usePayments() {
-  return useQuery({ queryKey: qk.payments, queryFn: api.listPayments });
+  const isDemo = useIsDemo();
+  return useQuery({
+    queryKey: isDemo ? ["demo", "payments"] : qk.payments,
+    queryFn: async () => {
+      if (isDemo) {
+        const data = await getDemoData();
+        const promos = data.promos as Promo[];
+        return promos.flatMap((p) =>
+          p.payments.map((pay) => ({ ...pay, promo: p }))
+        );
+      }
+      return api.listPayments();
+    },
+  });
 }
 export function useDashboard() {
-  return useQuery({ queryKey: qk.dashboard, queryFn: api.getDashboard });
+  const isDemo = useIsDemo();
+  return useQuery({
+    queryKey: isDemo ? ["demo", "dashboard"] : qk.dashboard,
+    queryFn: async () => {
+      if (isDemo) {
+        const data = await getDemoData();
+        return data.dashboard as DashboardData;
+      }
+      return api.getDashboard();
+    },
+  });
 }
 
 function useRefresh() {
@@ -189,9 +271,16 @@ export function useShare(code: string | null) {
 }
 
 export function useMonthly(year?: number) {
+  const isDemo = useIsDemo();
   return useQuery({
-    queryKey: qk.monthly(year),
-    queryFn: () => api.getMonthly(year),
+    queryKey: isDemo ? ["demo", "monthly"] : qk.monthly(year),
+    queryFn: async () => {
+      if (isDemo) {
+        const data = await getDemoData();
+        return data.monthly as { year: number; years: number[]; entries: import("@/lib/types").MonthlyEntry[] };
+      }
+      return api.getMonthly(year);
+    },
   });
 }
 // re-export the type for the consumer
