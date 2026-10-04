@@ -99,7 +99,7 @@ export function MoneyViewerDashboard() {
               <AudioLines className="h-5 w-5" />
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-semibold tracking-tight">PromoHub</p>
+              <p className="text-sm font-semibold tracking-tight">Promos</p>
               <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Eye className="h-2.5 w-2.5" />
                 {user?.displayName || user?.username}
@@ -330,7 +330,7 @@ export function MoneyViewerDashboard() {
       </main>
 
       <footer className="border-t mt-10 py-4 text-center text-xs text-muted-foreground">
-        PromoHub · Viewer
+        Promos · Viewer
       </footer>
     </div>
   );

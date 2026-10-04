@@ -16,18 +16,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PromoHub – Sound Promo Manager",
+  title: "Promos – Sound Promo Manager",
   description:
     "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
   openGraph: {
-    title: "PromoHub – Sound Promo Manager",
+    title: "Promos – Sound Promo Manager",
     description:
       "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "PromoHub – Sound Promo Manager",
+    title: "Promos – Sound Promo Manager",
     description:
       "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
   },

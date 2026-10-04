@@ -21,10 +21,10 @@ export async function generateMetadata({
 
   if (!user) {
     return {
-      title: "PromoHub – Promo Access",
+      title: "Promos – Promo Access",
       description: "View your promo campaign status, sounds and TikTok videos.",
       openGraph: {
-        title: "PromoHub – Promo Access",
+        title: "Promos – Promo Access",
         description: "View your promo campaign status, sounds and TikTok videos.",
         type: "website",
       },
@@ -32,7 +32,7 @@ export async function generateMetadata({
   }
 
   const name = user.displayName || user.username;
-  const title = `PromoHub – ${name}`;
+  const title = `Promos – ${name}`;
   const description = `View your promo campaign status, sounds and TikTok videos.`;
 
   return {

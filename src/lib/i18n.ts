@@ -1,4 +1,4 @@
-// Internationalization dictionary for PromoHub
+// Internationalization dictionary for Promos
 // Default language: English (en). German (de) available.
 
 export type Lang = "en" | "de";
@@ -12,7 +12,7 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   // ─── Common / Nav ────────────────────────────────────────
-  "app.name": "PromoHub",
+  "app.name": "Promos",
   "app.subtitle": "Sound Promo Manager",
   "nav.dashboard": "Dashboard",
   "nav.promos": "Promos",
@@ -47,13 +47,13 @@ const en: Dict = {
   "action.deleteFailed": "Delete failed",
 
   // ─── Login ───────────────────────────────────────────────
-  "login.title": "PromoHub",
+  "login.title": "Promos",
   "login.subtitle": "Sound Promo Manager",
   "login.username": "Username",
   "login.password": "Password",
   "login.signIn": "Sign in",
   "login.signingIn": "Signing in…",
-  "login.footer": "PromoHub · Protected area · Please sign in",
+  "login.footer": "Promos · Protected area · Please sign in",
   "login.error": "Login failed",
 
   // ─── Dashboard ───────────────────────────────────────────
@@ -399,7 +399,7 @@ const en: Dict = {
   "settings.clearAllTitle": "Really delete all data?",
   "settings.clearAllDesc2": "This action cannot be undone. All promos, payments, customers and sounds will be permanently removed.",
   "settings.deletePermanently": "Delete permanently",
-  "settings.dataStoredLocally": "PromoHub · Data is stored locally in a SQLite database.",
+  "settings.dataStoredLocally": "Promos · Data is stored locally in a SQLite database.",
   "settings.createLink": "Create direct-access link",
   "settings.copyLink": "Copy customer link",
   "settings.linkGenerated": "Direct-access link generated",
@@ -451,7 +451,7 @@ const en: Dict = {
   "share.target": "target",
   "share.done": "Done",
   "share.open2": "open",
-  "share.footer": "PromoHub · This page shows only the promo data shared with you.",
+  "share.footer": "Promos · This page shows only the promo data shared with you.",
 
   // ─── Status labels ───────────────────────────────────────
   "status.GEPLANT": "Planned",
@@ -529,7 +529,7 @@ const en: Dict = {
   "viewer.earned": "Earned",
 
   // ─── App footer ───────────────────────────────────────────
-  "app.footer": "PromoHub · Sound Promo Manager · Data is stored locally in SQLite",
+  "app.footer": "Promos · Sound Promo Manager · Data is stored locally in SQLite",
 
   // ─── Global search ────────────────────────────────────────
   "search.placeholder": "Search promos, customers, sounds, amounts…",
@@ -579,7 +579,7 @@ const en: Dict = {
 
 const de: Dict = {
   // ─── Common / Nav ────────────────────────────────────────
-  "app.name": "PromoHub",
+  "app.name": "Promos",
   "app.subtitle": "Sound Promo Manager",
   "nav.dashboard": "Dashboard",
   "nav.promos": "Promos",
@@ -614,13 +614,13 @@ const de: Dict = {
   "action.deleteFailed": "Löschen fehlgeschlagen",
 
   // ─── Login ───────────────────────────────────────────────
-  "login.title": "PromoHub",
+  "login.title": "Promos",
   "login.subtitle": "Sound-Promo-Verwaltung",
   "login.username": "Benutzername",
   "login.password": "Passwort",
   "login.signIn": "Anmelden",
   "login.signingIn": "Anmelden…",
-  "login.footer": "PromoHub · Geschützter Bereich · Bitte anmelden",
+  "login.footer": "Promos · Geschützter Bereich · Bitte anmelden",
   "login.error": "Anmeldung fehlgeschlagen",
 
   // ─── Dashboard ───────────────────────────────────────────
@@ -967,7 +967,7 @@ const de: Dict = {
   "settings.clearAllTitle": "Wirklich alle Daten löschen?",
   "settings.clearAllDesc2": "Diese Aktion kann nicht rückgängig gemacht werden. Es werden alle Promos, Zahlungen, Kunden und Sounds unwiderruflich entfernt.",
   "settings.deletePermanently": "Endgültig löschen",
-  "settings.dataStoredLocally": "PromoHub · Daten werden lokal in einer SQLite-Datenbank gespeichert.",
+  "settings.dataStoredLocally": "Promos · Daten werden lokal in einer SQLite-Datenbank gespeichert.",
   "settings.createLink": "Direkt-Link erstellen",
   "settings.copyLink": "Kunden-Link kopieren",
   "settings.linkGenerated": "Direkt-Link erstellt",
@@ -1019,7 +1019,7 @@ const de: Dict = {
   "share.target": "Ziel",
   "share.done": "Erledigt",
   "share.open2": "offen",
-  "share.footer": "PromoHub · Diese Seite zeigt ausschließlich die für Sie freigegebenen Promo-Daten.",
+  "share.footer": "Promos · Diese Seite zeigt ausschließlich die für Sie freigegebenen Promo-Daten.",
 
   // ─── Status labels ───────────────────────────────────────
   "status.GEPLANT": "Geplant",
@@ -1097,7 +1097,7 @@ const de: Dict = {
   "viewer.earned": "Verdienst",
 
   // ─── App footer ───────────────────────────────────────────
-  "app.footer": "PromoHub · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",
+  "app.footer": "Promos · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",
 
   // ─── Global search ────────────────────────────────────────
   "search.placeholder": "Promos, Kunden, Sounds, Beträge durchsuchen…",
