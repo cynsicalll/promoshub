@@ -368,7 +368,7 @@ export function PromosView() {
                           const ttDonePct = Math.min(100, (ttDone / ttTarget) * 100);
                           const ttDoneCls = ttDone >= ttTarget
                             ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                            : ttDonePct >= 50
+                            : ttDone > 0
                             ? "text-amber-600 dark:text-amber-400 font-medium"
                             : "text-muted-foreground";
                           return (
