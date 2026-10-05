@@ -501,12 +501,14 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
                         const avgLikes = withViews.length > 0 ? Math.round(totalLikes / withViews.length) : 0;
                         const bestVideo = [...withViews].sort((a, b) => (b.playCount || 0) - (a.playCount || 0))[0];
 
-                        // Chart data: each video as a bar
-                        const chartData = withViews.map((tt, i) => ({
-                          label: tt.title || `V${i + 1}`,
-                          views: tt.playCount || 0,
-                          likes: tt.likeCount || 0,
-                        }));
+                        // Chart data: each video as a bar, sorted by views descending
+                        const chartData = [...withViews]
+                          .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+                          .map((tt, i) => ({
+                            label: tt.title || `Video ${i + 1}`,
+                            views: tt.playCount || 0,
+                            likes: tt.likeCount || 0,
+                          }));
 
                         return (
                           <div className="mt-4 space-y-3">
