@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Eye,
   Heart,
+  ArrowLeft,
 } from "lucide-react";
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
@@ -35,7 +36,7 @@ function formatCount(n: number | null | undefined): string {
   return String(n);
 }
 
-export function CustomerDashboard({ token }: { token?: string } = {}) {
+export function CustomerDashboard({ token, demoMode }: { token?: string; demoMode?: boolean } = {}) {
   const { t } = useI18n();
   const { user, logout } = useAuth();
   const [promos, setPromos] = React.useState<ShareData[]>([]);
@@ -45,6 +46,65 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
 
   React.useEffect(() => {
+    if (demoMode) {
+      // Load demo data and map to ShareData format
+      fetch("/api/demo-data")
+        .then((r) => r.json())
+        .then((data) => {
+          const demoPromos: ShareData[] = (data.promos || []).map((p: Record<string, unknown>) => {
+            const sounds = (p.sounds as Array<Record<string, unknown>>).map((s: Record<string, unknown>) => {
+              const snd = s.sound as Record<string, unknown>;
+              const qt = s.quantityTotal as number;
+              const qu = s.quantityUsed as number;
+              return {
+                name: snd.name as string,
+                artist: (snd.artist as string) || null,
+                url: (snd.url as string) || null,
+                quantityTotal: qt,
+                quantityUsed: qu,
+                quantityRemaining: qt - qu,
+              };
+            });
+            const tiktoks = (p.tiktoks as Array<Record<string, unknown>>).map((t: Record<string, unknown>) => {
+              const snd = p.sounds
+                ? (p.sounds as Array<Record<string, unknown>>).find(
+                    (s: Record<string, unknown>) => s.soundId === t.soundId
+                  )
+                : null;
+              return {
+                url: t.url as string,
+                title: (t.title as string) || null,
+                soundName: snd ? ((snd.sound as Record<string, unknown>).name as string) : null,
+                playCount: (t.playCount as number) ?? null,
+                likeCount: (t.likeCount as number) ?? null,
+                createdAt: t.createdAt as string,
+              };
+            });
+            const cust = p.customer as Record<string, unknown> | null;
+            return {
+              name: p.name as string,
+              customerName: cust?.name ? (cust.name as string) : null,
+              customerCompany: cust?.company ? (cust.company as string) : null,
+              date: p.date as string,
+              status: p.status as ShareData["status"],
+              notes: (p.notes as string) || null,
+              tiktokTarget: p.tiktokTarget as number,
+              tiktokDone: tiktoks.length,
+              sounds,
+              tiktoks,
+            };
+          });
+          setPromos(demoPromos);
+          setDisplayName("Demo Customer (Nike)");
+          setLoading(false);
+        })
+        .catch(() => {
+          setError("Failed to load demo data");
+          setLoading(false);
+        });
+      return;
+    }
+
     const url = token
       ? `/api/customer-link/${encodeURIComponent(token)}`
       : "/api/my-promos";
@@ -67,7 +127,7 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
         setError(e.message);
         setLoading(false);
       });
-  }, [token, user]);
+  }, [token, user, demoMode]);
 
   function toggleExpand(key: string) {
     setExpanded((prev) => {
@@ -115,7 +175,19 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
           </div>
           <div className="flex items-center gap-2">
             <LanguageToggle />
-            {!token && user && (
+            {demoMode ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const event = new CustomEvent("demo-customer-close");
+                  window.dispatchEvent(event);
+                }}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Admin
+              </Button>
+            ) : !token && user ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -124,7 +196,7 @@ export function CustomerDashboard({ token }: { token?: string } = {}) {
               >
                 <LogOut className="h-4 w-4" /> {t("customer.logout")}
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </header>

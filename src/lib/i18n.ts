@@ -528,6 +528,10 @@ const en: Dict = {
   "viewer.statusChart": "Payment Status",
   "viewer.earned": "Earned",
 
+  // ─── Demo ─────────────────────────────────────────────────
+  "demo.customerView": "Customer View (Demo)",
+  "demo.banner": "You are viewing example data in demo mode. No changes can be made.",
+
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound Promo Manager · Data is stored locally in SQLite",
 
@@ -1095,6 +1099,10 @@ const de: Dict = {
   "viewer.chartTitle": "Verdienst & Eingänge",
   "viewer.statusChart": "Zahlungsstatus",
   "viewer.earned": "Verdienst",
+
+  // ─── Demo ─────────────────────────────────────────────────
+  "demo.customerView": "Kunden-Ansicht (Demo)",
+  "demo.banner": "Du siehst Beispieldaten im Demo-Modus. Es können keine Änderungen vorgenommen werden.",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",

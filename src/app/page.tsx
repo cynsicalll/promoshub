@@ -21,8 +21,21 @@ import { MoneyViewerDashboard } from "@/components/views/money-viewer-dashboard"
 
 function AdminApp() {
   const view = useAppStore((s) => s.view);
+  const [demoCustomerOpen, setDemoCustomerOpen] = React.useState(false);
+
+  // Listen for "back to admin" event from demo customer view
+  React.useEffect(() => {
+    const handler = () => setDemoCustomerOpen(false);
+    window.addEventListener("demo-customer-close", handler);
+    return () => window.removeEventListener("demo-customer-close", handler);
+  }, []);
+
+  if (demoCustomerOpen) {
+    return <CustomerDashboard demoMode />;
+  }
+
   return (
-    <AppShell>
+    <AppShell onOpenDemoCustomer={() => setDemoCustomerOpen(true)}>
       {view === "dashboard" && <DashboardView />}
       {view === "promos" && <PromosView />}
       {view === "promo-detail" && <PromoDetailView />}

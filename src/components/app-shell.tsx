@@ -32,6 +32,7 @@ import { useDashboard } from "@/hooks/use-data";
 import { formatCurrency } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
+import { useAuth } from "@/components/auth-provider";
 import { BounceSidebar, type BounceSidebarItem } from "@/components/ui/bounce-sidebar";
 
 interface NavItem {
@@ -133,12 +134,14 @@ function MoneySummary() {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, onOpenDemoCustomer }: { children: React.ReactNode; onOpenDemoCustomer?: () => void }) {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [formOpen, setFormOpen] = React.useState(false);
   const [uploadOpen, setUploadOpen] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const isDemo = user?.role === "DEMO";
 
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -172,6 +175,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Video className="h-4 w-4" />
             {t("action.upload")}
           </Button>
+          {isDemo && onOpenDemoCustomer && (
+            <Button
+              onClick={onOpenDemoCustomer}
+              variant="outline"
+              className="w-full gap-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+            >
+              <Users className="h-4 w-4" />
+              {t("demo.customerView")}
+            </Button>
+          )}
         </div>
         <div className="mt-6">
           <MoneySummary />
@@ -208,6 +221,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Video className="h-4 w-4" />
               {t("action.upload")}
             </Button>
+            {isDemo && onOpenDemoCustomer && (
+              <Button
+                onClick={() => {
+                  setMobileOpen(false);
+                  onOpenDemoCustomer();
+                }}
+                variant="outline"
+                className="w-full gap-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+              >
+                <Users className="h-4 w-4" />
+                {t("demo.customerView")}
+              </Button>
+            )}
           </div>
           <div className="mt-6">
             <MoneySummary />
