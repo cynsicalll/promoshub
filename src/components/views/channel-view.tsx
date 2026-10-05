@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/table";
 import { useI18n } from "@/components/language-provider";
 import { useAuth } from "@/components/auth-provider";
+import { QuickAddTiktokDialog } from "@/components/views/quick-add-tiktok-dialog";
 import {
   Video, Eye, Heart, MessageCircle, Share2, TrendingUp, Music2,
-  BarChart3, ExternalLink, Trophy, RefreshCw, Loader2, Megaphone,
+  BarChart3, ExternalLink, Trophy, RefreshCw, Loader2, Megaphone, Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { StatCard } from "@/components/stat-card";
@@ -66,6 +67,7 @@ export function ChannelView() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const isDemo = user?.role === "DEMO";
+  const [uploadOpen, setUploadOpen] = React.useState(false);
 
   const { data, isLoading } = useQuery<ChannelData>({
     queryKey: isDemo ? ["demo", "channel"] : ["channel-stats"],
@@ -164,9 +166,14 @@ export function ChannelView() {
           <p className="text-sm text-muted-foreground mt-1">{t("channel.subtitle")}</p>
         </div>
         {!isDemo && (
-          <Button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="gap-2">
-            {syncMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> {t("stats.syncing")}</> : <><RefreshCw className="h-4 w-4" /> {t("stats.sync")}</>}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setUploadOpen(true)} variant="outline" className="gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30">
+              <Plus className="h-4 w-4" /> {t("action.upload")}
+            </Button>
+            <Button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="gap-2">
+              {syncMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> {t("stats.syncing")}</> : <><RefreshCw className="h-4 w-4" /> {t("stats.sync")}</>}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -342,6 +349,8 @@ export function ChannelView() {
           </Table>
         </div>
       </Card>
+
+      <QuickAddTiktokDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </div>
   );
 }
