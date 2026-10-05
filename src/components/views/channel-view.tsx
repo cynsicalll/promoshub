@@ -39,6 +39,20 @@ function formatCount(n: number | null | undefined): string {
   return String(n);
 }
 
+// Extract TikTok video ID from URL (used for sorting by actual upload order)
+// TikTok video IDs are sequential timestamps — higher = newer
+function getTikTokId(url: string): number {
+  const m = url.match(/\/video\/(\d+)/);
+  if (m) return parseInt(m[1]);
+  // For short URLs (vm.tiktok.com/...), use 0 (will sort last)
+  return 0;
+}
+
+// Sort videos by TikTok video ID (ascending = oldest first = Video 1, 2, 3...)
+function sortByUploadOrder(a: VideoItem, b: VideoItem): number {
+  return getTikTokId(a.url) - getTikTokId(b.url);
+}
+
 function formatDuration(seconds: number | null | undefined): string {
   if (!seconds) return "—";
   const m = Math.floor(seconds / 60);
@@ -222,7 +236,7 @@ export function ChannelView() {
           // Sort by upload date (oldest first = Video 1, 2, 3...)
           const sortedByDate = data.allVideos
             .filter((v) => v.playCount !== null)
-            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            .sort(sortByUploadOrder);
           return (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {sortedByDate.map((v, i) => (
@@ -242,10 +256,10 @@ export function ChannelView() {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             {(() => {
-              // SAME order as the grid: by upload date (oldest first)
+              // SAME order as the grid: by TikTok upload order (oldest first)
               const sortedVideos = data.allVideos
                 .filter((v) => v.playCount !== null)
-                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                .sort(sortByUploadOrder);
               const chartData = sortedVideos.map((v, i) => ({
                 label: `V${i + 1}`,
                 views: v.playCount || 0,
