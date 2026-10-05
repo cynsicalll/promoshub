@@ -501,14 +501,16 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
                         const avgLikes = withViews.length > 0 ? Math.round(totalLikes / withViews.length) : 0;
                         const bestVideo = [...withViews].sort((a, b) => (b.playCount || 0) - (a.playCount || 0))[0];
 
-                        // Chart data: each video as a bar, sorted by views descending
-                        const chartData = [...withViews]
-                          .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+                        // Chart data: each video as a bar, keeping original order (Video 1, 2, 3...)
+                        // matching the TikTok thumbnail numbering below
+                        const allTiktoks = promo.tiktoks;
+                        const chartData = allTiktoks
                           .map((tt, i) => ({
                             label: tt.title || `Video ${i + 1}`,
                             views: tt.playCount || 0,
                             likes: tt.likeCount || 0,
-                          }));
+                          }))
+                          .filter((d) => d.views > 0);
 
                         return (
                           <div className="mt-4 space-y-3">
@@ -569,19 +571,22 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
                             </div>
 
                             {/* Best performing video */}
-                            {bestVideo && (
+                            {bestVideo && (() => {
+                              const bestIdx = allTiktoks.findIndex((tt) => tt === bestVideo);
+                              return (
                               <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 flex items-center gap-2">
                                 <Trophy className="h-4 w-4 text-amber-500 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs text-muted-foreground">{t("viewer.bestVideo")}</p>
-                                  <p className="text-sm font-medium truncate">{bestVideo.title || t("share.videoNum", { n: 1 })}</p>
+                                  <p className="text-sm font-medium truncate">{bestVideo.title || `Video ${bestIdx + 1}`}</p>
                                 </div>
                                 <div className="text-right shrink-0">
                                   <p className="text-sm font-bold tabular-nums text-emerald-600">{formatCount(bestVideo.playCount)}</p>
                                   <p className="text-[10px] text-muted-foreground">{t("stats.views")}</p>
                                 </div>
                               </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         );
                       })()}
