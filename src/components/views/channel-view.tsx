@@ -236,11 +236,19 @@ export function ChannelView() {
         </h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
+            {(() => {
+              // Use the SAME sorted list as the video grid above
+              const sortedVideos = data.allVideos
+                .filter((v) => v.playCount !== null)
+                .sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
+              const chartData = sortedVideos.map((v, i) => ({
+                label: `#${i + 1}`,
+                views: v.playCount || 0,
+                likes: v.likeCount || 0,
+              }));
+              return (
             <BarChart
-              data={data.allVideos
-                .filter((v) => v.playCount)
-                .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
-                .map((v, i) => ({ label: v.title || `Video ${i + 1}`, views: v.playCount || 0, likes: v.likeCount || 0 }))}
+              data={chartData}
               barGap={2}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
@@ -251,6 +259,8 @@ export function ChannelView() {
               <Bar dataKey="views" name={t("stats.views")} fill="#10b981" radius={[3, 3, 0, 0]} />
               <Bar dataKey="likes" name={t("stats.likes")} fill="#f43f5e" radius={[3, 3, 0, 0]} />
             </BarChart>
+              );
+            })()}
           </ResponsiveContainer>
         </div>
       </Card>
