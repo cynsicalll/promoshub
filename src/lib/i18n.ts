@@ -544,6 +544,10 @@ const en: Dict = {
   "channel.promoAnalysis": "Promo Performance",
   "channel.allVideos": "All Videos",
   "channel.engagement": "Engagement %",
+  "channel.addVideo": "Add Video",
+  "channel.addVideoDesc": "Paste any TikTok link — no promo required. Stats and thumbnail are auto-fetched.",
+  "channel.linkPromo": "Link to Promo (optional)",
+  "channel.linkSound": "Link to Sound (optional)",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound Promo Manager · Data is stored locally in SQLite",
@@ -1129,6 +1133,10 @@ const de: Dict = {
   "channel.promoAnalysis": "Promo-Performance",
   "channel.allVideos": "Alle Videos",
   "channel.engagement": "Engagement %",
+  "channel.addVideo": "Video hinzufügen",
+  "channel.addVideoDesc": "Füge beliebigen TikTok-Link ein — keine Promo erforderlich. Statistiken und Thumbnail werden automatisch abgerufen.",
+  "channel.linkPromo": "Mit Promo verknüpfen (optional)",
+  "channel.linkSound": "Mit Sound verknüpfen (optional)",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",

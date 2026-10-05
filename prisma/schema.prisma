@@ -92,17 +92,19 @@ model Payment {
 
 model TikTok {
   id           String    @id @default(cuid())
-  promoId      String
+  promoId      String?
   soundId      String?
   url          String
   title        String?
+  cover        String?
+  duration     Int?
   playCount    Int?      // views
   likeCount    Int?
   commentCount Int?
   shareCount   Int?
   statsSynced  DateTime? // when stats were last fetched
   createdAt    DateTime  @default(now())
-  promo        Promo     @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  promo        Promo?    @relation(fields: [promoId], references: [id], onDelete: Cascade)
 
   @@map("tiktoks")
 }
