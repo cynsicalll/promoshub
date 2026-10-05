@@ -524,7 +524,7 @@ const en: Dict = {
   "viewer.col.received": "Received",
   "viewer.col.receivedDate": "Received On",
   "viewer.col.status": "Status",
-  "viewer.chartTitle": "Earnings & Receipts",
+  "viewer.chartTitle": "Video Analytics",
   "viewer.statusChart": "Payment Status",
   "viewer.earned": "Earned",
 
@@ -1098,7 +1098,7 @@ const de: Dict = {
   "viewer.col.received": "Angekommen",
   "viewer.col.receivedDate": "Eingang am",
   "viewer.col.status": "Status",
-  "viewer.chartTitle": "Verdienst & Eingänge",
+  "viewer.chartTitle": "Video-Analytics",
   "viewer.statusChart": "Zahlungsstatus",
   "viewer.earned": "Verdienst",
 
