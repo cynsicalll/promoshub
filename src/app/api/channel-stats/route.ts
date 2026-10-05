@@ -4,6 +4,36 @@ import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+// Extract video ID from full TikTok URL
+function extractVideoId(url: string): string | null {
+  const m = url.match(/\/video\/(\d+)/);
+  return m ? m[1] : null;
+}
+
+// Resolve a short URL (vm.tiktok.com/...) to get the video ID by following redirects
+async function resolveVideoId(url: string): Promise<string | null> {
+  // First try direct extraction
+  const direct = extractVideoId(url);
+  if (direct) return direct;
+
+  // Try tikwm.com API to get the video ID
+  try {
+    const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`;
+    const res = await fetch(apiUrl, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code === 0 && data.data && data.data.id) {
+      return String(data.data.id);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest) {
   if (!(await requireAdmin(req))) {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
@@ -11,7 +41,6 @@ export async function GET(req: NextRequest) {
 
   const tiktoks = await db.tikTok.findMany({
     include: { promo: { select: { id: true, name: true } } },
-    orderBy: { playCount: "desc" },
   });
 
   const sounds = await db.sound.findMany({ select: { id: true, name: true, artist: true } });
@@ -19,8 +48,10 @@ export async function GET(req: NextRequest) {
   const promos = await db.promo.findMany({ select: { id: true, name: true } });
   const promoMap = new Map(promos.map((p) => [p.id, p.name]));
 
-  const videos = tiktoks.map((t) => {
+  // Build video list and resolve video IDs for sorting
+  const videoPromises = tiktoks.map(async (t) => {
     const sound = t.soundId ? soundMap.get(t.soundId) : null;
+    const videoId = await resolveVideoId(t.url);
     return {
       id: t.id,
       url: t.url,
@@ -37,10 +68,25 @@ export async function GET(req: NextRequest) {
       hasPromo: !!t.promoId,
       createdAt: t.createdAt.toISOString(),
       statsSynced: t.statsSynced?.toISOString() || null,
+      _videoId: videoId, // used for sorting only
     };
   });
 
-  const withStats = videos.filter((v) => v.playCount !== null);
+  let videos = await Promise.all(videoPromises);
+
+  // Sort by TikTok video ID (ascending = oldest first = Video 1, 2, 3...)
+  // Videos with no resolvable ID sort last (by createdAt)
+  videos.sort((a, b) => {
+    const aId = a._videoId ? parseInt(a._videoId) : Infinity;
+    const bId = b._videoId ? parseInt(b._videoId) : Infinity;
+    if (aId !== bId) return aId - bId;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+
+  // Remove the internal _videoId field
+  const cleanVideos = videos.map(({ _videoId, ...rest }) => rest);
+
+  const withStats = cleanVideos.filter((v) => v.playCount !== null);
   const totalViews = withStats.reduce((s, v) => s + (v.playCount || 0), 0);
   const totalLikes = withStats.reduce((s, v) => s + (v.likeCount || 0), 0);
   const totalComments = withStats.reduce((s, v) => s + (v.commentCount || 0), 0);
@@ -50,6 +96,7 @@ export async function GET(req: NextRequest) {
 
   const topVideos = [...withStats].sort((a, b) => (b.playCount || 0) - (a.playCount || 0)).slice(0, 10);
 
+  // Sound performance
   const soundStats = new Map<string, { soundName: string; artist: string | null; videoCount: number; totalViews: number; totalLikes: number; avgViews: number; avgEngagement: number }>();
   for (const v of withStats) {
     if (!v.soundName) continue;
@@ -59,6 +106,7 @@ export async function GET(req: NextRequest) {
   }
   const soundPerformance = Array.from(soundStats.values()).map((s) => ({ ...s, avgViews: s.videoCount > 0 ? Math.round(s.totalViews / s.videoCount) : 0, avgEngagement: s.totalViews > 0 ? Math.round((s.totalLikes / s.totalViews) * 1000) / 10 : 0 })).sort((a, b) => b.avgViews - a.avgViews);
 
+  // Promo performance
   const promoStats = new Map<string, { promoName: string; videoCount: number; totalViews: number; totalLikes: number; avgViews: number }>();
   for (const v of withStats) {
     if (!v.promoName) continue;
@@ -68,5 +116,14 @@ export async function GET(req: NextRequest) {
   }
   const promoPerformance = Array.from(promoStats.values()).map((p) => ({ ...p, avgViews: p.videoCount > 0 ? Math.round(p.totalViews / p.videoCount) : 0 })).sort((a, b) => b.totalViews - a.totalViews);
 
-  return NextResponse.json({ totalVideos: videos.length, videosWithStats: withStats.length, totalViews, totalLikes, totalComments, totalShares, avgViews, avgLikes, topVideos, soundPerformance, promoPerformance, allVideos: videos, lastSynced: withStats.length > 0 ? withStats[0].statsSynced : null });
+  return NextResponse.json({
+    totalVideos: cleanVideos.length,
+    videosWithStats: withStats.length,
+    totalViews, totalLikes, totalComments, totalShares, avgViews, avgLikes,
+    topVideos,
+    soundPerformance,
+    promoPerformance,
+    allVideos: cleanVideos,
+    lastSynced: withStats.length > 0 ? withStats[0].statsSynced : null,
+  });
 }

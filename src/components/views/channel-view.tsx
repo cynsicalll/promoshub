@@ -233,10 +233,9 @@ export function ChannelView() {
           {t("channel.allVideos")}
         </h3>
         {(() => {
-          // Sort by upload date (oldest first = Video 1, 2, 3...)
+          // Videos are already sorted by TikTok upload order (oldest first) from the API
           const sortedByDate = data.allVideos
-            .filter((v) => v.playCount !== null)
-            .sort(sortByUploadOrder);
+            .filter((v) => v.playCount !== null);
           return (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {sortedByDate.map((v, i) => (
@@ -256,10 +255,9 @@ export function ChannelView() {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             {(() => {
-              // SAME order as the grid: by TikTok upload order (oldest first)
+              // SAME order as the grid: already sorted by TikTok upload order from the API
               const sortedVideos = data.allVideos
-                .filter((v) => v.playCount !== null)
-                .sort(sortByUploadOrder);
+                .filter((v) => v.playCount !== null);
               const chartData = sortedVideos.map((v, i) => ({
                 label: `V${i + 1}`,
                 views: v.playCount || 0,
