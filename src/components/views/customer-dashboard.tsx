@@ -22,7 +22,19 @@ import {
   Eye,
   Heart,
   ArrowLeft,
+  BarChart3,
+  TrendingUp,
+  Trophy,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
 import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -478,6 +490,99 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
                           </div>
                         )}
                       </div>
+
+                      {/* Views Dashboard — only if there are TikToks with view data */}
+                      {(() => {
+                        const withViews = promo.tiktoks.filter((tt) => tt.playCount != null);
+                        if (withViews.length === 0) return null;
+                        const totalViews = withViews.reduce((s, tt) => s + (tt.playCount || 0), 0);
+                        const totalLikes = withViews.reduce((s, tt) => s + (tt.likeCount || 0), 0);
+                        const avgViews = Math.round(totalViews / withViews.length);
+                        const avgLikes = withViews.length > 0 ? Math.round(totalLikes / withViews.length) : 0;
+                        const bestVideo = [...withViews].sort((a, b) => (b.playCount || 0) - (a.playCount || 0))[0];
+
+                        // Chart data: each video as a bar
+                        const chartData = withViews.map((tt, i) => ({
+                          label: tt.title || `V${i + 1}`,
+                          views: tt.playCount || 0,
+                          likes: tt.likeCount || 0,
+                        }));
+
+                        return (
+                          <div className="mt-4 space-y-3">
+                            <h3 className="text-sm font-semibold flex items-center gap-2">
+                              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                              {t("viewer.chartTitle")}
+                            </h3>
+
+                            {/* KPI cards */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              <div className="rounded-lg border bg-muted/20 p-2.5">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Eye className="h-3 w-3 text-emerald-500" />
+                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.totalViews")}</span>
+                                </div>
+                                <p className="text-lg font-bold tabular-nums">{formatCount(totalViews)}</p>
+                              </div>
+                              <div className="rounded-lg border bg-muted/20 p-2.5">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <TrendingUp className="h-3 w-3 text-teal-500" />
+                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.avgViews")}</span>
+                                </div>
+                                <p className="text-lg font-bold tabular-nums">{formatCount(avgViews)}</p>
+                              </div>
+                              <div className="rounded-lg border bg-muted/20 p-2.5">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Heart className="h-3 w-3 text-rose-500" />
+                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.totalLikes")}</span>
+                                </div>
+                                <p className="text-lg font-bold tabular-nums">{formatCount(totalLikes)}</p>
+                              </div>
+                              <div className="rounded-lg border bg-muted/20 p-2.5">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <TrendingUp className="h-3 w-3 text-amber-500" />
+                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.avgLikes")}</span>
+                                </div>
+                                <p className="text-lg font-bold tabular-nums">{formatCount(avgLikes)}</p>
+                              </div>
+                            </div>
+
+                            {/* Views bar chart */}
+                            <div className="rounded-lg border p-3">
+                              <p className="text-xs text-muted-foreground mb-2">{t("stats.views")} {t("stats.perVideo")}</p>
+                              <div className="h-40">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={chartData} barGap={2}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={9} className="fill-muted-foreground" interval={0} angle={-30} textAnchor="end" height={50} />
+                                    <YAxis tickLine={false} axisLine={false} fontSize={10} className="fill-muted-foreground" width={35} tickFormatter={(v) => formatCount(v)} />
+                                    <Tooltip
+                                      formatter={(v: number) => formatCount(v)}
+                                      contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
+                                    />
+                                    <Bar dataKey="views" name={t("stats.views")} fill="#10b981" radius={[3, 3, 0, 0]} />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </div>
+
+                            {/* Best performing video */}
+                            {bestVideo && (
+                              <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 flex items-center gap-2">
+                                <Trophy className="h-4 w-4 text-amber-500 shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs text-muted-foreground">{t("viewer.bestVideo")}</p>
+                                  <p className="text-sm font-medium truncate">{bestVideo.title || t("share.videoNum", { n: 1 })}</p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-sm font-bold tabular-nums text-emerald-600">{formatCount(bestVideo.playCount)}</p>
+                                  <p className="text-[10px] text-muted-foreground">{t("stats.views")}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </Card>

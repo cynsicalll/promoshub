@@ -531,6 +531,8 @@ const en: Dict = {
   // ─── Demo ─────────────────────────────────────────────────
   "demo.customerView": "Customer View (Demo)",
   "demo.banner": "You are viewing example data in demo mode. No changes can be made.",
+  "viewer.bestVideo": "Best Performing Video",
+  "stats.perVideo": "per video",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound Promo Manager · Data is stored locally in SQLite",
@@ -1103,6 +1105,8 @@ const de: Dict = {
   // ─── Demo ─────────────────────────────────────────────────
   "demo.customerView": "Kunden-Ansicht (Demo)",
   "demo.banner": "Du siehst Beispieldaten im Demo-Modus. Es können keine Änderungen vorgenommen werden.",
+  "viewer.bestVideo": "Bestes Video",
+  "stats.perVideo": "pro Video",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",
