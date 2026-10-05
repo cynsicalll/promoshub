@@ -9,6 +9,7 @@ export type ViewKey =
   | "sounds"
   | "customers"
   | "stats"
+  | "channel"
   | "settings";
 
 interface AppState {

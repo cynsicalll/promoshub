@@ -23,6 +23,7 @@ import {
   CalendarRange,
   Video,
   BarChart3,
+  Radio,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { GlobalSearch, SearchTrigger } from "@/components/global-search";
@@ -47,6 +48,7 @@ const NAV: NavItem[] = [
   { key: "money", label: "nav.money", icon: Wallet },
   { key: "monthly", label: "nav.monthly", icon: CalendarRange },
   { key: "stats", label: "nav.stats", icon: BarChart3 },
+  { key: "channel", label: "nav.channel", icon: Radio },
   { key: "sounds", label: "nav.sounds", icon: Music2 },
   { key: "customers", label: "nav.customers", icon: Users },
   { key: "settings", label: "nav.settings", icon: Settings },

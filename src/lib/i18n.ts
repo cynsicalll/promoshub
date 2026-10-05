@@ -22,6 +22,7 @@ const en: Dict = {
   "nav.customers": "Customers",
   "nav.settings": "Settings",
   "nav.stats": "Video Stats",
+  "nav.channel": "Channel",
   "action.newPromo": "New Promo",
   "action.upload": "Upload",
   "action.search": "Search…",
@@ -534,6 +535,16 @@ const en: Dict = {
   "viewer.bestVideo": "Best Performing Video",
   "stats.perVideo": "per video",
 
+  // ─── Channel Analytics ────────────────────────────────────
+  "channel.title": "Channel Analytics",
+  "channel.subtitle": "Performance analysis of all your TikTok videos with sound correlation.",
+  "channel.noStats": "No video stats yet. Click \"Sync Stats\" to fetch view counts from TikTok.",
+  "channel.viewsPerVideo": "Views & Likes per Video",
+  "channel.soundAnalysis": "Sound Performance Analysis",
+  "channel.promoAnalysis": "Promo Performance",
+  "channel.allVideos": "All Videos",
+  "channel.engagement": "Engagement %",
+
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound Promo Manager · Data is stored locally in SQLite",
 
@@ -595,6 +606,7 @@ const de: Dict = {
   "nav.customers": "Kunden",
   "nav.settings": "Einstellungen",
   "nav.stats": "Video-Statistiken",
+  "nav.channel": "Channel",
   "action.newPromo": "Neue Promo",
   "action.upload": "Upload",
   "action.search": "Suchen…",
@@ -1107,6 +1119,16 @@ const de: Dict = {
   "demo.banner": "Du siehst Beispieldaten im Demo-Modus. Es können keine Änderungen vorgenommen werden.",
   "viewer.bestVideo": "Bestes Video",
   "stats.perVideo": "pro Video",
+
+  // ─── Channel Analytics ────────────────────────────────────
+  "channel.title": "Channel-Analytics",
+  "channel.subtitle": "Performance-Analyse aller deiner TikTok-Videos mit Sound-Korrelation.",
+  "channel.noStats": "Noch keine Video-Statistiken. Klicke auf \"Statistiken synchronisieren\", um Aufrufzahlen abzurufen.",
+  "channel.viewsPerVideo": "Aufrufe & Likes pro Video",
+  "channel.soundAnalysis": "Sound-Performance-Analyse",
+  "channel.promoAnalysis": "Promo-Performance",
+  "channel.allVideos": "Alle Videos",
+  "channel.engagement": "Engagement %",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",
