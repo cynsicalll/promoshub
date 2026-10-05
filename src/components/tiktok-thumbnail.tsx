@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Video, ExternalLink, Play, Music2, Eye, Heart } from "lucide-react";
+import { Video, ExternalLink, Play, Music2, Eye, Heart, Calendar } from "lucide-react";
 import { normalizeUrl, domainFromUrl } from "@/lib/format";
 
 // Format large numbers (e.g. 1200 -> 1.2K, 1500000 -> 1.5M)
@@ -22,6 +22,7 @@ interface TikTokThumbnailProps {
   fallbackLabel?: string;
   accentColor?: "pink" | "emerald";
   onSoundClick?: (soundName: string) => void;
+  postedDate?: string | null;
 }
 
 // Extract TikTok video ID directly from URL (for full URLs)
@@ -47,6 +48,7 @@ export function TikTokThumbnail({
   fallbackLabel,
   accentColor = "pink",
   onSoundClick,
+  postedDate,
 }: TikTokThumbnailProps) {
   // mounted prevents hydration mismatch
   const [mounted, setMounted] = React.useState(false);
@@ -195,6 +197,13 @@ export function TikTokThumbnail({
             <Music2 className="h-2.5 w-2.5 shrink-0" />
             <span className="truncate">{soundName}</span>
           </button>
+        )}
+        {/* Posted date */}
+        {postedDate && (
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Calendar className="h-2.5 w-2.5 shrink-0" />
+            <span>{new Date(postedDate).toLocaleDateString("en", { day: "numeric", month: "short", year: "2-digit" })}</span>
+          </div>
         )}
       </div>
     </div>

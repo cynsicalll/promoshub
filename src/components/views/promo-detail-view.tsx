@@ -587,6 +587,7 @@ export function PromoDetailView() {
                       url={tk.url}
                       title={tk.title}
                       soundName={sound?.sound.name || null}
+                      postedDate={tk.createdAt}
                       index={i + 1}
                       fallbackLabel={t("share.noTitle")}
                       accentColor="pink"

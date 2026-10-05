@@ -321,8 +321,30 @@ export function ChannelView() {
 
 // ─── Video Card with thumbnail ─────────────────────────────
 function VideoCard({ video, rank }: { video: VideoItem; rank: number }) {
+  const [cover, setCover] = React.useState<string | null>(video.cover || null);
   const [imgError, setImgError] = React.useState(false);
-  const hasCover = video.cover && !imgError;
+  const [fetching, setFetching] = React.useState(!video.cover);
+  const hasCover = cover && !imgError;
+
+  // If no cover stored, fetch it from tiktok-resolve API (same as customer access link)
+  React.useEffect(() => {
+    if (video.cover || !video.url.includes("tiktok.com")) {
+      setFetching(false);
+      return;
+    }
+    let cancelled = false;
+    setFetching(true);
+    fetch(`/api/tiktok-resolve?url=${encodeURIComponent(video.url)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data.cover) {
+          setCover(data.cover);
+        }
+        if (!cancelled) setFetching(false);
+      })
+      .catch(() => { if (!cancelled) setFetching(false); });
+    return () => { cancelled = true; };
+  }, [video.url, video.cover]);
 
   return (
     <a
@@ -335,13 +357,20 @@ function VideoCard({ video, rank }: { video: VideoItem; rank: number }) {
       <div className="relative aspect-[9/16] bg-muted overflow-hidden">
         {hasCover ? (
           <img
-            src={video.cover!}
+            src={cover!}
             alt={video.title || `Video ${rank}`}
             className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
             onError={() => setImgError(true)}
             loading="lazy"
             referrerPolicy="no-referrer"
           />
+        ) : fetching ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-950 dark:to-pink-900">
+            <div className="text-center">
+              <Video className="h-6 w-6 mx-auto mb-1 text-pink-400/60" />
+              <div className="h-2.5 w-2.5 mx-auto animate-spin rounded-full border-2 border-pink-300 border-t-pink-500" />
+            </div>
+          </div>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 flex items-center justify-center">
             <Video className="h-8 w-8 text-white/60" />

@@ -481,6 +481,7 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
                                 soundName={tt.soundName}
                                 playCount={tt.playCount}
                                 likeCount={tt.likeCount}
+                                postedDate={tt.createdAt}
                                 index={i + 1}
                                 fallbackLabel={t("share.videoNum", { n: i + 1 })}
                                 accentColor="pink"
