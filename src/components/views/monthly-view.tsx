@@ -157,6 +157,74 @@ export function MonthlyView() {
         />
       </div>
 
+      {/* Monthly Income Summary — current month breakdown */}
+      {(() => {
+        const now = new Date();
+        const currentMonthIdx = now.getMonth();
+        const currentMonth = entries[currentMonthIdx];
+        const lastMonth = entries[currentMonthIdx - 1] || null;
+        if (!currentMonth || (currentMonth.earned === 0 && currentMonth.promos === 0)) return null;
+
+        const earnedChange = lastMonth && lastMonth.earned > 0
+          ? Math.round(((currentMonth.earned - lastMonth.earned) / lastMonth.earned) * 100)
+          : null;
+        const receivedChange = lastMonth && lastMonth.received > 0
+          ? Math.round(((currentMonth.received - lastMonth.received) / lastMonth.received) * 100)
+          : null;
+
+        return (
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-emerald-500" />
+                  {t("monthly.incomeSummary")}
+                </h3>
+                <p className="text-xs text-muted-foreground">{currentMonth.label} {year}</p>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Earned this month */}
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase">{t("monthly.col.earnings")}</p>
+                <p className="text-xl font-bold tabular-nums">{formatCurrency(currentMonth.earned)}</p>
+                {earnedChange !== null && (
+                  <p className={`text-[10px] flex items-center gap-0.5 ${earnedChange >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    {earnedChange >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                    {earnedChange >= 0 ? "+" : ""}{earnedChange}% vs last month
+                  </p>
+                )}
+              </div>
+              {/* Received this month */}
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase">{t("monthly.col.received")}</p>
+                <p className="text-xl font-bold tabular-nums text-emerald-600">{formatCurrency(currentMonth.received)}</p>
+                {receivedChange !== null && (
+                  <p className={`text-[10px] flex items-center gap-0.5 ${receivedChange >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    {receivedChange >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                    {receivedChange >= 0 ? "+" : ""}{receivedChange}% vs last month
+                  </p>
+                )}
+              </div>
+              {/* Outstanding this month */}
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase">{t("monthly.col.open")}</p>
+                <p className="text-xl font-bold tabular-nums text-amber-600">{formatCurrency(currentMonth.outstanding)}</p>
+                <p className="text-[10px] text-muted-foreground">{currentMonth.promos} promo(s)</p>
+              </div>
+              {/* Avg per promo */}
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase">{t("monthly.avgPerPromo")}</p>
+                <p className="text-xl font-bold tabular-nums">
+                  {currentMonth.promos > 0 ? formatCurrency(Math.round(currentMonth.earned / currentMonth.promos)) : "—"}
+                </p>
+                <p className="text-[10px] text-muted-foreground">{currentMonth.tiktoks} TikTok(s)</p>
+              </div>
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* Main chart: Verdienst/Erhalten/Offen bars */}
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">

@@ -307,6 +307,8 @@ const en: Dict = {
   "monthly.col.open": "Open",
   "monthly.col.distribution": "Distribution",
   "monthly.sum": "Sum {year}",
+  "monthly.incomeSummary": "Monthly Income Summary",
+  "monthly.avgPerPromo": "Avg per Promo",
 
   // ─── Sounds view ─────────────────────────────────────────
   "sounds.title": "Sounds",
@@ -896,6 +898,8 @@ const de: Dict = {
   "monthly.col.open": "Offen",
   "monthly.col.distribution": "Verteilung",
   "monthly.sum": "Summe {year}",
+  "monthly.incomeSummary": "Monatliches Einkommen",
+  "monthly.avgPerPromo": "Ø pro Promo",
 
   // ─── Sounds view ─────────────────────────────────────────
   "sounds.title": "Sounds",
