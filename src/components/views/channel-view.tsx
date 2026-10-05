@@ -21,7 +21,7 @@ import { useAuth } from "@/components/auth-provider";
 import {
   Video, Eye, Heart, MessageCircle, Share2, TrendingUp, Music2,
   BarChart3, ExternalLink, Trophy, RefreshCw, Loader2, Megaphone,
-  Plus, Trash2, Play, Clock,
+  Plus, Trash2, Play, Clock, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { StatCard } from "@/components/stat-card";
@@ -218,14 +218,19 @@ export function ChannelView() {
           <Video className="h-4 w-4 text-muted-foreground" />
           {t("channel.allVideos")}
         </h3>
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {data.allVideos
+        {(() => {
+          // Sort by upload date (oldest first = Video 1, 2, 3...)
+          const sortedByDate = data.allVideos
             .filter((v) => v.playCount !== null)
-            .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
-            .map((v, i) => (
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          return (
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {sortedByDate.map((v, i) => (
               <VideoCard key={v.id} video={v} rank={i + 1} />
             ))}
         </div>
+          );
+        })()}
       </Card>
 
       {/* Views chart */}
@@ -237,12 +242,12 @@ export function ChannelView() {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             {(() => {
-              // Use the SAME sorted list as the video grid above
+              // SAME order as the grid: by upload date (oldest first)
               const sortedVideos = data.allVideos
                 .filter((v) => v.playCount !== null)
-                .sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
+                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
               const chartData = sortedVideos.map((v, i) => ({
-                label: `#${i + 1}`,
+                label: `V${i + 1}`,
                 views: v.playCount || 0,
                 likes: v.likeCount || 0,
               }));
@@ -385,6 +390,10 @@ function VideoCard({ video, rank }: { video: VideoItem; rank: number }) {
             <span className="truncate">{video.promoName}</span>
           </div>
         )}
+        <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+          <Calendar className="h-2.5 w-2.5 shrink-0" />
+          <span>{new Date(video.createdAt).toLocaleDateString("en", { day: "numeric", month: "short", year: "2-digit" })}</span>
+        </div>
       </div>
     </a>
   );
