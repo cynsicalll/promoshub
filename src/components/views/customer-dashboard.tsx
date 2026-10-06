@@ -169,6 +169,17 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
     if (soundIdx >= 0) scrollToSound(promoIdx, soundIdx);
   }
 
+  // Scroll to a video card by its element ID and highlight it
+  function scrollToVideo(promoIdx: number, videoIdx: number) {
+    const el = document.getElementById(`video-${promoIdx}-${videoIdx}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-pink-400", "scale-105");
+    setTimeout(() => {
+      el.classList.remove("ring-2", "ring-pink-400", "scale-105");
+    }, 2500);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-background to-teal-50/40 dark:from-emerald-950/10 dark:via-background dark:to-teal-950/10">
       {/* Header */}
@@ -474,19 +485,24 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
                         ) : (
                           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
                             {promo.tiktoks.map((tt, i) => (
-                              <TikTokThumbnail
+                              <div
+                                id={`video-${idx}-${i}`}
                                 key={i}
-                                url={tt.url}
-                                title={tt.title}
-                                soundName={tt.soundName}
-                                playCount={tt.playCount}
-                                likeCount={tt.likeCount}
-                                postedDate={tt.createdAt}
-                                index={i + 1}
-                                fallbackLabel={t("share.videoNum", { n: i + 1 })}
-                                accentColor="pink"
-                                onSoundClick={(name) => handleSoundClick(idx, name)}
-                              />
+                                className="rounded-lg transition-all duration-300"
+                              >
+                                <TikTokThumbnail
+                                  url={tt.url}
+                                  title={tt.title}
+                                  soundName={tt.soundName}
+                                  playCount={tt.playCount}
+                                  likeCount={tt.likeCount}
+                                  postedDate={tt.createdAt}
+                                  index={i + 1}
+                                  fallbackLabel={t("share.videoNum", { n: i + 1 })}
+                                  accentColor="pink"
+                                  onSoundClick={(name) => handleSoundClick(idx, name)}
+                                />
+                              </div>
                             ))}
                           </div>
                         )}
@@ -571,21 +587,36 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
                               </div>
                             </div>
 
-                            {/* Best performing video */}
+                            {/* Best performing video — click to scroll to it */}
                             {bestVideo && (() => {
                               const bestIdx = allTiktoks.findIndex((tt) => tt === bestVideo);
                               return (
-                              <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 flex items-center gap-2">
-                                <Trophy className="h-4 w-4 text-amber-500 shrink-0" />
+                              <button
+                                type="button"
+                                onClick={() => scrollToVideo(idx, bestIdx)}
+                                className="w-full text-left rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 flex items-center gap-3 transition-all hover:border-emerald-400 hover:shadow-md hover:bg-emerald-50/60 dark:hover:bg-emerald-950/30 cursor-pointer group"
+                                title={t("viewer.bestVideoHint")}
+                              >
+                                <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs text-muted-foreground">{t("viewer.bestVideo")}</p>
-                                  <p className="text-sm font-medium truncate">{bestVideo.title || `Video ${bestIdx + 1}`}</p>
+                                  <p className="text-sm font-medium truncate">
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold bg-emerald-500 text-white">
+                                        {bestIdx + 1}
+                                      </span>
+                                      {bestVideo.title || `Video ${bestIdx + 1}`}
+                                    </span>
+                                  </p>
                                 </div>
                                 <div className="text-right shrink-0">
                                   <p className="text-sm font-bold tabular-nums text-emerald-600">{formatCount(bestVideo.playCount)}</p>
                                   <p className="text-[10px] text-muted-foreground">{t("stats.views")}</p>
                                 </div>
-                              </div>
+                                <div className="shrink-0 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {t("viewer.bestVideoClick")}
+                                </div>
+                              </button>
                               );
                             })()}
                           </div>

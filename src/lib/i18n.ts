@@ -394,6 +394,10 @@ const en: Dict = {
   "settings.exportCustomers": "All Customers (CSV)",
   "settings.exportSounds": "All Sounds (CSV)",
   "settings.exportStarted": "Export started",
+  "settings.backup": "Full Backup",
+  "settings.backupDesc": "Download a complete JSON backup of all your data — promos, customers, sounds, payments, TikToks, and users. Keep this file safe.",
+  "settings.backupDownload": "Download Full Backup",
+  "settings.backupStarted": "Backup download started",
   "settings.dataManagement": "Data Management",
   "settings.reloadSample": "Reload sample data",
   "settings.reloadSampleDesc": "Resets the database to realistic sample promos.",
@@ -535,6 +539,8 @@ const en: Dict = {
   "demo.customerView": "Customer View (Demo)",
   "demo.banner": "You are viewing example data in demo mode. No changes can be made.",
   "viewer.bestVideo": "Best Performing Video",
+  "viewer.bestVideoHint": "Click to jump to this video",
+  "viewer.bestVideoClick": "View →",
   "stats.perVideo": "per video",
 
   // ─── Channel Analytics ────────────────────────────────────
@@ -985,6 +991,10 @@ const de: Dict = {
   "settings.exportCustomers": "Alle Kunden (CSV)",
   "settings.exportSounds": "Alle Sounds (CSV)",
   "settings.exportStarted": "Export gestartet",
+  "settings.backup": "Vollständiges Backup",
+  "settings.backupDesc": "Lade ein vollständiges JSON-Backup aller deiner Daten herunter — Promos, Kunden, Sounds, Zahlungen, TikToks und Benutzer. Bewahre diese Datei sicher auf.",
+  "settings.backupDownload": "Vollständiges Backup herunterladen",
+  "settings.backupStarted": "Backup-Download gestartet",
   "settings.dataManagement": "Datenverwaltung",
   "settings.reloadSample": "Beispieldaten neu laden",
   "settings.reloadSampleDesc": "Setzt die Datenbank auf realistische Beispiel-Promos zurück.",
@@ -1126,6 +1136,8 @@ const de: Dict = {
   "demo.customerView": "Kunden-Ansicht (Demo)",
   "demo.banner": "Du siehst Beispieldaten im Demo-Modus. Es können keine Änderungen vorgenommen werden.",
   "viewer.bestVideo": "Bestes Video",
+  "viewer.bestVideoHint": "Klicken, um zum Video zu springen",
+  "viewer.bestVideoClick": "Ansehen →",
   "stats.perVideo": "pro Video",
 
   // ─── Channel Analytics ────────────────────────────────────

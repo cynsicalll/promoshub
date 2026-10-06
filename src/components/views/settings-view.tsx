@@ -17,6 +17,7 @@ import {
   Sun,
   RefreshCw,
   FileUp,
+  Database,
 } from "lucide-react";
 import { toast } from "sonner";
 import { parseCsv } from "@/lib/csv";
@@ -102,6 +103,11 @@ export function SettingsView() {
   function exportData(type: string) {
     window.open(`/api/export?type=${type}&format=csv`, "_blank");
     toast.success(t("settings.exportStarted"));
+  }
+
+  function backupAll() {
+    window.open(`/api/backup`, "_blank");
+    toast.success(t("settings.backupStarted"));
   }
 
   async function reseed() {
@@ -318,6 +324,21 @@ export function SettingsView() {
             <FileSpreadsheet className="h-4 w-4" /> {t("settings.exportSounds")}
           </Button>
         </div>
+      </Card>
+
+      {/* Full Backup */}
+      <Card className="p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Database className="h-4 w-4 text-muted-foreground" />
+          <h2 className="font-semibold">{t("settings.backup")}</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">{t("settings.backupDesc")}</p>
+        <Button
+          className="w-full gap-2"
+          onClick={backupAll}
+        >
+          <Download className="h-4 w-4" /> {t("settings.backupDownload")}
+        </Button>
       </Card>
 
       {/* Data management */}

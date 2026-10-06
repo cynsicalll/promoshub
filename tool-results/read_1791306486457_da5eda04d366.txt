@@ -1,0 +1,611 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { useAuth } from "@/components/auth-provider";
+     5→import { Card } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { PromoStatusBadge } from "@/components/status-badges";
+     8→import type { ShareData } from "@/lib/types";
+     9→import {
+    10→  AudioLines,
+    11→  Music2,
+    12→  Video,
+    13→  ExternalLink,
+    14→  Link2,
+    15→  Calendar,
+    16→  CheckCircle2,
+    17→  Clock,
+    18→  LogOut,
+    19→  ChevronDown,
+    20→  ChevronUp,
+    21→  AlertCircle,
+    22→  Eye,
+    23→  Heart,
+    24→  ArrowLeft,
+    25→  BarChart3,
+    26→  TrendingUp,
+    27→  Trophy,
+    28→} from "lucide-react";
+    29→import {
+    30→  ResponsiveContainer,
+    31→  BarChart,
+    32→  Bar,
+    33→  XAxis,
+    34→  YAxis,
+    35→  Tooltip,
+    36→  CartesianGrid,
+    37→} from "recharts";
+    38→import { formatDate, normalizeUrl, domainFromUrl } from "@/lib/format";
+    39→import { useI18n } from "@/components/language-provider";
+    40→import { LanguageToggle } from "@/components/language-toggle";
+    41→import { TikTokThumbnail } from "@/components/tiktok-thumbnail";
+    42→
+    43→// Format large numbers (e.g. 1200 -> 1.2K, 1500000 -> 1.5M)
+    44→function formatCount(n: number | null | undefined): string {
+    45→  if (n == null) return "—";
+    46→  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    47→  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    48→  return String(n);
+    49→}
+    50→
+    51→export function CustomerDashboard({ token, demoMode }: { token?: string; demoMode?: boolean } = {}) {
+    52→  const { t } = useI18n();
+    53→  const { user, logout } = useAuth();
+    54→  const [promos, setPromos] = React.useState<ShareData[]>([]);
+    55→  const [displayName, setDisplayName] = React.useState<string>("");
+    56→  const [loading, setLoading] = React.useState(true);
+    57→  const [error, setError] = React.useState<string | null>(null);
+    58→  const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
+    59→
+    60→  React.useEffect(() => {
+    61→    if (demoMode) {
+    62→      // Load demo data and map to ShareData format
+    63→      fetch("/api/demo-data")
+    64→        .then((r) => r.json())
+    65→        .then((data) => {
+    66→          const demoPromos: ShareData[] = (data.promos || []).map((p: Record<string, unknown>) => {
+    67→            const sounds = (p.sounds as Array<Record<string, unknown>>).map((s: Record<string, unknown>) => {
+    68→              const snd = s.sound as Record<string, unknown>;
+    69→              const qt = s.quantityTotal as number;
+    70→              const qu = s.quantityUsed as number;
+    71→              return {
+    72→                name: snd.name as string,
+    73→                artist: (snd.artist as string) || null,
+    74→                url: (snd.url as string) || null,
+    75→                quantityTotal: qt,
+    76→                quantityUsed: qu,
+    77→                quantityRemaining: qt - qu,
+    78→              };
+    79→            });
+    80→            const tiktoks = (p.tiktoks as Array<Record<string, unknown>>).map((t: Record<string, unknown>) => {
+    81→              const snd = p.sounds
+    82→                ? (p.sounds as Array<Record<string, unknown>>).find(
+    83→                    (s: Record<string, unknown>) => s.soundId === t.soundId
+    84→                  )
+    85→                : null;
+    86→              return {
+    87→                url: t.url as string,
+    88→                title: (t.title as string) || null,
+    89→                soundName: snd ? ((snd.sound as Record<string, unknown>).name as string) : null,
+    90→                playCount: (t.playCount as number) ?? null,
+    91→                likeCount: (t.likeCount as number) ?? null,
+    92→                createdAt: t.createdAt as string,
+    93→              };
+    94→            });
+    95→            const cust = p.customer as Record<string, unknown> | null;
+    96→            return {
+    97→              name: p.name as string,
+    98→              customerName: cust?.name ? (cust.name as string) : null,
+    99→              customerCompany: cust?.company ? (cust.company as string) : null,
+   100→              date: p.date as string,
+   101→              status: p.status as ShareData["status"],
+   102→              notes: (p.notes as string) || null,
+   103→              tiktokTarget: p.tiktokTarget as number,
+   104→              tiktokDone: tiktoks.length,
+   105→              sounds,
+   106→              tiktoks,
+   107→            };
+   108→          });
+   109→          setPromos(demoPromos);
+   110→          setDisplayName("Demo Customer (Nike)");
+   111→          setLoading(false);
+   112→        })
+   113→        .catch(() => {
+   114→          setError("Failed to load demo data");
+   115→          setLoading(false);
+   116→        });
+   117→      return;
+   118→    }
+   119→
+   120→    const url = token
+   121→      ? `/api/customer-link/${encodeURIComponent(token)}`
+   122→      : "/api/my-promos";
+   123→    fetch(url)
+   124→      .then(async (r) => {
+   125→        if (!r.ok) {
+   126→          const d = await r.json().catch(() => ({}));
+   127→          throw new Error(d.error || "Failed to load");
+   128→        }
+   129→        return r.json();
+   130→      })
+   131→      .then((data) => {
+   132→        setPromos(data.promos || []);
+   133→        setDisplayName(
+   134→          token ? data.user?.displayName || data.user?.username || "" : user?.displayName || user?.username || ""
+   135→        );
+   136→        setLoading(false);
+   137→      })
+   138→      .catch((e) => {
+   139→        setError(e.message);
+   140→        setLoading(false);
+   141→      });
+   142→  }, [token, user, demoMode]);
+   143→
+   144→  function toggleExpand(key: string) {
+   145→    setExpanded((prev) => {
+   146→      const next = new Set(prev);
+   147→      if (next.has(key)) next.delete(key);
+   148→      else next.add(key);
+   149→      return next;
+   150→    });
+   151→  }
+   152→
+   153→  // Scroll to a sound card by its element ID and highlight it
+   154→  function scrollToSound(promoIdx: number, soundIdx: number) {
+   155→    const el = document.getElementById(`sound-${promoIdx}-${soundIdx}`);
+   156→    if (!el) return;
+   157→    el.scrollIntoView({ behavior: "smooth", block: "center" });
+   158→    el.classList.add("ring-2", "ring-emerald-400", "bg-emerald-50/50", "dark:bg-emerald-950/20");
+   159→    setTimeout(() => {
+   160→      el.classList.remove("ring-2", "ring-emerald-400", "bg-emerald-50/50", "dark:bg-emerald-950/20");
+   161→    }, 2000);
+   162→  }
+   163→
+   164→  // Find sound index by name within a promo and scroll to it
+   165→  function handleSoundClick(promoIdx: number, soundName: string) {
+   166→    const promo = promos[promoIdx];
+   167→    if (!promo) return;
+   168→    const soundIdx = promo.sounds.findIndex((s) => s.name === soundName);
+   169→    if (soundIdx >= 0) scrollToSound(promoIdx, soundIdx);
+   170→  }
+   171→
+   172→  return (
+   173→    <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-background to-teal-50/40 dark:from-emerald-950/10 dark:via-background dark:to-teal-950/10">
+   174→      {/* Header */}
+   175→      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
+   176→        <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">
+   177→          <div className="flex items-center gap-2.5">
+   178→            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
+   179→              <AudioLines className="h-5 w-5" />
+   180→            </div>
+   181→            <div className="leading-tight">
+   182→              <p className="text-sm font-semibold tracking-tight">{t("app.name")}</p>
+   183→              <p className="text-[11px] text-muted-foreground">
+   184→                {displayName || user?.displayName || user?.username}
+   185→              </p>
+   186→            </div>
+   187→          </div>
+   188→          <div className="flex items-center gap-2">
+   189→            <LanguageToggle />
+   190→            {demoMode ? (
+   191→              <Button
+   192→                variant="outline"
+   193→                size="sm"
+   194→                onClick={() => {
+   195→                  const event = new CustomEvent("demo-customer-close");
+   196→                  window.dispatchEvent(event);
+   197→                }}
+   198→                className="gap-2"
+   199→              >
+   200→                <ArrowLeft className="h-4 w-4" /> Back to Admin
+   201→              </Button>
+   202→            ) : !token && user ? (
+   203→              <Button
+   204→                variant="outline"
+   205→                size="sm"
+   206→                onClick={logout}
+   207→                className="gap-2"
+   208→              >
+   209→                <LogOut className="h-4 w-4" /> {t("customer.logout")}
+   210→              </Button>
+   211→            ) : null}
+   212→          </div>
+   213→        </div>
+   214→      </header>
+   215→
+   216→      <main className="mx-auto max-w-4xl px-4 py-6 space-y-5">
+   217→        {error ? (
+   218→          <Card className="p-10 text-center">
+   219→            <AlertCircle className="h-10 w-10 mx-auto mb-3 text-rose-500" />
+   220→            <p className="text-sm text-muted-foreground">
+   221→              {t("share.accessDenied")}
+   222→            </p>
+   223→          </Card>
+   224→        ) : (
+   225→        <>
+   226→        <div>
+   227→          <h1 className="text-2xl font-semibold tracking-tight">
+   228→            {t("customer.welcome", {
+   229→              name: displayName || user?.displayName || user?.username || "",
+   230→            })}
+   231→          </h1>
+   232→          <p className="text-sm text-muted-foreground mt-1">
+   233→            {t("customer.subtitle")}
+   234→          </p>
+   235→        </div>
+   236→
+   237→        {loading ? (
+   238→          <Card className="p-10 text-center">
+   239→            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-emerald-500" />
+   240→            <p className="mt-3 text-sm text-muted-foreground">{t("action.loading")}</p>
+   241→          </Card>
+   242→        ) : promos.length === 0 ? (
+   243→          <Card className="p-10 text-center">
+   244→            <Music2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
+   245→            <p className="text-muted-foreground">{t("customer.noPromos")}</p>
+   246→          </Card>
+   247→        ) : (
+   248→          <div className="space-y-4">
+   249→            {promos.map((promo, idx) => {
+   250→              const key = `${idx}-${promo.name}`;
+   251→              const isExpanded = expanded.has(key);
+   252→              const tiktokDone = promo.tiktoks.length;
+   253→              const tiktokTarget = promo.tiktokTarget || 0;
+   254→              const tiktokPct =
+   255→                tiktokTarget > 0
+   256→                  ? Math.min(100, (tiktokDone / tiktokTarget) * 100)
+   257→                  : 0;
+   258→              const soundsTotal = promo.sounds.reduce(
+   259→                (s, x) => s + x.quantityTotal,
+   260→                0
+   261→              );
+   262→              const soundsUsed = promo.sounds.reduce(
+   263→                (s, x) => s + x.quantityUsed,
+   264→                0
+   265→              );
+   266→              const soundsRemaining = promo.sounds.reduce(
+   267→                (s, x) => s + x.quantityRemaining,
+   268→                0
+   269→              );
+   270→              const soundsPct =
+   271→                soundsTotal > 0
+   272→                  ? Math.min(100, (soundsUsed / soundsTotal) * 100)
+   273→                  : 0;
+   274→
+   275→              return (
+   276→                <Card key={key} className="overflow-hidden">
+   277→                  {/* Promo header (clickable to expand) */}
+   278→                  <button
+   279→                    onClick={() => toggleExpand(key)}
+   280→                    className="w-full text-left p-5 hover:bg-muted/30 transition-colors"
+   281→                  >
+   282→                    <div className="flex items-start justify-between gap-3 flex-wrap">
+   283→                      <div className="min-w-0">
+   284→                        <div className="flex items-center gap-2 flex-wrap">
+   285→                          <h2 className="text-lg font-semibold tracking-tight">
+   286→                            {promo.name}
+   287→                          </h2>
+   288→                          <PromoStatusBadge status={promo.status} />
+   289→                        </div>
+   290→                        <p className="text-sm text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
+   291→                          <span className="flex items-center gap-1">
+   292→                            <Calendar className="h-3.5 w-3.5" />
+   293→                            {formatDate(promo.date)}
+   294→                          </span>
+   295→                          {promo.customerName && (
+   296→                            <span>
+   297→                              {promo.customerName}
+   298→                              {promo.customerCompany
+   299→                                ? ` · ${promo.customerCompany}`
+   300→                                : ""}
+   301→                            </span>
+   302→                          )}
+   303→                        </p>
+   304→                      </div>
+   305→                      <div className="flex items-center gap-1 text-muted-foreground">
+   306→                        {isExpanded ? (
+   307→                          <ChevronUp className="h-5 w-5" />
+   308→                        ) : (
+   309→                          <ChevronDown className="h-5 w-5" />
+   310→                        )}
+   311→                      </div>
+   312→                    </div>
+   313→
+   314→                    {/* Mini KPIs always visible */}
+   315→                    <div className="grid grid-cols-2 gap-3 mt-4">
+   316→                      <div className="rounded-lg border bg-muted/20 p-3">
+   317→                        <div className="flex items-center gap-2 mb-1">
+   318→                          <Music2 className="h-3.5 w-3.5 text-emerald-600" />
+   319→                          <span className="text-xs font-medium text-muted-foreground">
+   320→                            {t("customer.sounds")}
+   321→                          </span>
+   322→                        </div>
+   323→                        <p className="text-xl font-bold tabular-nums">
+   324→                          {soundsUsed}
+   325→                          <span className="text-sm text-muted-foreground">
+   326→                            /{soundsTotal}
+   327→                          </span>
+   328→                        </p>
+   329→                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden mt-1.5">
+   330→                          <div
+   331→                            className="h-full bg-emerald-500 rounded-full"
+   332→                            style={{ width: `${soundsPct}%` }}
+   333→                          />
+   334→                        </div>
+   335→                      </div>
+   336→                      <div className="rounded-lg border bg-muted/20 p-3">
+   337→                        <div className="flex items-center gap-2 mb-1">
+   338→                          <Video className="h-3.5 w-3.5 text-pink-600" />
+   339→                          <span className="text-xs font-medium text-muted-foreground">
+   340→                            {t("customer.tiktoks")}
+   341→                          </span>
+   342→                        </div>
+   343→                        <p className="text-xl font-bold tabular-nums">
+   344→                          {tiktokDone}
+   345→                          <span className="text-sm text-muted-foreground">
+   346→                            /{tiktokTarget}
+   347→                          </span>
+   348→                        </p>
+   349→                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden mt-1.5">
+   350→                          <div
+   351→                            className="h-full bg-pink-500 rounded-full"
+   352→                            style={{ width: `${tiktokPct}%` }}
+   353→                          />
+   354→                        </div>
+   355→                      </div>
+   356→                    </div>
+   357→                  </button>
+   358→
+   359→                  {/* Expanded details */}
+   360→                  {isExpanded && (
+   361→                    <div className="border-t px-5 py-4 space-y-4 bg-muted/10">
+   362→                      {/* Sounds detail */}
+   363→                      <div>
+   364→                        <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+   365→                          <Music2 className="h-4 w-4 text-muted-foreground" />
+   366→                          {t("customer.soundDetails")}
+   367→                        </h3>
+   368→                        {promo.sounds.length === 0 ? (
+   369→                          <p className="text-sm text-muted-foreground">
+   370→                            {t("customer.noSounds")}
+   371→                          </p>
+   372→                        ) : (
+   373→                          <div className="space-y-2">
+   374→                            {promo.sounds.map((s, i) => {
+   375→                              const pct =
+   376→                                s.quantityTotal > 0
+   377→                                  ? Math.min(
+   378→                                      100,
+   379→                                      (s.quantityUsed / s.quantityTotal) * 100
+   380→                                    )
+   381→                                  : 0;
+   382→                              const done =
+   383→                                s.quantityUsed >= s.quantityTotal;
+   384→                              return (
+   385→                                <div
+   386→                                  key={i}
+   387→                                  id={`sound-${idx}-${i}`}
+   388→                                  className="rounded-lg border p-3 space-y-1.5 transition-all duration-300"
+   389→                                >
+   390→                                  <div className="flex items-start justify-between gap-2">
+   391→                                    <div className="min-w-0">
+   392→                                      <p className="text-sm font-medium truncate">
+   393→                                        {s.name}
+   394→                                      </p>
+   395→                                      <p className="text-xs text-muted-foreground">
+   396→                                        {s.artist || "—"}
+   397→                                      </p>
+   398→                                    </div>
+   399→                                    {s.url && (
+   400→                                      <a
+   401→                                        href={normalizeUrl(s.url)}
+   402→                                        target="_blank"
+   403→                                        rel="noopener noreferrer"
+   404→                                        className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+   405→                                      >
+   406→                                        <Link2 className="h-3.5 w-3.5" />
+   407→                                        {domainFromUrl(s.url)}
+   408→                                        <ExternalLink className="h-3 w-3" />
+   409→                                      </a>
+   410→                                    )}
+   411→                                  </div>
+   412→                                  <div className="flex items-center justify-between text-xs">
+   413→                                    <span className="tabular-nums">
+   414→                                      {s.quantityUsed} / {s.quantityTotal}{" "}
+   415→                                      {t("customer.used2")}
+   416→                                    </span>
+   417→                                    <span
+   418→                                      className={
+   419→                                        done
+   420→                                          ? "text-emerald-600 dark:text-emerald-400 font-medium"
+   421→                                          : "text-muted-foreground"
+   422→                                      }
+   423→                                    >
+   424→                                      {s.quantityRemaining} {t("customer.left")}
+   425→                                    </span>
+   426→                                  </div>
+   427→                                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+   428→                                    <div
+   429→                                      className={`h-full rounded-full ${
+   430→                                        done ? "bg-teal-500" : "bg-emerald-500"
+   431→                                      }`}
+   432→                                      style={{ width: `${pct}%` }}
+   433→                                    />
+   434→                                  </div>
+   435→                                </div>
+   436→                              );
+   437→                            })}
+   438→                          </div>
+   439→                        )}
+   440→                      </div>
+   441→
+   442→                      {/* TikToks */}
+   443→                      <div>
+   444→                        <h3 className="text-sm font-semibold flex items-center gap-2 mb-2 flex-wrap">
+   445→                          <Video className="h-4 w-4 text-muted-foreground" />
+   446→                          {t("customer.tiktokVideos")}
+   447→                          {(() => {
+   448→                            const withViews = promo.tiktoks.filter((tt) => tt.playCount != null);
+   449→                            if (withViews.length === 0) return null;
+   450→                            const totalViews = withViews.reduce((s, tt) => s + (tt.playCount || 0), 0);
+   451→                            const avgViews = Math.round(totalViews / withViews.length);
+   452→                            const totalLikes = withViews.reduce((s, tt) => s + (tt.likeCount || 0), 0);
+   453→                            return (
+   454→                              <span className="text-xs font-normal text-muted-foreground flex items-center gap-2">
+   455→                                <span className="flex items-center gap-0.5">
+   456→                                  <Eye className="h-3 w-3" />
+   457→                                  {t("stats.avgViews")}: {formatCount(avgViews)}
+   458→                                </span>
+   459→                                <span className="flex items-center gap-0.5">
+   460→                                  <Heart className="h-3 w-3" />
+   461→                                  {t("stats.totalLikes")}: {formatCount(totalLikes)}
+   462→                                </span>
+   463→                              </span>
+   464→                            );
+   465→                          })()}
+   466→                        </h3>
+   467→                        {promo.tiktoks.length === 0 ? (
+   468→                          <div className="text-center py-4">
+   469→                            <Video className="h-6 w-6 mx-auto mb-1.5 text-muted-foreground/40" />
+   470→                            <p className="text-sm text-muted-foreground">
+   471→                              {t("customer.noTiktoks")}
+   472→                            </p>
+   473→                          </div>
+   474→                        ) : (
+   475→                          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+   476→                            {promo.tiktoks.map((tt, i) => (
+   477→                              <TikTokThumbnail
+   478→                                key={i}
+   479→                                url={tt.url}
+   480→                                title={tt.title}
+   481→                                soundName={tt.soundName}
+   482→                                playCount={tt.playCount}
+   483→                                likeCount={tt.likeCount}
+   484→                                postedDate={tt.createdAt}
+   485→                                index={i + 1}
+   486→                                fallbackLabel={t("share.videoNum", { n: i + 1 })}
+   487→                                accentColor="pink"
+   488→                                onSoundClick={(name) => handleSoundClick(idx, name)}
+   489→                              />
+   490→                            ))}
+   491→                          </div>
+   492→                        )}
+   493→                      </div>
+   494→
+   495→                      {/* Views Dashboard — only if there are TikToks with view data */}
+   496→                      {(() => {
+   497→                        const withViews = promo.tiktoks.filter((tt) => tt.playCount != null);
+   498→                        if (withViews.length === 0) return null;
+   499→                        const totalViews = withViews.reduce((s, tt) => s + (tt.playCount || 0), 0);
+   500→                        const totalLikes = withViews.reduce((s, tt) => s + (tt.likeCount || 0), 0);
+   501→                        const avgViews = Math.round(totalViews / withViews.length);
+   502→                        const avgLikes = withViews.length > 0 ? Math.round(totalLikes / withViews.length) : 0;
+   503→                        const bestVideo = [...withViews].sort((a, b) => (b.playCount || 0) - (a.playCount || 0))[0];
+   504→
+   505→                        // Chart data: each video as a bar, keeping original order (Video 1, 2, 3...)
+   506→                        // matching the TikTok thumbnail numbering below
+   507→                        const allTiktoks = promo.tiktoks;
+   508→                        const chartData = allTiktoks
+   509→                          .map((tt, i) => ({
+   510→                            label: tt.title || `Video ${i + 1}`,
+   511→                            views: tt.playCount || 0,
+   512→                            likes: tt.likeCount || 0,
+   513→                          }))
+   514→                          .filter((d) => d.views > 0);
+   515→
+   516→                        return (
+   517→                          <div className="mt-4 space-y-3">
+   518→                            <h3 className="text-sm font-semibold flex items-center gap-2">
+   519→                              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+   520→                              {t("viewer.chartTitle")}
+   521→                            </h3>
+   522→
+   523→                            {/* KPI cards */}
+   524→                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+   525→                              <div className="rounded-lg border bg-muted/20 p-2.5">
+   526→                                <div className="flex items-center gap-1 mb-0.5">
+   527→                                  <Eye className="h-3 w-3 text-emerald-500" />
+   528→                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.totalViews")}</span>
+   529→                                </div>
+   530→                                <p className="text-lg font-bold tabular-nums">{formatCount(totalViews)}</p>
+   531→                              </div>
+   532→                              <div className="rounded-lg border bg-muted/20 p-2.5">
+   533→                                <div className="flex items-center gap-1 mb-0.5">
+   534→                                  <TrendingUp className="h-3 w-3 text-teal-500" />
+   535→                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.avgViews")}</span>
+   536→                                </div>
+   537→                                <p className="text-lg font-bold tabular-nums">{formatCount(avgViews)}</p>
+   538→                              </div>
+   539→                              <div className="rounded-lg border bg-muted/20 p-2.5">
+   540→                                <div className="flex items-center gap-1 mb-0.5">
+   541→                                  <Heart className="h-3 w-3 text-rose-500" />
+   542→                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.totalLikes")}</span>
+   543→                                </div>
+   544→                                <p className="text-lg font-bold tabular-nums">{formatCount(totalLikes)}</p>
+   545→                              </div>
+   546→                              <div className="rounded-lg border bg-muted/20 p-2.5">
+   547→                                <div className="flex items-center gap-1 mb-0.5">
+   548→                                  <TrendingUp className="h-3 w-3 text-amber-500" />
+   549→                                  <span className="text-[10px] text-muted-foreground uppercase">{t("stats.avgLikes")}</span>
+   550→                                </div>
+   551→                                <p className="text-lg font-bold tabular-nums">{formatCount(avgLikes)}</p>
+   552→                              </div>
+   553→                            </div>
+   554→
+   555→                            {/* Views bar chart */}
+   556→                            <div className="rounded-lg border p-3">
+   557→                              <p className="text-xs text-muted-foreground mb-2">{t("stats.views")} {t("stats.perVideo")}</p>
+   558→                              <div className="h-40">
+   559→                                <ResponsiveContainer width="100%" height="100%">
+   560→                                  <BarChart data={chartData} barGap={2}>
+   561→                                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+   562→                                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={9} className="fill-muted-foreground" interval={0} angle={-30} textAnchor="end" height={50} />
+   563→                                    <YAxis tickLine={false} axisLine={false} fontSize={10} className="fill-muted-foreground" width={35} tickFormatter={(v) => formatCount(v)} />
+   564→                                    <Tooltip
+   565→                                      formatter={(v: number) => formatCount(v)}
+   566→                                      contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
+   567→                                    />
+   568→                                    <Bar dataKey="views" name={t("stats.views")} fill="#10b981" radius={[3, 3, 0, 0]} />
+   569→                                  </BarChart>
+   570→                                </ResponsiveContainer>
+   571→                              </div>
+   572→                            </div>
+   573→
+   574→                            {/* Best performing video */}
+   575→                            {bestVideo && (() => {
+   576→                              const bestIdx = allTiktoks.findIndex((tt) => tt === bestVideo);
+   577→                              return (
+   578→                              <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 flex items-center gap-2">
+   579→                                <Trophy className="h-4 w-4 text-amber-500 shrink-0" />
+   580→                                <div className="min-w-0 flex-1">
+   581→                                  <p className="text-xs text-muted-foreground">{t("viewer.bestVideo")}</p>
+   582→                                  <p className="text-sm font-medium truncate">{bestVideo.title || `Video ${bestIdx + 1}`}</p>
+   583→                                </div>
+   584→                                <div className="text-right shrink-0">
+   585→                                  <p className="text-sm font-bold tabular-nums text-emerald-600">{formatCount(bestVideo.playCount)}</p>
+   586→                                  <p className="text-[10px] text-muted-foreground">{t("stats.views")}</p>
+   587→                                </div>
+   588→                              </div>
+   589→                              );
+   590→                            })()}
+   591→                          </div>
+   592→                        );
+   593→                      })()}
+   594→                    </div>
+   595→                  )}
+   596→                </Card>
+   597→              );
+   598→            })}
+   599→          </div>
+   600→        )}
+   601→        </>
+   602→        )}
+   603→      </main>
+   604→
+   605→      <footer className="border-t mt-10 py-4 text-center text-xs text-muted-foreground">
+   606→        {t("app.name")} · {t("customer.customerView")}
+   607→      </footer>
+   608→    </div>
+   609→  );
+   610→}
+   611→

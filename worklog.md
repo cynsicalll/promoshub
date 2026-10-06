@@ -71,3 +71,36 @@ Stage Summary:
 - Every hardcoded German UI string in the three target views is now driven by the i18n dictionary via `useI18n()`; English is the default and German remains selectable through the existing LanguageProvider.
 - No logic changes; no imports removed; one necessary variable rename (`t` → `tk` inside `formTiktoks.map`) to resolve a function-shadowing type error created by introducing the `t` translation function.
 - ESLint clean; TypeScript clean for all edited files. The 5 residual TS errors in money-view.tsx are pre-existing (Payment.promo) and out of scope for this i18n task.
+
+---
+Task ID: best-video-clickable + backup-button
+Agent: main (Z.ai Code)
+Task: 1) Fix "best performing video" on customer access link — show which video it is, make clickable to scroll+highlight. 2) Add backup button in Settings.
+
+Work Log:
+- Investigated customer-dashboard.tsx: the "best performing video" card only showed a trophy icon + title + view count. No video number, no thumbnail, not clickable. TikTok videos had no element IDs for scrolling.
+- Fixed customer-dashboard.tsx:
+  * Added scrollToVideo(promoIdx, videoIdx) function — scrolls to the video card with id `video-{promoIdx}-{videoIdx}` and highlights it with a pink ring + scale-105 for 2.5s.
+  * Wrapped each TikTokThumbnail in a div with `id={`video-${idx}-${i}`}` and `className="rounded-lg transition-all duration-300"` (mirrors the existing sound-card pattern).
+  * Made the best-video card a <button> with onClick → scrollToVideo(idx, bestIdx). Added:
+    - A rank badge (green circle with the video number, e.g. "13") so the user immediately sees which video number it is
+    - Hover effects (border-emerald-400, shadow, bg change)
+    - A "View →" hint that appears on hover
+    - title attribute for accessibility
+- Added i18n keys: viewer.bestVideoHint ("Click to jump to this video"), viewer.bestVideoClick ("View →") in EN+DE.
+- Created /api/backup/route.ts: GET endpoint (admin-only) that fetches all promos (with customer/sounds/payments/tiktoks), customers, sounds, tiktoks, and users (excluding passwordHash) from the database, wraps them in a JSON object with _meta (exportedAt, version, counts), and returns as a downloadable .json file.
+- Updated settings-view.tsx:
+  * Added Database icon import.
+  * Added backupAll() function that opens /api/backup in a new tab and shows a toast.
+  * Added a new "Full Backup" Card section between Export and Data Management — with a description and a prominent "Download Full Backup" button.
+- Added i18n keys: settings.backup ("Full Backup"), settings.backupDesc, settings.backupDownload, settings.backupStarted in EN+DE.
+- Deployed: commit 9907887, Vercel deployment SUCCEEDED.
+- Verified on production:
+  * Backup API: returns 66KB JSON file with 12 promos, 7 customers, 11 sounds, 23 tiktoks, 5 users.
+  * Customer access link: best performing video shows "Best Performing Video 13 #stretchtok #giftok #gta 10.7K views View →" — clicking it scrolls to Video #13 and highlights it with a pink ring (confirmed via DOM check: ring-pink-400 class present).
+  * Settings: "Full Backup" section with "Download Full Backup" button is visible.
+
+Stage Summary:
+- 4 files changed: customer-dashboard.tsx (scrollToVideo + video IDs + clickable best-video card with rank badge), settings-view.tsx (backup button + section), i18n.ts (new keys EN+DE), new api/backup/route.ts (JSON backup endpoint).
+- Best performing video on customer access link now shows the video number (rank badge), is clickable, scrolls to the video, and highlights it with a pink ring for 2.5s.
+- Settings has a new "Full Backup" section that downloads a complete JSON backup of all data.
