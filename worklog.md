@@ -130,3 +130,27 @@ Stage Summary:
 - Sounds now save correctly when creating a new promo (inline create sound flow works).
 - quantityUsed auto-increments when a TikTok with a sound is added — works in all 4 code paths: standalone add, quick-add, promo create, promo update.
 - The "TikToks uploaded" count (e.g. "1/10") now updates automatically when you add a TikTok with a sound to a promo.
+
+---
+Task ID: fix-missing-video-stats
+Agent: main (Z.ai Code)
+Task: Videos added via promo button don't automatically get stats in channel — newest Sydney Sweeney Ad video was missing
+
+Work Log:
+- Investigated production: found the newest Sydney Sweeney Ad video (vm.tiktok.com/ZGdCF9kKH, uploaded Oct 6 14:54) was in the DB but had playCount=null, cover=null — no stats were fetched.
+- The video WAS in channel-stats (at position V23) but was excluded from all statistics because playCount was null.
+- Root cause: the auto-fetch from tikwm failed when the promo was updated (tikwm is very flaky). The previous retry logic (3 attempts, 1.5s/3s/4.5s backoff) wasn't enough.
+- Triggered 3 manual syncs on production to backfill the missing video. After 3 syncs, the video got its stats (2805 views, cover, createTime). All 24/24 videos now have stats.
+- Improved src/lib/tikwm.ts:
+  * Single fetch (used by promo create/update for 1-3 new tiktoks): increased from 3 retries to 5 retries with 1s/2s/3s/4s/5s backoff (total max ~15s, well within Vercel's timeout for a single video).
+  * Batch fetch (used by Sync Stats button for all videos): reduced batch size from 5 to 3, kept 3 retries per video (to stay within Vercel's 10s timeout when syncing many videos).
+  * Separated the batch fetch logic to use fetchTiktokData directly with 3 retries (instead of calling fetchAndStoreTiktokStats which uses 5 retries) — avoids timeout when syncing 20+ videos.
+- Deployed: commit 7da0a47, Vercel deployment SUCCEEDED.
+- Verified: 24/24 videos have stats. The previously missing video (ZGdCF9kKH) has 2805 views and cover. It's at position V23 (Oct 6, 14:54 — second newest).
+
+Stage Summary:
+- 1 file changed: src/lib/tikwm.ts (improved retry logic).
+- The missing Sydney Sweeney Ad video now shows in the Channel tab with stats and thumbnail.
+- Future promo creations/updates will retry up to 5 times (1s/2s/3s/4s/5s backoff) when fetching stats for new TikToks — much more reliable than the previous 3 retries.
+- The Sync Stats button also benefits from the improved batch logic (batch size 3, 3 retries per video).
+- NOTE: If a video still doesn't get stats after promo creation (tikwm down for extended period), the user can always click "Sync Stats" in the Channel tab to retry.
