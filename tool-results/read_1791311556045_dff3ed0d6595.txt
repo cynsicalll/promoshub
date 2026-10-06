@@ -1,0 +1,900 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import {
+     5→  Dialog,
+     6→  DialogContent,
+     7→  DialogHeader,
+     8→  DialogTitle,
+     9→  DialogFooter,
+    10→  DialogDescription,
+    11→} from "@/components/ui/dialog";
+    12→import { Button } from "@/components/ui/button";
+    13→import { Input } from "@/components/ui/input";
+    14→import { Label } from "@/components/ui/label";
+    15→import { Textarea } from "@/components/ui/textarea";
+    16→import {
+    17→  Select,
+    18→  SelectContent,
+    19→  SelectItem,
+    20→  SelectTrigger,
+    21→  SelectValue,
+    22→} from "@/components/ui/select";
+    23→import { Checkbox } from "@/components/ui/checkbox";
+    24→import { Separator } from "@/components/ui/separator";
+    25→import { Badge } from "@/components/ui/badge";
+    26→import {
+    27→  Plus,
+    28→  Trash2,
+    29→  Music2,
+    30→  Wallet,
+    31→  AlertTriangle,
+    32→  UserPlus,
+    33→  Video,
+    34→  Link2,
+    35→} from "lucide-react";
+    36→import { toast } from "sonner";
+    37→import { useI18n } from "@/components/language-provider";
+    38→import {
+    39→  useCreatePromo,
+    40→  useUpdatePromo,
+    41→  useCustomers,
+    42→  useSounds,
+    43→  useCreateCustomer,
+    44→  useCreateSound,
+    45→} from "@/hooks/use-data";
+    46→import type { Promo, PromoInput, PromoStatus } from "@/lib/types";
+    47→import {
+    48→  formatDateInput,
+    49→  toISODate,
+    50→  parseCurrencyInput,
+    51→  formatCurrency,
+    52→} from "@/lib/format";
+    53→
+    54→interface FormSound {
+    55→  key: string;
+    56→  soundId: string;
+    57→  quantityTotal: number;
+    58→  quantityUsed: number;
+    59→}
+    60→interface FormPayment {
+    61→  id?: string;
+    62→  key: string;
+    63→  amount: string;
+    64→  expectedDate: string;
+    65→  payoutDate: string;
+    66→  receivedDate: string;
+    67→  paidOut: boolean;
+    68→  received: boolean;
+    69→  notes: string;
+    70→}
+    71→interface FormTikTok {
+    72→  id?: string;
+    73→  key: string;
+    74→  url: string;
+    75→  title: string;
+    76→  soundId: string;
+    77→}
+    78→
+    79→const STATUS_OPTIONS: PromoStatus[] = [
+    80→  "GEPLANT",
+    81→  "AKTIV",
+    82→  "ABGESCHLOSSEN",
+    83→  "STORNIERT",
+    84→];
+    85→
+    86→let keyCounter = 0;
+    87→const nextKey = () => `k${++keyCounter}`;
+    88→
+    89→export function PromoFormDialog({
+    90→  open,
+    91→  onOpenChange,
+    92→  mode,
+    93→  promo,
+    94→  onSaved,
+    95→}: {
+    96→  open: boolean;
+    97→  onOpenChange: (v: boolean) => void;
+    98→  mode: "create" | "edit";
+    99→  promo?: Promo | null;
+   100→  onSaved?: (promo: Promo) => void;
+   101→}) {
+   102→  const { t } = useI18n();
+   103→  const { data: customers = [] } = useCustomers();
+   104→  const { data: sounds = [] } = useSounds();
+   105→  const createPromo = useCreatePromo();
+   106→  const updatePromo = useUpdatePromo();
+   107→  const createCustomer = useCreateCustomer();
+   108→  const createSound = useCreateSound();
+   109→
+   110→  const [name, setName] = React.useState("");
+   111→  const [customerId, setCustomerId] = React.useState<string>("");
+   112→  const [date, setDate] = React.useState(formatDateInput(new Date()));
+   113→  const [status, setStatus] = React.useState<PromoStatus>("GEPLANT");
+   114→  const [notes, setNotes] = React.useState("");
+   115→  const [tiktokTarget, setTiktokTarget] = React.useState(0);
+   116→  const [formSounds, setFormSounds] = React.useState<FormSound[]>([]);
+   117→  const [formPayments, setFormPayments] = React.useState<FormPayment[]>([]);
+   118→  const [formTiktoks, setFormTiktoks] = React.useState<FormTikTok[]>([]);
+   119→
+   120→  const [newCustomerOpen, setNewCustomerOpen] = React.useState(false);
+   121→  const [newCustomerName, setNewCustomerName] = React.useState("");
+   122→  const [newCustomerCompany, setNewCustomerCompany] = React.useState("");
+   123→  const [newSoundOpen, setNewSoundOpen] = React.useState(false);
+   124→  const [newSoundName, setNewSoundName] = React.useState("");
+   125→  const [newSoundArtist, setNewSoundArtist] = React.useState("");
+   126→  const [newSoundUrl, setNewSoundUrl] = React.useState("");
+   127→
+   128→  React.useEffect(() => {
+   129→    if (!open) return;
+   130→    if (mode === "edit" && promo) {
+   131→      setName(promo.name);
+   132→      setCustomerId(promo.customerId || "none");
+   133→      setDate(formatDateInput(promo.date));
+   134→      setStatus(promo.status);
+   135→      setNotes(promo.notes || "");
+   136→      setTiktokTarget(promo.tiktokTarget || 0);
+   137→      setFormSounds(
+   138→        promo.sounds.map((s) => ({
+   139→          key: nextKey(),
+   140→          soundId: s.soundId,
+   141→          quantityTotal: s.quantityTotal,
+   142→          quantityUsed: s.quantityUsed,
+   143→        }))
+   144→      );
+   145→      setFormPayments(
+   146→        promo.payments.map((p) => ({
+   147→          id: p.id,
+   148→          key: nextKey(),
+   149→          amount: String(p.amount),
+   150→          expectedDate: formatDateInput(p.expectedDate),
+   151→          payoutDate: formatDateInput(p.payoutDate),
+   152→          receivedDate: formatDateInput(p.receivedDate),
+   153→          paidOut: p.paidOut,
+   154→          received: p.received,
+   155→          notes: p.notes || "",
+   156→        }))
+   157→      );
+   158→      setFormTiktoks(
+   159→        (promo.tiktoks || []).map((t) => ({
+   160→          id: t.id,
+   161→          key: nextKey(),
+   162→          url: t.url,
+   163→          title: t.title || "",
+   164→          soundId: t.soundId || "",
+   165→        }))
+   166→      );
+   167→    } else {
+   168→      setName("");
+   169→      setCustomerId("none");
+   170→      setDate(formatDateInput(new Date()));
+   171→      setStatus("GEPLANT");
+   172→      setNotes("");
+   173→      setTiktokTarget(0);
+   174→      setFormSounds([]);
+   175→      setFormPayments([{ key: nextKey(), amount: "", expectedDate: "", payoutDate: "", receivedDate: "", paidOut: false, received: false, notes: "" }]);
+   176→      setFormTiktoks([]);
+   177→    }
+   178→    setNewCustomerOpen(false);
+   179→    setNewCustomerName("");
+   180→    setNewCustomerCompany("");
+   181→    setNewSoundOpen(false);
+   182→    setNewSoundName("");
+   183→    setNewSoundArtist("");
+   184→    setNewSoundUrl("");
+   185→  }, [open, mode, promo]);
+   186→
+   187→  const totalAmount = formPayments.reduce(
+   188→    (s, p) => s + parseCurrencyInput(p.amount),
+   189→    0
+   190→  );
+   191→
+   192→  function addSound() {
+   193→    setFormSounds((prev) => [
+   194→      ...prev,
+   195→      { key: nextKey(), soundId: "", quantityTotal: 1, quantityUsed: 0 },
+   196→    ]);
+   197→  }
+   198→  function updateSound(key: string, patch: Partial<FormSound>) {
+   199→    setFormSounds((prev) =>
+   200→      prev.map((s) => (s.key === key ? { ...s, ...patch } : s))
+   201→    );
+   202→  }
+   203→  function removeSound(key: string) {
+   204→    setFormSounds((prev) => prev.filter((s) => s.key !== key));
+   205→  }
+   206→
+   207→  function addPayment() {
+   208→    setFormPayments((prev) => [
+   209→      ...prev,
+   210→      { key: nextKey(), amount: "", expectedDate: "", payoutDate: "", receivedDate: "", paidOut: false, received: false, notes: "" },
+   211→    ]);
+   212→  }
+   213→  function updatePayment(key: string, patch: Partial<FormPayment>) {
+   214→    setFormPayments((prev) =>
+   215→      prev.map((p) => {
+   216→        if (p.key !== key) return p;
+   217→        const next = { ...p, ...patch };
+   218→        if (patch.received === true && !p.receivedDate) {
+   219→          next.receivedDate = formatDateInput(new Date());
+   220→        }
+   221→        if (patch.received === false) next.receivedDate = "";
+   222→        if (patch.paidOut === true && !p.payoutDate) {
+   223→          next.payoutDate = formatDateInput(new Date());
+   224→        }
+   225→        if (patch.paidOut === false) next.payoutDate = "";
+   226→        return next;
+   227→      })
+   228→    );
+   229→  }
+   230→  function removePayment(key: string) {
+   231→    setFormPayments((prev) => prev.filter((p) => p.key !== key));
+   232→  }
+   233→
+   234→  function addTiktok() {
+   235→    setFormTiktoks((prev) => [
+   236→      ...prev,
+   237→      { key: nextKey(), url: "", title: "", soundId: "" },
+   238→    ]);
+   239→  }
+   240→  function updateTiktok(key: string, patch: Partial<FormTikTok>) {
+   241→    setFormTiktoks((prev) =>
+   242→      prev.map((t) => (t.key === key ? { ...t, ...patch } : t))
+   243→    );
+   244→  }
+   245→  function removeTiktok(key: string) {
+   246→    setFormTiktoks((prev) => prev.filter((t) => t.key !== key));
+   247→  }
+   248→
+   249→  async function handleCreateCustomer() {
+   250→    if (!newCustomerName.trim()) return;
+   251→    const c = await createCustomer.mutateAsync({
+   252→      name: newCustomerName.trim(),
+   253→      company: newCustomerCompany || null,
+   254→    });
+   255→    setCustomerId(c.id);
+   256→    setNewCustomerName("");
+   257→    setNewCustomerCompany("");
+   258→    setNewCustomerOpen(false);
+   259→    toast.success(t("form.toast.customerCreated"));
+   260→  }
+   261→
+   262→  async function handleCreateSound(addToRowKey?: string) {
+   263→    if (!newSoundName.trim()) return;
+   264→    const s = await createSound.mutateAsync({
+   265→      name: newSoundName.trim(),
+   266→      artist: newSoundArtist || null,
+   267→      url: newSoundUrl || null,
+   268→    });
+   269→    if (addToRowKey) updateSound(addToRowKey, { soundId: s.id });
+   270→    setNewSoundName("");
+   271→    setNewSoundArtist("");
+   272→    setNewSoundUrl("");
+   273→    setNewSoundOpen(false);
+   274→    toast.success(t("form.toast.soundCreated"));
+   275→  }
+   276→
+   277→  function buildPayload(): PromoInput | null {
+   278→    if (!name.trim()) {
+   279→      toast.error(t("form.error.nameRequired"));
+   280→      return null;
+   281→    }
+   282→    if (!date) {
+   283→      toast.error(t("form.error.dateRequired"));
+   284→      return null;
+   285→    }
+   286→    const cleanSounds = formSounds
+   287→      .filter((s) => s.soundId)
+   288→      .map((s) => ({
+   289→        soundId: s.soundId,
+   290→        quantityTotal: Number(s.quantityTotal) || 0,
+   291→        quantityUsed: Number(s.quantityUsed) || 0,
+   292→      }));
+   293→    const cleanPayments = formPayments
+   294→      .filter((p) => parseCurrencyInput(p.amount) > 0 || p.notes)
+   295→      .map((p) => ({
+   296→        id: p.id,
+   297→        amount: parseCurrencyInput(p.amount),
+   298→        expectedDate: toISODate(p.expectedDate),
+   299→        payoutDate: toISODate(p.payoutDate),
+   300→        receivedDate: toISODate(p.receivedDate),
+   301→        paidOut: p.paidOut,
+   302→        received: p.received,
+   303→        notes: p.notes || null,
+   304→      }));
+   305→
+   306→    const cleanTiktoks = formTiktoks
+   307→      .filter((t) => t.url.trim())
+   308→      .map((t) => ({
+   309→        id: t.id,
+   310→        url: t.url.trim(),
+   311→        title: t.title || null,
+   312→        soundId: t.soundId || null,
+   313→      }));
+   314→
+   315→    return {
+   316→      name: name.trim(),
+   317→      customerId: customerId === "none" ? null : customerId,
+   318→      date: toISODate(date)!,
+   319→      status,
+   320→      notes: notes || null,
+   321→      tiktokTarget: Number(tiktokTarget) || 0,
+   322→      sounds: cleanSounds,
+   323→      payments: cleanPayments,
+   324→      tiktoks: cleanTiktoks,
+   325→    };
+   326→  }
+   327→
+   328→  async function handleSubmit() {
+   329→    const payload = buildPayload();
+   330→    if (!payload) return;
+   331→    try {
+   332→      if (mode === "edit" && promo) {
+   333→        const updated = await updatePromo.mutateAsync({
+   334→          id: promo.id,
+   335→          data: payload,
+   336→        });
+   337→        toast.success(t("form.toast.promoUpdated"));
+   338→        onSaved?.(updated);
+   339→        onOpenChange(false);
+   340→      } else {
+   341→        const created = await createPromo.mutateAsync(payload);
+   342→        toast.success(t("form.toast.promoCreated"));
+   343→        onSaved?.(created);
+   344→        onOpenChange(false);
+   345→      }
+   346→    } catch (e) {
+   347→      toast.error(e instanceof Error ? e.message : t("form.toast.saveError"));
+   348→    }
+   349→  }
+   350→
+   351→  const saving = createPromo.isPending || updatePromo.isPending;
+   352→
+   353→  return (
+   354→    <Dialog open={open} onOpenChange={onOpenChange}>
+   355→      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
+   356→        <DialogHeader className="px-6 pt-6 pb-4 sticky top-0 bg-background z-10 border-b">
+   357→          <DialogTitle>
+   358→            {mode === "edit" ? t("form.editTitle") : t("form.createTitle")}
+   359→          </DialogTitle>
+   360→          <DialogDescription>{t("form.description")}</DialogDescription>
+   361→        </DialogHeader>
+   362→
+   363→        <div className="px-6 py-5 space-y-7">
+   364→          <section className="space-y-4">
+   365→            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+   366→              {t("form.general")}
+   367→            </h3>
+   368→            <div className="grid gap-4 sm:grid-cols-2">
+   369→              <div className="space-y-1.5 sm:col-span-2">
+   370→                <Label htmlFor="promo-name">{t("form.promoName")}</Label>
+   371→                <Input
+   372→                  id="promo-name"
+   373→                  value={name}
+   374→                  onChange={(e) => setName(e.target.value)}
+   375→                  placeholder={t("form.promoNamePlaceholder")}
+   376→                />
+   377→              </div>
+   378→
+   379→              <div className="space-y-1.5">
+   380→                <div className="flex items-center justify-between">
+   381→                  <Label>{t("form.customer")}</Label>
+   382→                  <button
+   383→                    type="button"
+   384→                    onClick={() => setNewCustomerOpen((v) => !v)}
+   385→                    className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+   386→                  >
+   387→                    <UserPlus className="h-3 w-3" /> {t("form.newCustomer")}
+   388→                  </button>
+   389→                </div>
+   390→                {newCustomerOpen ? (
+   391→                  <div className="space-y-2 rounded-lg border p-2.5">
+   392→                    <Input
+   393→                      placeholder={t("form.customerNamePlaceholder")}
+   394→                      value={newCustomerName}
+   395→                      onChange={(e) => setNewCustomerName(e.target.value)}
+   396→                    />
+   397→                    <Input
+   398→                      placeholder={t("form.companyPlaceholder")}
+   399→                      value={newCustomerCompany}
+   400→                      onChange={(e) => setNewCustomerCompany(e.target.value)}
+   401→                    />
+   402→                    <div className="flex gap-2">
+   403→                      <Button
+   404→                        size="sm"
+   405→                        type="button"
+   406→                        onClick={handleCreateCustomer}
+   407→                        disabled={!newCustomerName.trim()}
+   408→                      >
+   409→                        {t("action.create")}
+   410→                      </Button>
+   411→                      <Button
+   412→                        size="sm"
+   413→                        type="button"
+   414→                        variant="ghost"
+   415→                        onClick={() => setNewCustomerOpen(false)}
+   416→                      >
+   417→                        {t("action.cancel")}
+   418→                      </Button>
+   419→                    </div>
+   420→                  </div>
+   421→                ) : (
+   422→                  <Select value={customerId} onValueChange={setCustomerId}>
+   423→                    <SelectTrigger>
+   424→                      <SelectValue placeholder={t("form.selectCustomer")} />
+   425→                    </SelectTrigger>
+   426→                    <SelectContent>
+   427→                      <SelectItem value="none">{t("form.noCustomer")}</SelectItem>
+   428→                      {customers.map((c) => (
+   429→                        <SelectItem key={c.id} value={c.id}>
+   430→                          {c.name}
+   431→                          {c.company ? ` · ${c.company}` : ""}
+   432→                        </SelectItem>
+   433→                      ))}
+   434→                    </SelectContent>
+   435→                  </Select>
+   436→                )}
+   437→              </div>
+   438→
+   439→              <div className="space-y-1.5">
+   440→                <Label htmlFor="promo-date">{t("form.date")}</Label>
+   441→                <Input
+   442→                  id="promo-date"
+   443→                  type="date"
+   444→                  value={date}
+   445→                  onChange={(e) => setDate(e.target.value)}
+   446→                />
+   447→              </div>
+   448→
+   449→              <div className="space-y-1.5">
+   450→                <Label>{t("form.status")}</Label>
+   451→                <Select
+   452→                  value={status}
+   453→                  onValueChange={(v) => setStatus(v as PromoStatus)}
+   454→                >
+   455→                  <SelectTrigger>
+   456→                    <SelectValue />
+   457→                  </SelectTrigger>
+   458→                  <SelectContent>
+   459→                    {STATUS_OPTIONS.map((s) => (
+   460→                      <SelectItem key={s} value={s}>
+   461→                        {t(`status.${s}`)}
+   462→                      </SelectItem>
+   463→                    ))}
+   464→                  </SelectContent>
+   465→                </Select>
+   466→              </div>
+   467→            </div>
+   468→          </section>
+   469→
+   470→          <Separator />
+   471→
+   472→          <section className="space-y-4">
+   473→            <div className="flex items-center justify-between gap-2 flex-wrap">
+   474→              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+   475→                <Music2 className="h-4 w-4" /> {t("form.sounds")}
+   476→              </h3>
+   477→              <div className="flex gap-2">
+   478→                <Button
+   479→                  type="button"
+   480→                  variant="outline"
+   481→                  size="sm"
+   482→                  onClick={() => setNewSoundOpen((v) => !v)}
+   483→                >
+   484→                  <Plus className="h-3.5 w-3.5" /> {t("form.newSound")}
+   485→                </Button>
+   486→                <Button
+   487→                  type="button"
+   488→                  variant="outline"
+   489→                  size="sm"
+   490→                  onClick={addSound}
+   491→                >
+   492→                  <Plus className="h-3.5 w-3.5" /> {t("form.addSound")}
+   493→                </Button>
+   494→              </div>
+   495→            </div>
+   496→
+   497→            {newSoundOpen && (
+   498→              <div className="space-y-2 rounded-lg border p-2.5 bg-muted/30">
+   499→                <div className="grid gap-2 sm:grid-cols-2">
+   500→                  <Input
+   501→                    placeholder={t("form.soundNamePlaceholder")}
+   502→                    value={newSoundName}
+   503→                    onChange={(e) => setNewSoundName(e.target.value)}
+   504→                  />
+   505→                  <Input
+   506→                    placeholder={t("form.artist")}
+   507→                    value={newSoundArtist}
+   508→                    onChange={(e) => setNewSoundArtist(e.target.value)}
+   509→                  />
+   510→                </div>
+   511→                <Input
+   512→                  placeholder={t("form.soundUrlPlaceholder")}
+   513→                  value={newSoundUrl}
+   514→                  onChange={(e) => setNewSoundUrl(e.target.value)}
+   515→                />
+   516→                <div className="flex gap-2">
+   517→                  <Button
+   518→                    size="sm"
+   519→                    type="button"
+   520→                    onClick={() => handleCreateSound()}
+   521→                    disabled={!newSoundName.trim()}
+   522→                  >
+   523→                    {t("form.createSound")}
+   524→                  </Button>
+   525→                  <Button
+   526→                    size="sm"
+   527→                    type="button"
+   528→                    variant="ghost"
+   529→                    onClick={() => setNewSoundOpen(false)}
+   530→                  >
+   531→                    {t("action.cancel")}
+   532→                  </Button>
+   533→                </div>
+   534→              </div>
+   535→            )}
+   536→
+   537→            {formSounds.length === 0 ? (
+   538→              <p className="text-sm text-muted-foreground py-2">
+   539→                {t("form.noSounds")}
+   540→              </p>
+   541→            ) : (
+   542→              <div className="space-y-2">
+   543→                {formSounds.map((s) => {
+   544→                  const over = s.quantityUsed > s.quantityTotal;
+   545→                  const remaining = s.quantityTotal - s.quantityUsed;
+   546→                  return (
+   547→                    <div
+   548→                      key={s.key}
+   549→                      className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-end"
+   550→                    >
+   551→                      <div className="space-y-1.5">
+   552→                        <Label className="text-xs">{t("form.sound")}</Label>
+   553→                        <Select
+   554→                          value={s.soundId}
+   555→                          onValueChange={(v) => updateSound(s.key, { soundId: v })}
+   556→                        >
+   557→                          <SelectTrigger>
+   558→                            <SelectValue placeholder={t("form.selectSound")} />
+   559→                          </SelectTrigger>
+   560→                          <SelectContent>
+   561→                            {sounds.map((snd) => (
+   562→                              <SelectItem key={snd.id} value={snd.id}>
+   563→                                {snd.name}
+   564→                                {snd.artist ? ` · ${snd.artist}` : ""}
+   565→                              </SelectItem>
+   566→                            ))}
+   567→                          </SelectContent>
+   568→                        </Select>
+   569→                      </div>
+   570→                      <div className="space-y-1.5 w-24">
+   571→                        <Label className="text-xs">{t("form.booked")}</Label>
+   572→                        <Input
+   573→                          type="number"
+   574→                          min={0}
+   575→                          value={s.quantityTotal}
+   576→                          onChange={(e) =>
+   577→                            updateSound(s.key, {
+   578→                              quantityTotal: Number(e.target.value) || 0,
+   579→                            })
+   580→                          }
+   581→                        />
+   582→                      </div>
+   583→                      <div className="space-y-1.5 w-24">
+   584→                        <Label className="text-xs">{t("form.used")}</Label>
+   585→                        <Input
+   586→                          type="number"
+   587→                          min={0}
+   588→                          value={s.quantityUsed}
+   589→                          onChange={(e) =>
+   590→                            updateSound(s.key, {
+   591→                              quantityUsed: Number(e.target.value) || 0,
+   592→                            })
+   593→                          }
+   594→                          className={over ? "border-rose-400 focus-visible:ring-rose-400" : ""}
+   595→                        />
+   596→                      </div>
+   597→                      <div className="w-20 text-center pb-2.5">
+   598→                        <p className="text-[10px] text-muted-foreground uppercase">
+   599→                          {t("form.remaining")}
+   600→                        </p>
+   601→                        <p
+   602→                          className={`text-sm font-semibold tabular-nums ${
+   603→                            over ? "text-rose-600" : "text-foreground"
+   604→                          }`}
+   605→                        >
+   606→                          {remaining}
+   607→                        </p>
+   608→                      </div>
+   609→                      <Button
+   610→                        type="button"
+   611→                        variant="ghost"
+   612→                        size="icon"
+   613→                        onClick={() => removeSound(s.key)}
+   614→                        className="text-muted-foreground hover:text-rose-600"
+   615→                      >
+   616→                        <Trash2 className="h-4 w-4" />
+   617→                      </Button>
+   618→                      {over && (
+   619→                        <p className="sm:col-span-5 text-xs text-rose-600 flex items-center gap-1.5">
+   620→                          <AlertTriangle className="h-3.5 w-3.5" />
+   621→                          {t("form.overbooked", {
+   622→                            used: s.quantityUsed,
+   623→                            total: s.quantityTotal,
+   624→                          })}
+   625→                        </p>
+   626→                      )}
+   627→                    </div>
+   628→                  );
+   629→                })}
+   630→              </div>
+   631→            )}
+   632→          </section>
+   633→
+   634→          <Separator />
+   635→
+   636→          <section className="space-y-4">
+   637→            <div className="flex items-center justify-between gap-2 flex-wrap">
+   638→              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+   639→                <Wallet className="h-4 w-4" /> {t("form.payments")}
+   640→              </h3>
+   641→              <Button
+   642→                type="button"
+   643→                variant="outline"
+   644→                size="sm"
+   645→                onClick={addPayment}
+   646→              >
+   647→                <Plus className="h-3.5 w-3.5" /> {t("form.addPayment")}
+   648→              </Button>
+   649→            </div>
+   650→
+   651→            <div className="space-y-2">
+   652→              {formPayments.map((p) => (
+   653→                <div key={p.key} className="rounded-lg border p-3 space-y-3">
+   654→                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+   655→                    <div className="space-y-1.5">
+   656→                      <Label className="text-xs">{t("form.amount")}</Label>
+   657→                      <Input
+   658→                        type="text"
+   659→                        inputMode="decimal"
+   660→                        value={p.amount}
+   661→                        onChange={(e) =>
+   662→                          updatePayment(p.key, { amount: e.target.value })
+   663→                        }
+   664→                        placeholder={t("form.amountPlaceholder")}
+   665→                      />
+   666→                    </div>
+   667→                    <div className="flex gap-4 pb-2.5">
+   668→                      <label className="flex items-center gap-2 text-sm">
+   669→                        <Checkbox
+   670→                          checked={p.paidOut}
+   671→                          onCheckedChange={(v) =>
+   672→                            updatePayment(p.key, { paidOut: !!v })
+   673→                          }
+   674→                        />
+   675→                        {t("form.paidOut")}
+   676→                      </label>
+   677→                      <label className="flex items-center gap-2 text-sm">
+   678→                        <Checkbox
+   679→                          checked={p.received}
+   680→                          onCheckedChange={(v) =>
+   681→                            updatePayment(p.key, { received: !!v })
+   682→                          }
+   683→                        />
+   684→                        {t("form.received")}
+   685→                      </label>
+   686→                    </div>
+   687→                    <Button
+   688→                      type="button"
+   689→                      variant="ghost"
+   690→                      size="icon"
+   691→                      onClick={() => removePayment(p.key)}
+   692→                      className="text-muted-foreground hover:text-rose-600"
+   693→                    >
+   694→                      <Trash2 className="h-4 w-4" />
+   695→                    </Button>
+   696→                  </div>
+   697→                  <div className="grid gap-3 sm:grid-cols-3">
+   698→                    <div className="space-y-1.5">
+   699→                      <Label className="text-xs">{t("form.expectedDate")}</Label>
+   700→                      <Input
+   701→                        type="date"
+   702→                        value={p.expectedDate}
+   703→                        onChange={(e) =>
+   704→                          updatePayment(p.key, { expectedDate: e.target.value })
+   705→                        }
+   706→                      />
+   707→                    </div>
+   708→                    <div className="space-y-1.5">
+   709→                      <Label className="text-xs">{t("form.payoutDate")}</Label>
+   710→                      <Input
+   711→                        type="date"
+   712→                        value={p.payoutDate}
+   713→                        onChange={(e) =>
+   714→                          updatePayment(p.key, { payoutDate: e.target.value })
+   715→                        }
+   716→                      />
+   717→                    </div>
+   718→                    <div className="space-y-1.5">
+   719→                      <Label className="text-xs">{t("form.receivedDate")}</Label>
+   720→                      <Input
+   721→                        type="date"
+   722→                        value={p.receivedDate}
+   723→                        onChange={(e) =>
+   724→                          updatePayment(p.key, { receivedDate: e.target.value })
+   725→                        }
+   726→                      />
+   727→                    </div>
+   728→                  </div>
+   729→                  <div className="space-y-1.5">
+   730→                    <Label className="text-xs">{t("form.paymentNotes")}</Label>
+   731→                    <Input
+   732→                      value={p.notes}
+   733→                      onChange={(e) =>
+   734→                        updatePayment(p.key, { notes: e.target.value })
+   735→                      }
+   736→                      placeholder={t("form.paymentNotesPlaceholder")}
+   737→                    />
+   738→                  </div>
+   739→                </div>
+   740→              ))}
+   741→            </div>
+   742→
+   743→            <div className="flex items-center justify-end gap-2 text-sm">
+   744→              <span className="text-muted-foreground">{t("form.totalAmount")}</span>
+   745→              <Badge variant="secondary" className="text-base font-semibold tabular-nums">
+   746→                {formatCurrency(totalAmount)}
+   747→              </Badge>
+   748→            </div>
+   749→          </section>
+   750→
+   751→          <Separator />
+   752→
+   753→          {/* TikTok Section */}
+   754→          <section className="space-y-4">
+   755→            <div className="flex items-center justify-between gap-2 flex-wrap">
+   756→              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+   757→                <Video className="h-4 w-4" /> {t("form.tiktoks")}
+   758→              </h3>
+   759→              <Button
+   760→                type="button"
+   761→                variant="outline"
+   762→                size="sm"
+   763→                onClick={addTiktok}
+   764→              >
+   765→                <Plus className="h-3.5 w-3.5" /> {t("form.addTiktok")}
+   766→              </Button>
+   767→            </div>
+   768→
+   769→            <div className="grid gap-3 sm:grid-cols-2">
+   770→              <div className="space-y-1.5">
+   771→                <Label className="text-xs">{t("form.tiktokTarget")}</Label>
+   772→                <Input
+   773→                  type="number"
+   774→                  min={0}
+   775→                  value={tiktokTarget}
+   776→                  onChange={(e) => setTiktokTarget(Number(e.target.value) || 0)}
+   777→                  placeholder={t("form.tiktokTargetPlaceholder")}
+   778→                />
+   779→              </div>
+   780→              <div className="flex items-end">
+   781→                <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm w-full">
+   782→                  <span className="text-muted-foreground">{t("form.tiktokProgress")} </span>
+   783→                  <span className="font-semibold tabular-nums">
+   784→                    {formTiktoks.filter((t) => t.url.trim()).length}/{tiktokTarget || 0}
+   785→                  </span>
+   786→                  {tiktokTarget > 0 && (
+   787→                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+   788→                      <div
+   789→                        className="h-full bg-emerald-500 rounded-full transition-all"
+   790→                        style={{
+   791→                          width: `${Math.min(100, (formTiktoks.filter((t) => t.url.trim()).length / tiktokTarget) * 100)}%`,
+   792→                        }}
+   793→                      />
+   794→                    </div>
+   795→                  )}
+   796→                </div>
+   797→              </div>
+   798→            </div>
+   799→
+   800→            {formTiktoks.length === 0 ? (
+   801→              <p className="text-sm text-muted-foreground py-2">
+   802→                {t("form.noTiktoks")}
+   803→              </p>
+   804→            ) : (
+   805→              <div className="space-y-2">
+   806→                {formTiktoks.map((tk) => (
+   807→                  <div
+   808→                    key={tk.key}
+   809→                    className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end"
+   810→                  >
+   811→                    <div className="space-y-1.5">
+   812→                      <Label className="text-xs flex items-center gap-1">
+   813→                        <Link2 className="h-3 w-3" /> {t("form.tiktokUrl")}
+   814→                      </Label>
+   815→                      <Input
+   816→                        type="url"
+   817→                        value={tk.url}
+   818→                        onChange={(e) =>
+   819→                          updateTiktok(tk.key, { url: e.target.value })
+   820→                        }
+   821→                        placeholder={t("form.tiktokUrlPlaceholder")}
+   822→                      />
+   823→                    </div>
+   824→                    <div className="space-y-1.5">
+   825→                      <Label className="text-xs">{t("form.tiktokTitle")}</Label>
+   826→                      <Input
+   827→                        value={tk.title}
+   828→                        onChange={(e) =>
+   829→                          updateTiktok(tk.key, { title: e.target.value })
+   830→                        }
+   831→                        placeholder={t("form.tiktokTitlePlaceholder")}
+   832→                      />
+   833→                    </div>
+   834→                    <div className="space-y-1.5 sm:w-40">
+   835→                      <Label className="text-xs">{t("form.tiktokSound")}</Label>
+   836→                      <Select
+   837→                        value={tk.soundId}
+   838→                        onValueChange={(v) =>
+   839→                          updateTiktok(tk.key, { soundId: v === "none" ? "" : v })
+   840→                        }
+   841→                      >
+   842→                        <SelectTrigger>
+   843→                          <SelectValue placeholder="—" />
+   844→                        </SelectTrigger>
+   845→                        <SelectContent>
+   846→                          <SelectItem value="none">{t("form.tiktokNoSound")}</SelectItem>
+   847→                          {sounds.map((s) => (
+   848→                            <SelectItem key={s.id} value={s.id}>
+   849→                              {s.name}
+   850→                            </SelectItem>
+   851→                          ))}
+   852→                        </SelectContent>
+   853→                      </Select>
+   854→                    </div>
+   855→                    <Button
+   856→                      type="button"
+   857→                      variant="ghost"
+   858→                      size="icon"
+   859→                      onClick={() => removeTiktok(tk.key)}
+   860→                      className="text-muted-foreground hover:text-rose-600"
+   861→                    >
+   862→                      <Trash2 className="h-4 w-4" />
+   863→                    </Button>
+   864→                  </div>
+   865→                ))}
+   866→              </div>
+   867→            )}
+   868→          </section>
+   869→
+   870→          <Separator />
+   871→
+   872→          <section className="space-y-2">
+   873→            <Label htmlFor="promo-notes">{t("form.notesLabel")}</Label>
+   874→            <Textarea
+   875→              id="promo-notes"
+   876→              value={notes}
+   877→              onChange={(e) => setNotes(e.target.value)}
+   878→              rows={3}
+   879→              placeholder={t("form.notesPlaceholder")}
+   880→            />
+   881→          </section>
+   882→        </div>
+   883→
+   884→        <DialogFooter className="px-6 py-4 border-t sticky bottom-0 bg-background">
+   885→          <Button variant="outline" onClick={() => onOpenChange(false)}>
+   886→            {t("action.cancel")}
+   887→          </Button>
+   888→          <Button onClick={handleSubmit} disabled={saving}>
+   889→            {saving
+   890→              ? t("action.saving")
+   891→              : mode === "edit"
+   892→              ? t("form.editSubmit")
+   893→              : t("form.createSubmit")}
+   894→          </Button>
+   895→        </DialogFooter>
+   896→      </DialogContent>
+   897→    </Dialog>
+   898→  );
+   899→}
+   900→

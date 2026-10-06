@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { fetchAndStoreTiktokStats } from "@/lib/tikwm";
 
 export const dynamic = "force-dynamic";
 
@@ -40,34 +41,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Auto-fetch stats from tikwm.com
-  try {
-    const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(cleanUrl)}`;
-    const res = await fetch(apiUrl, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.code === 0 && data.data) {
-        await db.tikTok.update({
-          where: { id: tiktok.id },
-          data: {
-            title: tiktok.title || data.data.title || null,
-            cover: data.data.cover || data.data.origin_cover || null,
-            duration: data.data.duration || null,
-            playCount: data.data.play_count ?? null,
-            likeCount: data.data.digg_count ?? null,
-            commentCount: data.data.comment_count ?? null,
-            shareCount: data.data.share_count ?? null,
-            statsSynced: new Date(),
-          },
-        });
-      }
-    }
-  } catch {
-    // Stats will be fetched on next sync
-  }
+  // Auto-fetch stats from tikwm.com (best-effort)
+  await fetchAndStoreTiktokStats(tiktok.id, cleanUrl);
 
   // Auto-increment sound usage if soundId is set and promoId is set
   if (soundId && promoId) {
@@ -119,6 +94,7 @@ export async function GET(req: NextRequest) {
       promoName: t.promo?.name || null,
       hasPromo: !!t.promoId,
       createdAt: t.createdAt.toISOString(),
+      createTime: t.createTime ?? null,
       statsSynced: t.statsSynced?.toISOString() || null,
     };
   });

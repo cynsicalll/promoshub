@@ -104,3 +104,29 @@ Stage Summary:
 - 4 files changed: customer-dashboard.tsx (scrollToVideo + video IDs + clickable best-video card with rank badge), settings-view.tsx (backup button + section), i18n.ts (new keys EN+DE), new api/backup/route.ts (JSON backup endpoint).
 - Best performing video on customer access link now shows the video number (rank badge), is clickable, scrolls to the video, and highlights it with a pink ring for 2.5s.
 - Settings has a new "Full Backup" section that downloads a complete JSON backup of all data.
+
+---
+Task ID: fix-sound-save + quantityUsed
+Agent: main (Z.ai Code)
+Task: 1) Sounds not saving when creating a new promo. 2) Auto-count TikToks towards sound usage in promos.
+
+Work Log:
+- Investigated via subagent: found two root causes.
+- ISSUE 1 (sounds not saving): In promo-form-dialog.tsx, handleCreateSound() created the sound in the DB but did NOT add it to formSounds (unlike handleCreateCustomer which sets customerId). So when the user created a sound inline and saved, buildPayload() produced an empty sounds:[] array.
+- ISSUE 2 (quantityUsed not incrementing): POST /api/promos and PUT /api/promos/[id] created TikToks with soundId but never incremented promoSound.quantityUsed. Only the standalone /api/tiktoks POST and /api/promos/[id]/tiktoks POST had this logic.
+- Fix 1: Updated handleCreateSound() in promo-form-dialog.tsx — when no addToRowKey is provided, it now adds a new formSounds row with the freshly-created sound's ID (mirroring handleCreateCustomer's setCustomerId pattern).
+- Fix 2a: Updated POST /api/promos (route.ts) — after creating the promo (which creates PromoSound records via nested write), loops through new tiktoks that have a soundId and increments the matching PromoSound.quantityUsed.
+- Fix 2b: Updated PUT /api/promos/[id] (route.ts) — inside the new-tiktok creation loop, after each db.tikTok.create, if the tiktok has a soundId, finds the matching PromoSound and increments quantityUsed.
+- Synced local files from deployed version first (local was out of sync due to deploying from /tmp/promohub-clone).
+- Deployed: commit f6f590d, Vercel deployment SUCCEEDED.
+- Verified on production: created a test promo with a sound (quantityTotal=10, quantityUsed=0) AND a tiktok linked to that sound. API response showed:
+  * Sounds saved: 1 (sound correctly stored) ✓
+  * quantityUsed: 1 (auto-incremented from 0 to 1 because of the linked tiktok) ✓
+  * TikTok views: 27454 (auto-fetched from tikwm) ✓
+- Cleaned up: deleted the test promo.
+
+Stage Summary:
+- 3 files changed: promo-form-dialog.tsx (handleCreateSound adds to formSounds), api/promos/route.ts (increment quantityUsed), api/promos/[id]/route.ts (increment quantityUsed for new tiktoks).
+- Sounds now save correctly when creating a new promo (inline create sound flow works).
+- quantityUsed auto-increments when a TikTok with a sound is added — works in all 4 code paths: standalone add, quick-add, promo create, promo update.
+- The "TikToks uploaded" count (e.g. "1/10") now updates automatically when you add a TikTok with a sound to a promo.

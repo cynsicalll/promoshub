@@ -266,7 +266,16 @@ export function PromoFormDialog({
       artist: newSoundArtist || null,
       url: newSoundUrl || null,
     });
-    if (addToRowKey) updateSound(addToRowKey, { soundId: s.id });
+    if (addToRowKey) {
+      // Update an existing row's soundId
+      updateSound(addToRowKey, { soundId: s.id });
+    } else {
+      // No specific row — add a new formSounds row with the freshly-created sound
+      setFormSounds((prev) => [
+        ...prev,
+        { key: nextKey(), soundId: s.id, quantityTotal: 1, quantityUsed: 0 },
+      ]);
+    }
     setNewSoundName("");
     setNewSoundArtist("");
     setNewSoundUrl("");

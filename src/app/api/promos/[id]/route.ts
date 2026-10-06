@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { PromoInput } from "@/lib/types";
 import { requireAdmin } from "@/lib/auth";
+import { fetchAndStoreTiktokStatsBatch } from "@/lib/tikwm";
 
 export const dynamic = "force-dynamic";
 
@@ -127,9 +128,10 @@ export async function PUT(
     }
   }
 
-  // Create new TikToks (those without id)
+  // Create new TikToks (those without id) and collect them for stats fetching
+  const newTiktoks: Array<{ id: string; url: string }> = [];
   for (const t of (data.tiktoks || []).filter((t) => t.url.trim() && !t.id)) {
-    await db.tikTok.create({
+    const created = await db.tikTok.create({
       data: {
         promoId: id,
         url: t.url.trim(),
@@ -137,6 +139,20 @@ export async function PUT(
         soundId: t.soundId || null,
       },
     });
+    newTiktoks.push({ id: created.id, url: created.url });
+
+    // Auto-increment quantityUsed for the sound linked to this new TikTok
+    if (t.soundId) {
+      const ps = await db.promoSound.findFirst({
+        where: { promoId: id, soundId: t.soundId },
+      });
+      if (ps) {
+        await db.promoSound.update({
+          where: { id: ps.id },
+          data: { quantityUsed: { increment: 1 } },
+        });
+      }
+    }
   }
   // Update existing TikToks
   for (const t of (data.tiktoks || []).filter((t) => t.id && t.url.trim())) {
@@ -148,6 +164,12 @@ export async function PUT(
         soundId: t.soundId || null,
       },
     });
+  }
+
+  // Auto-fetch stats (views, likes, cover, etc.) from tikwm for all new TikToks.
+  // Best-effort: if tikwm is down, the TikToks still exist — user can click "Sync Stats" later.
+  if (newTiktoks.length > 0) {
+    await fetchAndStoreTiktokStatsBatch(newTiktoks);
   }
 
   const promo = await db.promo.findUnique({

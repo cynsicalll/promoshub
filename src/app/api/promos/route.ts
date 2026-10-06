@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { PromoInput } from "@/lib/types";
 import { requireAdmin } from "@/lib/auth";
+import { fetchAndStoreTiktokStatsBatch } from "@/lib/tikwm";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,33 @@ export async function POST(req: NextRequest) {
     },
     include: promoInclude(),
   });
+
+  // Auto-increment quantityUsed for each new TikTok that has a sound linked.
+  // The PromoSound records were just created in the same db.promo.create call,
+  // so we can match them by soundId.
+  for (const t of (data.tiktoks || []).filter((t) => t.url.trim() && t.soundId)) {
+    const ps = promo.sounds?.find((s) => s.soundId === t.soundId);
+    if (ps) {
+      await db.promoSound.update({
+        where: { id: ps.id },
+        data: { quantityUsed: { increment: 1 } },
+      });
+    }
+  }
+
+  // Auto-fetch stats (views, likes, cover, etc.) from tikwm for all new TikToks.
+  // Best-effort: if tikwm is down, the TikToks still exist — user can click "Sync Stats" later.
+  if (promo.tiktoks?.length) {
+    await fetchAndStoreTiktokStatsBatch(
+      promo.tiktoks.map((t) => ({ id: t.id, url: t.url }))
+    );
+    // Re-fetch the promo to include the updated stats in the response
+    const updated = await db.promo.findUnique({
+      where: { id: promo.id },
+      include: promoInclude(),
+    });
+    return NextResponse.json(updated, { status: 201 });
+  }
 
   return NextResponse.json(promo, { status: 201 });
 }

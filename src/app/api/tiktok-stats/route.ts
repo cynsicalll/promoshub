@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { fetchAndStoreTiktokStatsBatch } from "@/lib/tikwm";
 
 export const dynamic = "force-dynamic";
 
 // POST: Sync stats for all TikToks (admin only)
-// Fetches play/like/comment/share counts from tikwm.com and stores them
+// Fetches play/like/comment/share counts from tikwm.com and stores them.
+// Uses the shared helper with retry logic (3 attempts per video with backoff).
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin(req))) {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
@@ -13,44 +15,7 @@ export async function POST(req: NextRequest) {
 
   const tiktoks = await db.tikTok.findMany({ select: { id: true, url: true } });
 
-  let updated = 0;
-  let failed = 0;
-
-  for (const tt of tiktoks) {
-    try {
-      const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(tt.url)}`;
-      const res = await fetch(apiUrl, {
-        headers: { "User-Agent": "Mozilla/5.0" },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!res.ok) {
-        failed++;
-        continue;
-      }
-      const data = await res.json();
-      if (data.code !== 0 || !data.data) {
-        failed++;
-        continue;
-      }
-
-      await db.tikTok.update({
-        where: { id: tt.id },
-        data: {
-          playCount: data.data.play_count ?? null,
-          likeCount: data.data.digg_count ?? null,
-          commentCount: data.data.comment_count ?? null,
-          shareCount: data.data.share_count ?? null,
-          statsSynced: new Date(),
-        },
-      });
-      updated++;
-
-      // Small delay to avoid rate-limiting
-      await new Promise((r) => setTimeout(r, 500));
-    } catch {
-      failed++;
-    }
-  }
+  const { updated, failed } = await fetchAndStoreTiktokStatsBatch(tiktoks);
 
   return NextResponse.json({ updated, failed, total: tiktoks.length });
 }
@@ -88,7 +53,7 @@ export async function GET(req: NextRequest) {
     likeCount: t.likeCount,
     commentCount: t.commentCount,
     shareCount: t.shareCount,
-    promoName: t.promo.name,
+    promoName: t.promo?.name || null,
     createdAt: t.createdAt.toISOString(),
   }));
 
@@ -106,6 +71,7 @@ export async function GET(req: NextRequest) {
   >();
 
   for (const t of tiktoks) {
+    if (!t.promo) continue;
     const key = t.promo.id;
     if (!promoMap.has(key)) {
       promoMap.set(key, {
