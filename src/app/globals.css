@@ -148,86 +148,264 @@
   }
 }
 
-/* ─── Liquid Glass Effect ──────────────────────────────────
-   Applied when the .liquid-glass class is on a parent element.
-   Creates a frosted-glass / glassmorphism aesthetic on cards,
-   matching the Figma sidebar dashboard design.
+/* ─── Liquid Glass Effect (Apple iOS 26 style) ─────────────
+   True liquid glass: strong backdrop refraction + blur + saturation,
+   specular edge highlights (bright top/left, dark bottom/right),
+   layered gradient overlays for depth, and a vibrant mesh background.
+   Applied to the WHOLE website when .liquid-glass is on <main>.
 */
 .liquid-glass {
-  /* Subtle gradient mesh background behind the glass cards */
+  /* Vibrant gradient mesh background — the glass refracts this */
   background:
-    radial-gradient(circle at 15% 20%, oklch(0.62 0.24 278 / 0.12), transparent 40%),
-    radial-gradient(circle at 85% 80%, oklch(0.56 0.22 300 / 0.10), transparent 40%),
-    radial-gradient(circle at 50% 50%, oklch(0.60 0.20 195 / 0.06), transparent 50%);
+    radial-gradient(ellipse at 10% 0%, oklch(0.62 0.28 278 / 0.35), transparent 45%),
+    radial-gradient(ellipse at 90% 10%, oklch(0.60 0.25 330 / 0.30), transparent 45%),
+    radial-gradient(ellipse at 50% 100%, oklch(0.58 0.22 195 / 0.28), transparent 50%),
+    radial-gradient(ellipse at 80% 80%, oklch(0.55 0.20 30 / 0.20), transparent 40%),
+    var(--background);
 }
 
 .dark .liquid-glass {
   background:
-    radial-gradient(circle at 15% 20%, oklch(0.62 0.24 278 / 0.15), transparent 40%),
-    radial-gradient(circle at 85% 80%, oklch(0.56 0.22 300 / 0.12), transparent 40%),
-    radial-gradient(circle at 50% 50%, oklch(0.60 0.20 195 / 0.08), transparent 50%);
+    radial-gradient(ellipse at 10% 0%, oklch(0.50 0.28 278 / 0.30), transparent 45%),
+    radial-gradient(ellipse at 90% 10%, oklch(0.48 0.25 330 / 0.25), transparent 45%),
+    radial-gradient(ellipse at 50% 100%, oklch(0.45 0.22 195 / 0.22), transparent 50%),
+    radial-gradient(ellipse at 80% 80%, oklch(0.42 0.20 30 / 0.15), transparent 40%),
+    var(--background);
 }
 
-/* Glass cards: frosted backdrop blur + semi-transparent fill */
-.liquid-glass .glass-card {
-  background: oklch(1 0 0 / 0.55);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid oklch(1 0 0 / 0.3);
-  box-shadow:
-    0 8px 32px oklch(0 0 0 / 0.08),
-    inset 0 1px 0 oklch(1 0 0 / 0.5);
-}
-
-.dark .liquid-glass .glass-card {
-  background: oklch(0.25 0.03 275 / 0.45);
-  border: 1px solid oklch(1 0 0 / 0.08);
-  box-shadow:
-    0 8px 32px oklch(0 0 0 / 0.3),
-    inset 0 1px 0 oklch(1 0 0 / 0.06);
-}
-
-/* Glass stat cards: extra translucency with colored tint */
-.liquid-glass .glass-stat {
-  background: oklch(1 0 0 / 0.45);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid oklch(1 0 0 / 0.25);
-  box-shadow:
-    0 4px 16px oklch(0 0 0 / 0.06),
-    inset 0 1px 0 oklch(1 0 0 / 0.4);
-}
-
-.dark .liquid-glass .glass-stat {
-  background: oklch(0.22 0.03 278 / 0.4);
-  border: 1px solid oklch(1 0 0 / 0.06);
-  box-shadow:
-    0 4px 16px oklch(0 0 0 / 0.25),
-    inset 0 1px 0 oklch(1 0 0 / 0.05);
-}
-
-/* Glass video cards: slightly more opaque for readability */
-.liquid-glass .glass-video {
-  background: oklch(1 0 0 / 0.65);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  border: 1px solid oklch(1 0 0 / 0.3);
-  box-shadow:
-    0 4px 20px oklch(0 0 0 / 0.08),
-    inset 0 1px 0 oklch(1 0 0 / 0.4);
-}
-
-.dark .liquid-glass .glass-video {
-  background: oklch(0.20 0.03 275 / 0.55);
-  border: 1px solid oklch(1 0 0 / 0.08);
-  box-shadow:
-    0 4px 20px oklch(0 0 0 / 0.3),
-    inset 0 1px 0 oklch(1 0 0 / 0.05);
-}
-
-/* Smooth transition when toggling */
+/* ─── Core liquid glass surface ─── */
+.liquid-glass .glass,
 .liquid-glass .glass-card,
 .liquid-glass .glass-stat,
-.liquid-glass .glass-video {
-  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+.liquid-glass .glass-video,
+.liquid-glass .glass-nav,
+.liquid-glass .glass-header,
+.liquid-glass .glass-sidebar {
+  position: relative;
+  /* Strong frosted blur + saturation boost = liquid refraction look */
+  backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
+  /* Semi-transparent fill — you can see through the glass */
+  background: oklch(1 0 0 / 0.35);
+  /* Specular edge: bright highlight on top/left, subtle dark on bottom/right */
+  border: 1px solid oklch(1 0 0 / 0.5);
+  box-shadow:
+    /* Outer drop shadow for depth */
+    0 8px 32px oklch(0 0 0 / 0.12),
+    /* Inner top highlight — simulates light hitting the glass edge */
+    inset 0 1px 1px oklch(1 0 0 / 0.6),
+    /* Inner left highlight */
+    inset 1px 0 1px oklch(1 0 0 / 0.3),
+    /* Inner bottom shadow — glass thickness */
+    inset 0 -1px 1px oklch(0 0 0 / 0.08);
+  transition: backdrop-filter 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Pseudo-element overlay for the glossy gradient sheen */
+.liquid-glass .glass::before,
+.liquid-glass .glass-card::before,
+.liquid-glass .glass-stat::before,
+.liquid-glass .glass-video::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.25) 0%,
+    oklch(1 0 0 / 0.05) 30%,
+    transparent 50%,
+    oklch(1 0 0 / 0.03) 70%,
+    oklch(1 0 0 / 0.15) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content sits above the ::before overlay */
+.liquid-glass .glass > *,
+.liquid-glass .glass-card > *,
+.liquid-glass .glass-stat > *,
+.liquid-glass .glass-video > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Dark mode liquid glass ─── */
+.dark .liquid-glass .glass,
+.dark .liquid-glass .glass-card,
+.dark .liquid-glass .glass-stat,
+.dark .liquid-glass .glass-video,
+.dark .liquid-glass .glass-nav,
+.dark .liquid-glass .glass-header,
+.dark .liquid-glass .glass-sidebar {
+  background: oklch(0.25 0.04 278 / 0.30);
+  border: 1px solid oklch(1 0 0 / 0.12);
+  backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+  box-shadow:
+    0 8px 32px oklch(0 0 0 / 0.4),
+    inset 0 1px 1px oklch(1 0 0 / 0.15),
+    inset 1px 0 1px oklch(1 0 0 / 0.08),
+    inset 0 -1px 1px oklch(0 0 0 / 0.2);
+}
+
+.dark .liquid-glass .glass::before,
+.dark .liquid-glass .glass-card::before,
+.dark .liquid-glass .glass-stat::before,
+.dark .liquid-glass .glass-video::before {
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.10) 0%,
+    oklch(1 0 0 / 0.03) 30%,
+    transparent 50%,
+    oklch(1 0 0 / 0.02) 70%,
+    oklch(1 0 0 / 0.06) 100%
+  );
+}
+
+/* ─── Hover: glass becomes more reflective ─── */
+.liquid-glass .glass-card:hover,
+.liquid-glass .glass-video:hover,
+.liquid-glass .glass-stat:hover {
+  backdrop-filter: blur(50px) saturate(220%) brightness(1.08);
+  -webkit-backdrop-filter: blur(50px) saturate(220%) brightness(1.08);
+  box-shadow:
+    0 12px 40px oklch(0 0 0 / 0.15),
+    inset 0 1px 1px oklch(1 0 0 / 0.7),
+    inset 1px 0 1px oklch(1 0 0 / 0.4),
+    inset 0 -1px 1px oklch(0 0 0 / 0.1);
+}
+
+.dark .liquid-glass .glass-card:hover,
+.dark .liquid-glass .glass-video:hover,
+.dark .liquid-glass .glass-stat:hover {
+  backdrop-filter: blur(50px) saturate(200%) brightness(1.15);
+  -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.15);
+}
+
+/* ─── Glass sidebar (always visible, not just in liquid-glass mode) ─── */
+.liquid-glass .glass-sidebar {
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
+}
+
+/* ─── Glass header ─── */
+.liquid-glass .glass-header {
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  background: oklch(1 0 0 / 0.45) !important;
+}
+
+.dark .liquid-glass .glass-header {
+  background: oklch(0.18 0.03 278 / 0.40) !important;
+}
+
+/* ─── Glass nav buttons (sidebar items) ─── */
+.liquid-glass .glass-nav {
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+/* ─── Auto-apply glass to ALL shadcn Cards (data-slot="card") ─── */
+.liquid-glass [data-slot="card"] {
+  position: relative;
+  backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
+  background: oklch(1 0 0 / 0.35);
+  border: 1px solid oklch(1 0 0 / 0.5);
+  box-shadow:
+    0 8px 32px oklch(0 0 0 / 0.12),
+    inset 0 1px 1px oklch(1 0 0 / 0.6),
+    inset 1px 0 1px oklch(1 0 0 / 0.3),
+    inset 0 -1px 1px oklch(0 0 0 / 0.08);
+  transition: backdrop-filter 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dark .liquid-glass [data-slot="card"] {
+  background: oklch(0.25 0.04 278 / 0.30);
+  border: 1px solid oklch(1 0 0 / 0.12);
+  backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+  box-shadow:
+    0 8px 32px oklch(0 0 0 / 0.4),
+    inset 0 1px 1px oklch(1 0 0 / 0.15),
+    inset 1px 0 1px oklch(1 0 0 / 0.08),
+    inset 0 -1px 1px oklch(0 0 0 / 0.2);
+}
+
+/* Glossy sheen overlay on all glass cards */
+.liquid-glass [data-slot="card"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.25) 0%,
+    oklch(1 0 0 / 0.05) 30%,
+    transparent 50%,
+    oklch(1 0 0 / 0.03) 70%,
+    oklch(1 0 0 / 0.15) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark .liquid-glass [data-slot="card"]::before {
+  background: linear-gradient(
+    135deg,
+    oklch(1 0 0 / 0.10) 0%,
+    oklch(1 0 0 / 0.03) 30%,
+    transparent 50%,
+    oklch(1 0 0 / 0.02) 70%,
+    oklch(1 0 0 / 0.06) 100%
+  );
+}
+
+/* Ensure card content sits above the ::before overlay */
+.liquid-glass [data-slot="card"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover: cards become more reflective */
+.liquid-glass [data-slot="card"]:hover {
+  backdrop-filter: blur(50px) saturate(220%) brightness(1.08);
+  -webkit-backdrop-filter: blur(50px) saturate(220%) brightness(1.08);
+}
+
+.dark .liquid-glass [data-slot="card"]:hover {
+  backdrop-filter: blur(50px) saturate(200%) brightness(1.15);
+  -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.15);
+}
+
+/* ─── Auto-apply glass to ALL StatCards ─── */
+.liquid-glass [data-slot="card"] .glass-stat,
+.liquid-glass .glass-stat {
+  backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
+}
+
+/* ─── Glass dialogs (modals) ─── */
+.liquid-glass [data-slot="dialog-content"],
+.liquid-glass [data-slot="alert-dialog-content"] {
+  backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+  -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+  background: oklch(1 0 0 / 0.55);
+  border: 1px solid oklch(1 0 0 / 0.5);
+  box-shadow:
+    0 24px 64px oklch(0 0 0 / 0.2),
+    inset 0 1px 1px oklch(1 0 0 / 0.6),
+    inset 1px 0 1px oklch(1 0 0 / 0.3);
+}
+
+.dark .liquid-glass [data-slot="dialog-content"],
+.dark .liquid-glass [data-slot="alert-dialog-content"] {
+  background: oklch(0.22 0.04 278 / 0.50);
+  border: 1px solid oklch(1 0 0 / 0.12);
+  box-shadow:
+    0 24px 64px oklch(0 0 0 / 0.5),
+    inset 0 1px 1px oklch(1 0 0 / 0.15),
+    inset 1px 0 1px oklch(1 0 0 / 0.08);
 }

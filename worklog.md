@@ -314,3 +314,43 @@ Stage Summary:
 - When enabled, the Channel tab gets the liquid glass aesthetic matching the Figma design.
 - When disabled, the Channel tab looks exactly as it did before (solid cards).
 - The preference is persisted in localStorage, so it survives page reloads.
+
+---
+Task ID: true-liquid-glass
+Agent: main (Z.ai Code)
+Task: Fix the liquid glass effect to be true Apple iOS 26 style and apply to the WHOLE website
+
+Work Log:
+- Researched liquidglassdesign.com and liquid glass CSS tutorials. The previous implementation was basic glassmorphism (just blur + transparency). True liquid glass (Apple iOS 26 style) requires:
+  * Strong backdrop blur (40px+) with saturation boost (200%)
+  * Specular edge highlights — bright inset on top/left, dark on bottom/right (simulates glass thickness)
+  * Glossy gradient sheen overlay (::before pseudo-element with 135deg gradient)
+  * Vibrant gradient mesh background for the glass to refract
+  * Layered box-shadows (outer drop + multiple inset highlights)
+- Rewrote the liquid glass CSS in globals.css:
+  * .liquid-glass: vibrant 4-color radial gradient mesh background (indigo, purple, teal, orange) — the glass refracts this
+  * Core glass surface: backdrop-filter blur(40px) saturate(200%) brightness(1.05), 35% opacity white fill, 4-layer box-shadow (outer drop + inset top/left highlights + inset bottom shadow), 50% white border
+  * ::before overlay: 135deg glossy gradient sheen (25% → 5% → transparent → 15% white)
+  * Dark mode: darker translucent fill (30% opacity), adjusted shadows
+  * Hover: blur increases to 50px, saturation to 220%, brightness to 1.08 — glass becomes more reflective
+  * Glass sidebar: blur(50px) saturate(200%)
+  * Glass header: blur(30px) saturate(180%), 45% opacity
+- KEY: Used [data-slot="card"] CSS selector to auto-apply glass to ALL shadcn Card components across the ENTIRE website — no need to edit individual view files. Every Card on every view (Dashboard, Promos, Money, Monthly, Channel, Sounds, Customers, Settings, etc.) automatically gets the liquid glass treatment.
+- Also applied glass to dialogs/modals ([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) with stronger blur (50px) and deeper shadow.
+- Updated app-shell.tsx: added glass-sidebar class to desktop + mobile sidebar, glass-header class to the header — when liquid glass is enabled.
+- Deployed: commit a8d3f46, Vercel deployment SUCCEEDED.
+- Verified via Agent Browser:
+  * Enabled Liquid Glass toggle in Settings
+  * Dashboard: cards have 35% opacity white background, inset box-shadows (specular edges), backdrop-filter blur
+  * Sidebar: has glass-sidebar class
+  * Header: has glass-header class
+  * Channel tab: video cards have glass-video class with 35% opacity and 50% white border
+  * All glass effects are present in the CSS and applied site-wide
+
+Stage Summary:
+- 2 files changed: globals.css (complete liquid glass rewrite + [data-slot=card] global selector), app-shell.tsx (glass-sidebar + glass-header classes).
+- True liquid glass effect: strong backdrop blur + saturation, specular edge highlights, glossy sheen overlay, vibrant mesh background.
+- Applied to the WHOLE website: all cards (via [data-slot=card] selector), all dialogs, sidebar, header.
+- Toggle in Settings → Appearance: "Liquid Glass" (default OFF).
+- When enabled, the entire app gets the Apple iOS 26 liquid glass aesthetic.
+- When disabled, the app looks exactly as before (solid cards).
