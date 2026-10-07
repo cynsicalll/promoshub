@@ -154,3 +154,35 @@ Stage Summary:
 - Future promo creations/updates will retry up to 5 times (1s/2s/3s/4s/5s backoff) when fetching stats for new TikToks — much more reliable than the previous 3 retries.
 - The Sync Stats button also benefits from the improved batch logic (batch size 3, 3 retries per video).
 - NOTE: If a video still doesn't get stats after promo creation (tikwm down for extended period), the user can always click "Sync Stats" in the Channel tab to retry.
+
+---
+Task ID: channel-delete-videos
+Agent: main (Z.ai Code)
+Task: Add option to remove videos from the Channel tab
+
+Work Log:
+- Updated VideoCard component in channel-view.tsx:
+  * Changed outer element from <a> to a <div> wrapper (to allow a button inside without nesting interactive elements)
+  * The thumbnail area is still an <a> that opens the video in a new tab
+  * Added a delete button (Trash2 icon) positioned absolute top-right of the thumbnail, appears on hover (opacity-0 → group-hover:opacity-100), with red hover background
+  * Added handleDelete() function that calls DELETE /api/tiktoks?id={video.id}, invalidates channel-stats/tiktok-stats/promos queries, shows success/error toast
+  * Added AlertDialog confirmation: "Remove video?" title, "This will remove the video from the channel statistics. This cannot be undone." description, Cancel + Remove video buttons (red)
+  * Delete button is hidden in demo mode (isDemo prop)
+  * Added useI18n + useQueryClient hooks to VideoCard
+- Added isDemo prop to VideoCard, passed from the ChannelView component
+- Added AlertDialog import from @/components/ui/alert-dialog
+- Added i18n keys: channel.deleteVideo, channel.deleteVideoTitle, channel.deleteVideoDesc, channel.deleteVideoSuccess, channel.deleteVideoFailed (EN + DE)
+- The existing DELETE /api/tiktoks endpoint already existed and handles the deletion
+- Deployed: commit 27a0f32, Vercel deployment SUCCEEDED.
+- Verified via Agent Browser on production:
+  * Logged in as admin, navigated to Channel tab
+  * Delete button found in DOM on video cards
+  * Clicking it opens a confirmation dialog with "Remove video?" title, Cancel + Remove video buttons
+  * Cancel works correctly (dialog closes without deleting)
+
+Stage Summary:
+- 2 files changed: channel-view.tsx (VideoCard with delete button + confirmation dialog), i18n.ts (new keys EN+DE).
+- Videos can now be removed from the Channel tab by hovering over a video card and clicking the trash icon that appears in the top-right corner.
+- A confirmation dialog prevents accidental deletion.
+- The delete button is hidden in demo mode.
+- After deletion, the channel stats, tiktok stats, and promos queries are invalidated so the UI refreshes immediately.

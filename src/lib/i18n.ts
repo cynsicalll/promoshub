@@ -556,6 +556,11 @@ const en: Dict = {
   "channel.addVideoDesc": "Paste any TikTok link — no promo required. Stats and thumbnail are auto-fetched.",
   "channel.linkPromo": "Link to Promo (optional)",
   "channel.linkSound": "Link to Sound (optional)",
+  "channel.deleteVideo": "Remove video",
+  "channel.deleteVideoTitle": "Remove video?",
+  "channel.deleteVideoDesc": "This will remove the video from the channel statistics. This cannot be undone.",
+  "channel.deleteVideoSuccess": "Video removed",
+  "channel.deleteVideoFailed": "Failed to remove video",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound Promo Manager · Data is stored locally in SQLite",
@@ -1153,6 +1158,11 @@ const de: Dict = {
   "channel.addVideoDesc": "Füge beliebigen TikTok-Link ein — keine Promo erforderlich. Statistiken und Thumbnail werden automatisch abgerufen.",
   "channel.linkPromo": "Mit Promo verknüpfen (optional)",
   "channel.linkSound": "Mit Sound verknüpfen (optional)",
+  "channel.deleteVideo": "Video entfernen",
+  "channel.deleteVideoTitle": "Video entfernen?",
+  "channel.deleteVideoDesc": "Dies entfernt das Video aus den Channel-Statistiken. Dies kann nicht rückgängig gemacht werden.",
+  "channel.deleteVideoSuccess": "Video entfernt",
+  "channel.deleteVideoFailed": "Video konnte nicht entfernt werden",
 
   // ─── App footer ───────────────────────────────────────────
   "app.footer": "Promos · Sound-Promo-Verwaltung · Daten werden lokal in SQLite gespeichert",

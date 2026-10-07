@@ -10,6 +10,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -39,19 +42,7 @@ function formatCount(n: number | null | undefined): string {
   return String(n);
 }
 
-// Extract TikTok video ID from URL (used for sorting by actual upload order)
-// TikTok video IDs are sequential timestamps — higher = newer
-function getTikTokId(url: string): number {
-  const m = url.match(/\/video\/(\d+)/);
-  if (m) return parseInt(m[1]);
-  // For short URLs (vm.tiktok.com/...), use 0 (will sort last)
-  return 0;
-}
-
-// Sort videos by TikTok video ID (ascending = oldest first = Video 1, 2, 3...)
-function sortByUploadOrder(a: VideoItem, b: VideoItem): number {
-  return getTikTokId(a.url) - getTikTokId(b.url);
-}
+// (Sorting is done server-side in /api/channel-stats by real TikTok upload time.)
 
 function formatDuration(seconds: number | null | undefined): string {
   if (!seconds) return "—";
@@ -75,6 +66,7 @@ interface VideoItem {
   promoName: string | null;
   hasPromo: boolean;
   createdAt: string;
+  createTime: number | null; // real TikTok upload timestamp (Unix seconds)
   statsSynced: string | null;
 }
 
@@ -125,7 +117,7 @@ export function ChannelView() {
               soundName: snd ? ((snd.sound as Record<string, unknown>).name as string) : null,
               soundArtist: snd ? ((snd.sound as Record<string, unknown>).artist as string) : null,
               promoName: p.name as string, hasPromo: true,
-              createdAt: tt.createdAt as string, statsSynced: null,
+              createdAt: tt.createdAt as string, createTime: null, statsSynced: null,
             };
           })
         );
@@ -226,6 +218,13 @@ export function ChannelView() {
         <StatCard label={t("stats.totalVideos")} value={`${data.videosWithStats}/${data.totalVideos}`} icon={Video} />
       </div>
 
+      {/* Secondary KPIs */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label={t("stats.totalComments")} value={formatCount(data.totalComments)} icon={MessageCircle} tone="slate" />
+        <StatCard label={t("stats.totalShares")} value={formatCount(data.totalShares)} icon={Share2} tone="slate" />
+        <StatCard label={t("stats.avgLikes")} value={formatCount(data.avgLikes)} icon={Heart} tone="amber" />
+      </div>
+
       {/* Video grid with thumbnails */}
       <Card className="p-5">
         <h3 className="font-semibold flex items-center gap-2 mb-4">
@@ -239,7 +238,7 @@ export function ChannelView() {
           return (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {sortedByDate.map((v, i) => (
-              <VideoCard key={v.id} video={v} rank={i + 1} />
+              <VideoCard key={v.id} video={v} rank={i + 1} isDemo={isDemo} />
             ))}
         </div>
           );
@@ -326,117 +325,257 @@ export function ChannelView() {
         </Card>
       )}
 
+      {/* Promo performance */}
+      {data.promoPerformance.length > 0 && (
+        <Card className="overflow-hidden">
+          <div className="p-5 pb-3">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Megaphone className="h-4 w-4 text-muted-foreground" />
+              {t("channel.promoAnalysis")}
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="min-w-[180px]">{t("stats.col.promo")}</TableHead>
+                  <TableHead className="text-center w-[90px]">{t("stats.totalVideos")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("stats.totalViews")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("stats.totalLikes")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("stats.col.avgViews")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.promoPerformance.map((p) => (
+                  <TableRow key={p.promoName} className="hover:bg-muted/40">
+                    <TableCell className="font-medium text-sm">{p.promoName}</TableCell>
+                    <TableCell className="text-center tabular-nums">{p.videoCount}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">{formatCount(p.totalViews)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCount(p.totalLikes)}</TableCell>
+                    <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{formatCount(p.avgViews)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      )}
+
       {!isDemo && <AddTiktokDialog open={addOpen} onOpenChange={setAddOpen} />}
     </div>
   );
 }
 
 // ─── Video Card with thumbnail ─────────────────────────────
-function VideoCard({ video, rank }: { video: VideoItem; rank: number }) {
+function VideoCard({ video, rank, isDemo }: { video: VideoItem; rank: number; isDemo?: boolean }) {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  // Cover state: try stored cover → fetched cover → fetched originCover → fallback
   const [cover, setCover] = React.useState<string | null>(video.cover || null);
+  const [originCover, setOriginCover] = React.useState<string | null>(null);
+  const [usingOrigin, setUsingOrigin] = React.useState(false);
   const [imgError, setImgError] = React.useState(false);
   const [fetching, setFetching] = React.useState(!video.cover);
-  const hasCover = cover && !imgError;
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const hasCover = (cover || originCover) && !imgError;
+  const currentSrc = usingOrigin ? originCover : cover;
 
-  // If no cover stored, fetch it from tiktok-resolve API (same as customer access link)
+  // If no cover stored, fetch it from tiktok-resolve API with retry
   React.useEffect(() => {
     if (video.cover || !video.url.includes("tiktok.com")) {
       setFetching(false);
       return;
     }
     let cancelled = false;
-    setFetching(true);
-    fetch(`/api/tiktok-resolve?url=${encodeURIComponent(video.url)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!cancelled && data.cover) {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    async function fetchCover(attempt: number) {
+      if (cancelled) return;
+      setFetching(true);
+      try {
+        const res = await fetch(`/api/tiktok-resolve?url=${encodeURIComponent(video.url)}`);
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.cover) {
           setCover(data.cover);
         }
-        if (!cancelled) setFetching(false);
-      })
-      .catch(() => { if (!cancelled) setFetching(false); });
-    return () => { cancelled = true; };
+        if (data.originCover) {
+          setOriginCover(data.originCover);
+        }
+        if (!data.cover && !data.originCover) {
+          // No cover from API — retry up to 3 times with backoff
+          if (attempt < 3) {
+            timeoutId = setTimeout(() => fetchCover(attempt + 1), 2000 * (attempt + 1));
+            return;
+          }
+        }
+        setFetching(false);
+      } catch {
+        if (cancelled) return;
+        // Network error — retry up to 3 times
+        if (attempt < 3) {
+          timeoutId = setTimeout(() => fetchCover(attempt + 1), 2000 * (attempt + 1));
+        } else {
+          setFetching(false);
+        }
+      }
+    }
+
+    fetchCover(0);
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [video.url, video.cover]);
 
+  // Handle image load error: try origin_cover as fallback, then show gradient
+  function handleImgError() {
+    if (!usingOrigin && originCover) {
+      setUsingOrigin(true);
+      setImgError(false);
+    } else {
+      setImgError(true);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/tiktoks?id=${video.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(t("channel.deleteVideoSuccess"));
+      qc.invalidateQueries({ queryKey: ["channel-stats"] });
+      qc.invalidateQueries({ queryKey: ["tiktok-stats"] });
+      qc.invalidateQueries({ queryKey: ["promos"] });
+      setDeleteOpen(false);
+    } catch {
+      toast.error(t("channel.deleteVideoFailed"));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
-    <a
-      href={normalizeUrl(video.url)}
-      target="_blank"
-      rel="noopener noreferrer nofollow"
-      className="group block overflow-hidden rounded-lg border bg-muted transition-colors hover:border-emerald-400"
-    >
-      {/* Thumbnail */}
-      <div className="relative aspect-[9/16] bg-muted overflow-hidden">
-        {hasCover ? (
-          <img
-            src={cover!}
-            alt={video.title || `Video ${rank}`}
-            className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
-            onError={() => setImgError(true)}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-          />
-        ) : fetching ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-950 dark:to-pink-900">
-            <div className="text-center">
-              <Video className="h-6 w-6 mx-auto mb-1 text-pink-400/60" />
-              <div className="h-2.5 w-2.5 mx-auto animate-spin rounded-full border-2 border-pink-300 border-t-pink-500" />
+    <>
+      <div className="group relative block overflow-hidden rounded-lg border bg-muted transition-colors hover:border-emerald-400">
+        {/* Clickable thumbnail — opens video */}
+        <a
+          href={normalizeUrl(video.url)}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          className="block"
+        >
+          <div className="relative aspect-[9/16] bg-muted overflow-hidden">
+            {hasCover && currentSrc ? (
+              <img
+                src={currentSrc}
+                alt={video.title || `Video ${rank}`}
+                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                onError={handleImgError}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            ) : fetching ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-950 dark:to-pink-900">
+                <div className="text-center">
+                  <Video className="h-6 w-6 mx-auto mb-1 text-pink-400/60" />
+                  <div className="h-2.5 w-2.5 mx-auto animate-spin rounded-full border-2 border-pink-300 border-t-pink-500" />
+                </div>
+              </div>
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 flex items-center justify-center">
+                <Video className="h-8 w-8 text-white/60" />
+              </div>
+            )}
+            <div className="absolute top-1.5 left-1.5 flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm">
+              {rank}
+            </div>
+            {video.duration && (
+              <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 rounded bg-black/60 px-1 py-0.5 text-[9px] text-white backdrop-blur-sm">
+                <Clock className="h-2 w-2" />
+                {formatDuration(video.duration)}
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500/90 text-white shadow-lg transition-transform group-hover:scale-110">
+                <Play className="h-4 w-4 fill-white" />
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 flex items-center justify-center">
-            <Video className="h-8 w-8 text-white/60" />
-          </div>
+        </a>
+        {/* Delete button — appears on hover (hidden in demo mode) */}
+        {!isDemo && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDeleteOpen(true);
+            }}
+            className="absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded bg-black/60 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/90"
+            title={t("channel.deleteVideo")}
+            aria-label={t("channel.deleteVideo")}
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
         )}
-        {/* Rank badge */}
-        <div className="absolute top-1.5 left-1.5 flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm">
-          {rank}
-        </div>
-        {/* Duration */}
-        {video.duration && (
-          <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 rounded bg-black/60 px-1 py-0.5 text-[9px] text-white backdrop-blur-sm">
-            <Clock className="h-2 w-2" />
-            {formatDuration(video.duration)}
+        {/* Info */}
+        <div className="p-2 space-y-1 bg-background">
+          <p className="text-xs font-medium truncate">{video.title || `Video ${rank}`}</p>
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <Eye className="h-2.5 w-2.5" />
+              {formatCount(video.playCount)}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <Heart className="h-2.5 w-2.5" />
+              {formatCount(video.likeCount)}
+            </span>
           </div>
-        )}
-        {/* Play overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500/90 text-white shadow-lg transition-transform group-hover:scale-110">
-            <Play className="h-4 w-4 fill-white" />
+          {video.soundName && (
+            <div className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 truncate">
+              <Music2 className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{video.soundName}</span>
+            </div>
+          )}
+          {video.promoName && (
+            <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground truncate">
+              <Megaphone className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{video.promoName}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Calendar className="h-2.5 w-2.5 shrink-0" />
+            <span>{(video.createTime ? new Date(video.createTime * 1000) : new Date(video.createdAt)).toLocaleDateString("en", { day: "numeric", month: "short", year: "2-digit" })}</span>
           </div>
-        </div>
-      </div>
-      {/* Info */}
-      <div className="p-2 space-y-1 bg-background">
-        <p className="text-xs font-medium truncate">{video.title || `Video ${rank}`}</p>
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-0.5">
-            <Eye className="h-2.5 w-2.5" />
-            {formatCount(video.playCount)}
-          </span>
-          <span className="flex items-center gap-0.5">
-            <Heart className="h-2.5 w-2.5" />
-            {formatCount(video.likeCount)}
-          </span>
-        </div>
-        {video.soundName && (
-          <div className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 truncate">
-            <Music2 className="h-2.5 w-2.5 shrink-0" />
-            <span className="truncate">{video.soundName}</span>
-          </div>
-        )}
-        {video.promoName && (
-          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground truncate">
-            <Megaphone className="h-2.5 w-2.5 shrink-0" />
-            <span className="truncate">{video.promoName}</span>
-          </div>
-        )}
-        <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-          <Calendar className="h-2.5 w-2.5 shrink-0" />
-          <span>{new Date(video.createdAt).toLocaleDateString("en", { day: "numeric", month: "short", year: "2-digit" })}</span>
         </div>
       </div>
-    </a>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("channel.deleteVideoTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("channel.deleteVideoDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{t("action.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {t("channel.deleteVideo")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
