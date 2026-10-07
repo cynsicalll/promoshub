@@ -212,21 +212,21 @@ export function ChannelView() {
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("stats.totalViews")} value={formatCount(data.totalViews)} icon={Eye} tone="emerald" />
-        <StatCard label={t("stats.avgViews")} value={formatCount(data.avgViews)} icon={TrendingUp} tone="teal" />
-        <StatCard label={t("stats.totalLikes")} value={formatCount(data.totalLikes)} icon={Heart} tone="rose" />
-        <StatCard label={t("stats.totalVideos")} value={`${data.videosWithStats}/${data.totalVideos}`} icon={Video} />
+        <StatCard label={t("stats.totalViews")} value={formatCount(data.totalViews)} icon={Eye} tone="emerald" className="glass-stat" />
+        <StatCard label={t("stats.avgViews")} value={formatCount(data.avgViews)} icon={TrendingUp} tone="teal" className="glass-stat" />
+        <StatCard label={t("stats.totalLikes")} value={formatCount(data.totalLikes)} icon={Heart} tone="rose" className="glass-stat" />
+        <StatCard label={t("stats.totalVideos")} value={`${data.videosWithStats}/${data.totalVideos}`} icon={Video} className="glass-stat" />
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label={t("stats.totalComments")} value={formatCount(data.totalComments)} icon={MessageCircle} tone="slate" />
-        <StatCard label={t("stats.totalShares")} value={formatCount(data.totalShares)} icon={Share2} tone="slate" />
-        <StatCard label={t("stats.avgLikes")} value={formatCount(data.avgLikes)} icon={Heart} tone="amber" />
+        <StatCard label={t("stats.totalComments")} value={formatCount(data.totalComments)} icon={MessageCircle} tone="slate" className="glass-stat" />
+        <StatCard label={t("stats.totalShares")} value={formatCount(data.totalShares)} icon={Share2} tone="slate" className="glass-stat" />
+        <StatCard label={t("stats.avgLikes")} value={formatCount(data.avgLikes)} icon={Heart} tone="amber" className="glass-stat" />
       </div>
 
       {/* Video grid with thumbnails */}
-      <Card className="p-5">
+      <Card className="p-5 glass-card">
         <h3 className="font-semibold flex items-center gap-2 mb-4">
           <Video className="h-4 w-4 text-muted-foreground" />
           {t("channel.allVideos")}
@@ -246,7 +246,7 @@ export function ChannelView() {
       </Card>
 
       {/* Views chart */}
-      <Card className="p-5">
+      <Card className="p-5 glass-card">
         <h3 className="font-semibold flex items-center gap-2 mb-4">
           <BarChart3 className="h-4 w-4 text-emerald-500" />
           {t("channel.viewsPerVideo")}
@@ -283,7 +283,7 @@ export function ChannelView() {
 
       {/* Sound performance */}
       {data.soundPerformance.length > 0 && (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden glass-card">
           <div className="p-5 pb-3">
             <h3 className="font-semibold flex items-center gap-2">
               <Music2 className="h-4 w-4 text-emerald-500" />
@@ -327,7 +327,7 @@ export function ChannelView() {
 
       {/* Promo performance */}
       {data.promoPerformance.length > 0 && (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden glass-card">
           <div className="p-5 pb-3">
             <h3 className="font-semibold flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-muted-foreground" />
@@ -459,7 +459,7 @@ function VideoCard({ video, rank, isDemo }: { video: VideoItem; rank: number; is
 
   return (
     <>
-      <div className="group relative block overflow-hidden rounded-lg border bg-muted transition-colors hover:border-emerald-400">
+      <div className="group relative block overflow-hidden rounded-lg border bg-muted transition-colors hover:border-emerald-400 glass-video">
         {/* Clickable thumbnail — opens video */}
         <a
           href={normalizeUrl(video.url)}

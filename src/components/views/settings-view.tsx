@@ -18,6 +18,7 @@ import {
   RefreshCw,
   FileUp,
   Database,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { parseCsv } from "@/lib/csv";
@@ -36,10 +37,14 @@ import {
 import { CustomerAccessSection } from "@/components/views/customer-access-section";
 import { useI18n } from "@/components/language-provider";
 import { LANGS } from "@/lib/i18n";
+import { Switch } from "@/components/ui/switch";
+import { useUIPrefs } from "@/lib/ui-prefs";
 
 export function SettingsView() {
   const { t } = useI18n();
   const { theme, setTheme } = useTheme();
+  const liquidGlass = useUIPrefs((s) => s.liquidGlass);
+  const setLiquidGlass = useUIPrefs((s) => s.setLiquidGlass);
   const importMut = useImport();
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [importType, setImportType] = React.useState<"promos" | "payments">(
@@ -179,6 +184,22 @@ export function SettingsView() {
             </p>
           </div>
           <LanguageSwitcher />
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-indigo-500" />
+            <div>
+              <p className="text-sm font-medium">{t("settings.liquidGlass")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.liquidGlassDesc")}
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={liquidGlass}
+            onCheckedChange={setLiquidGlass}
+          />
         </div>
       </Card>
 

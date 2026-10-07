@@ -35,6 +35,7 @@ import { useI18n } from "@/components/language-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useAuth } from "@/components/auth-provider";
 import { BounceSidebar, type BounceSidebarItem } from "@/components/ui/bounce-sidebar";
+import { useUIPrefs } from "@/lib/ui-prefs";
 
 interface NavItem {
   key: ViewKey;
@@ -139,6 +140,7 @@ function MoneySummary() {
 export function AppShell({ children, onOpenDemoCustomer }: { children: React.ReactNode; onOpenDemoCustomer?: () => void }) {
   const { t } = useI18n();
   const { user } = useAuth();
+  const liquidGlass = useUIPrefs((s) => s.liquidGlass);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [formOpen, setFormOpen] = React.useState(false);
   const [uploadOpen, setUploadOpen] = React.useState(false);
@@ -282,7 +284,7 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0">{children}</main>
+        <main className={`flex-1 p-4 md:p-6 lg:p-8 min-w-0 ${liquidGlass ? "liquid-glass" : ""}`}>{children}</main>
 
         <footer className="mt-auto border-t bg-background px-4 py-4 text-center text-xs text-muted-foreground md:px-6">
           {t("app.footer")}

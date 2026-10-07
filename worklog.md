@@ -273,3 +273,44 @@ Stage Summary:
 - UI now matches the Figma dashboard design: dark sidebar, indigo/purple gradient accents, clean content area, rounded corners, polished shadows.
 - No structural changes — all data, features, components, and functionality remain exactly the same.
 - Both light and dark mode work; the sidebar is dark in both modes (matching the Figma design).
+
+---
+Task ID: liquid-glass-effect
+Agent: main (Z.ai Code)
+Task: Add "liquid glass" glassmorphism effect on the Channel tab with a Settings toggle
+
+Work Log:
+- Created src/lib/ui-prefs.ts: Zustand store with localStorage persistence for the liquidGlass boolean preference. Defaults to false (current solid look). Includes setLiquidGlass and toggleLiquidGlass.
+- Added liquid glass CSS in globals.css:
+  * .liquid-glass: subtle gradient mesh background (indigo/purple/teal radial gradients) behind the content area
+  * .liquid-glass .glass-card: frosted backdrop-blur(20px) + saturate(180%), semi-transparent white background (55% opacity), glass border, layered shadow with inset highlight
+  * .liquid-glass .glass-stat: lighter blur(16px), 45% opacity, for stat KPI cards
+  * .liquid-glass .glass-video: slightly more opaque (65%) for video card readability, blur(12px)
+  * Dark mode variants for all glass classes with darker translucent backgrounds
+  * Smooth transition on toggle
+- Updated app-shell.tsx: imports useUIPrefs, applies `liquid-glass` class to <main> when the setting is enabled
+- Updated stat-card.tsx: added optional className prop so glass-stat class can be passed through
+- Updated channel-view.tsx:
+  * All 7 StatCard components: added className="glass-stat"
+  * All 5 Card components: added glass-card to className
+  * VideoCard wrapper div: added glass-video class
+- Updated settings-view.tsx:
+  * Added Switch component import and useUIPrefs import
+  * Added Sparkles icon import
+  * Added liquid glass toggle in the Appearance section: indigo Sparkles icon, "Liquid Glass" label, description, Switch component
+  * Toggle is separated by a Separator from the language switcher
+- Added i18n keys: settings.liquidGlass ("Liquid Glass"), settings.liquidGlassDesc (EN+DE)
+- Deployed: commit a23c11d, Vercel deployment SUCCEEDED.
+- Verified via Agent Browser:
+  * Settings: "Liquid Glass" toggle appears in Appearance section, unchecked by default
+  * Toggling it on → Channel tab: main element has `liquid-glass` class
+  * Glass cards have semi-transparent background (white at 55% opacity)
+  * Backdrop-filter blur is applied via CSS (headless browser computed style may not report it, but the CSS is present)
+
+Stage Summary:
+- 7 files changed: ui-prefs.ts (new), globals.css (glass CSS), app-shell.tsx (liquid-glass class on main), stat-card.tsx (className prop), channel-view.tsx (glass classes), settings-view.tsx (toggle), i18n.ts (keys).
+- Liquid Glass effect: glassmorphism on the Channel tab — frosted backdrop blur, semi-transparent cards, gradient mesh background, glass borders with inset highlights.
+- Toggle in Settings → Appearance: "Liquid Glass" with Sparkles icon, default OFF (current solid look is the default).
+- When enabled, the Channel tab gets the liquid glass aesthetic matching the Figma design.
+- When disabled, the Channel tab looks exactly as it did before (solid cards).
+- The preference is persisted in localStorage, so it survives page reloads.

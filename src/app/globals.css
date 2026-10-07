@@ -147,3 +147,87 @@
     background: oklch(0.50 0.02 275 / 0.7);
   }
 }
+
+/* ─── Liquid Glass Effect ──────────────────────────────────
+   Applied when the .liquid-glass class is on a parent element.
+   Creates a frosted-glass / glassmorphism aesthetic on cards,
+   matching the Figma sidebar dashboard design.
+*/
+.liquid-glass {
+  /* Subtle gradient mesh background behind the glass cards */
+  background:
+    radial-gradient(circle at 15% 20%, oklch(0.62 0.24 278 / 0.12), transparent 40%),
+    radial-gradient(circle at 85% 80%, oklch(0.56 0.22 300 / 0.10), transparent 40%),
+    radial-gradient(circle at 50% 50%, oklch(0.60 0.20 195 / 0.06), transparent 50%);
+}
+
+.dark .liquid-glass {
+  background:
+    radial-gradient(circle at 15% 20%, oklch(0.62 0.24 278 / 0.15), transparent 40%),
+    radial-gradient(circle at 85% 80%, oklch(0.56 0.22 300 / 0.12), transparent 40%),
+    radial-gradient(circle at 50% 50%, oklch(0.60 0.20 195 / 0.08), transparent 50%);
+}
+
+/* Glass cards: frosted backdrop blur + semi-transparent fill */
+.liquid-glass .glass-card {
+  background: oklch(1 0 0 / 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid oklch(1 0 0 / 0.3);
+  box-shadow:
+    0 8px 32px oklch(0 0 0 / 0.08),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+}
+
+.dark .liquid-glass .glass-card {
+  background: oklch(0.25 0.03 275 / 0.45);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  box-shadow:
+    0 8px 32px oklch(0 0 0 / 0.3),
+    inset 0 1px 0 oklch(1 0 0 / 0.06);
+}
+
+/* Glass stat cards: extra translucency with colored tint */
+.liquid-glass .glass-stat {
+  background: oklch(1 0 0 / 0.45);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid oklch(1 0 0 / 0.25);
+  box-shadow:
+    0 4px 16px oklch(0 0 0 / 0.06),
+    inset 0 1px 0 oklch(1 0 0 / 0.4);
+}
+
+.dark .liquid-glass .glass-stat {
+  background: oklch(0.22 0.03 278 / 0.4);
+  border: 1px solid oklch(1 0 0 / 0.06);
+  box-shadow:
+    0 4px 16px oklch(0 0 0 / 0.25),
+    inset 0 1px 0 oklch(1 0 0 / 0.05);
+}
+
+/* Glass video cards: slightly more opaque for readability */
+.liquid-glass .glass-video {
+  background: oklch(1 0 0 / 0.65);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid oklch(1 0 0 / 0.3);
+  box-shadow:
+    0 4px 20px oklch(0 0 0 / 0.08),
+    inset 0 1px 0 oklch(1 0 0 / 0.4);
+}
+
+.dark .liquid-glass .glass-video {
+  background: oklch(0.20 0.03 275 / 0.55);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  box-shadow:
+    0 4px 20px oklch(0 0 0 / 0.3),
+    inset 0 1px 0 oklch(1 0 0 / 0.05);
+}
+
+/* Smooth transition when toggling */
+.liquid-glass .glass-card,
+.liquid-glass .glass-stat,
+.liquid-glass .glass-video {
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}

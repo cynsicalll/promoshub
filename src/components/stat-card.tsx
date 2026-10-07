@@ -8,12 +8,14 @@ export function StatCard({
   hint,
   icon: Icon,
   tone = "default",
+  className,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
   icon?: LucideIcon;
   tone?: "default" | "emerald" | "amber" | "rose" | "teal" | "slate";
+  className?: string;
 }) {
   const tones: Record<string, string> = {
     default: "text-foreground",
@@ -36,7 +38,7 @@ export function StatCard({
       "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
   };
   return (
-    <Card className="p-5 gap-0">
+    <Card className={cn("p-5 gap-0", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm text-muted-foreground">{label}</p>
