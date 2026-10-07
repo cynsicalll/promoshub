@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { fetchAndStoreTiktokStats } from "@/lib/tikwm";
 
 export const dynamic = "force-dynamic";
 
@@ -51,5 +52,11 @@ export async function POST(
     }
   }
 
-  return NextResponse.json(tiktok, { status: 201 });
+  // Auto-fetch stats (views, likes, cover, etc.) from tikwm — best-effort with 5 retries.
+  // If tikwm is down, the TikTok still exists; user can click "Sync Stats" later.
+  await fetchAndStoreTiktokStats(tiktok.id, tiktok.url);
+
+  // Re-fetch to include the updated stats in the response
+  const updated = await db.tikTok.findUnique({ where: { id: tiktok.id } });
+  return NextResponse.json(updated, { status: 201 });
 }

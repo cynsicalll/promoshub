@@ -96,6 +96,8 @@ export function QuickAddTiktokDialog({
       qc.invalidateQueries({ queryKey: ["promos"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["monthly"] });
+      qc.invalidateQueries({ queryKey: ["channel-stats"] });
+      qc.invalidateQueries({ queryKey: ["tiktok-stats"] });
 
       toast.success(
         t("quickAdd.success", { promo: selectedPromo?.name || "" })

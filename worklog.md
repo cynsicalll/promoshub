@@ -209,3 +209,26 @@ Stage Summary:
 - 1 file changed: channel-view.tsx (delete button className updated).
 - Delete buttons are now always visible on mobile/touch devices, and hover-only on desktop.
 - Verified working on iPhone viewport (390×844).
+
+---
+Task ID: fix-quickadd-no-stats
+Agent: main (Z.ai Code)
+Task: TikToks added via the Upload button (quick-add to promo) didn't auto-fetch stats
+
+Work Log:
+- Investigated: found the newest Sydney Sweeney Ad video (ZGdC2jb4C) had no stats (playCount=null, cover=null).
+- Root cause: The quick-add endpoint (POST /api/promos/[id]/tiktoks) — used by the "Upload" button when adding a TikTok to a specific promo — did NOT call fetchAndStoreTiktokStats. It created the TikTok record and returned immediately. This is a completely different code path from the standalone POST /api/tiktoks (Channel tab "Add Video" button) which does fetch stats.
+- Fixed src/app/api/promos/[id]/tiktoks/route.ts:
+  * Added import of fetchAndStoreTiktokStats from @/lib/tikwm
+  * After creating the TikTok and incrementing quantityUsed, calls fetchAndStoreTiktokStats(tiktok.id, tiktok.url) — best-effort with 5 retries
+  * Re-fetches the TikTok record to include the updated stats in the response
+- Fixed src/components/views/quick-add-tiktok-dialog.tsx:
+  * Added channel-stats and tiktok-stats query invalidation after a successful quick-add, so the Channel tab refreshes automatically
+- Triggered a sync on production to backfill the missing video — it now has 361 views and a cover. All 27/27 videos have stats.
+- Deployed: commit f4b0e12, Vercel deployment SUCCEEDED.
+
+Stage Summary:
+- 2 files changed: api/promos/[id]/tiktoks/route.ts (auto-fetch stats), quick-add-tiktok-dialog.tsx (invalidate channel-stats query).
+- The "Upload" button now auto-fetches TikTok stats (views, likes, cover, etc.) when adding a video to a promo — same as the standalone "Add Video" button in the Channel tab.
+- The missing video (ZGdC2jb4C) has been synced and now shows with 361 views and a thumbnail.
+- All 4 TikTok creation code paths now auto-fetch stats: standalone add (POST /api/tiktoks), quick-add (POST /api/promos/[id]/tiktoks), promo create (POST /api/promos), promo update (PUT /api/promos/[id]).
