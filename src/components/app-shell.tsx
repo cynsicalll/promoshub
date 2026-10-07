@@ -58,12 +58,12 @@ function BrandLogo() {
   const { t } = useI18n();
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
         <AudioLines className="h-5 w-5" />
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-semibold tracking-tight">{t("app.name")}</p>
-        <p className="text-[11px] text-muted-foreground">{t("app.subtitle")}</p>
+        <p className="text-sm font-semibold tracking-tight text-sidebar-foreground">{t("app.name")}</p>
+        <p className="text-[11px] text-sidebar-foreground/50">{t("app.subtitle")}</p>
       </div>
     </div>
   );
@@ -114,7 +114,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
         setView(NAV[index].key);
         onNavigate?.();
       }}
-      dotColor="#10b981"
+      dotColor="#818cf8"
     />
   );
 }
@@ -124,12 +124,12 @@ function MoneySummary() {
   const { data } = useDashboard();
   if (!data) return null;
   return (
-    <div className="mt-auto rounded-lg border bg-muted/30 p-3 space-y-1.5">
-      <p className="text-xs font-medium text-muted-foreground">{t("sidebar.openPayments")}</p>
-      <p className="text-lg font-semibold tabular-nums">
+    <div className="mt-auto rounded-xl border border-sidebar-border bg-sidebar-accent/50 p-3 space-y-1.5">
+      <p className="text-xs font-medium text-sidebar-foreground/60">{t("sidebar.openPayments")}</p>
+      <p className="text-lg font-semibold tabular-nums text-sidebar-foreground">
         {formatCurrency(data.money.outstanding)}
       </p>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-sidebar-foreground/50">
         {t("sidebar.received")} {formatCurrency(data.money.received)}
       </p>
     </div>
@@ -157,9 +157,9 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full bg-muted/20">
+    <div className="flex min-h-screen w-full bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r bg-background p-4">
+      <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r border-sidebar-border bg-sidebar p-4">
         <BrandLogo />
         <div className="mt-6">
           <NavLinks />
@@ -195,7 +195,7 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
 
       {/* Mobile sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 p-4 flex flex-col">
+        <SheetContent side="left" className="w-72 p-4 flex flex-col bg-sidebar border-r border-sidebar-border">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <BrandLogo />
           <div className="mt-6">

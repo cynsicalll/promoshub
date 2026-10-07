@@ -232,3 +232,44 @@ Stage Summary:
 - The "Upload" button now auto-fetches TikTok stats (views, likes, cover, etc.) when adding a video to a promo — same as the standalone "Add Video" button in the Channel tab.
 - The missing video (ZGdC2jb4C) has been synced and now shows with 361 views and a thumbnail.
 - All 4 TikTok creation code paths now auto-fetch stats: standalone add (POST /api/tiktoks), quick-add (POST /api/promos/[id]/tiktoks), promo create (POST /api/promos), promo update (PUT /api/promos/[id]).
+
+---
+Task ID: ui-redesign-figma-style
+Agent: main (Z.ai Code)
+Task: Redesign the whole UI to match the Figma "Sidebar Navigation Menu for Dashboard" design (dark sidebar, indigo/purple accents, clean card aesthetic) without changing structure/data
+
+Work Log:
+- Fetched the Figma page to understand the design style: "Sidebar Navigation Menu for Dashboard – Animation (Dark & Light Versions)" — dark sidebar with indigo/purple gradient accents, clean card-based content area, rounded corners, subtle shadows.
+- Redesigned globals.css (CSS variables):
+  * Light mode: clean white/light background with subtle indigo tint, indigo/purple primary color, larger border radius (0.75rem)
+  * Dark mode: deep dark background with indigo tint, indigo primary
+  * Sidebar: dark background in BOTH light and dark modes (Figma style — sidebar is always dark), with indigo sidebar-primary color
+  * All accent colors shifted to indigo/purple palette
+  * Added custom scrollbar styling (thinner, rounded, subtle)
+  * Chart colors updated to indigo-based palette
+- Updated app-shell.tsx:
+  * BrandLogo: indigo→purple gradient (was emerald→teal), shadow with indigo tint, text uses sidebar-foreground colors
+  * MoneySummary: uses sidebar-accent background and sidebar-foreground text colors (was muted/background)
+  * Desktop sidebar: bg-sidebar (dark) with border-sidebar-border (was bg-background)
+  * Mobile sidebar (Sheet): same dark sidebar styling
+  * BounceSidebar dotColor: indigo-400 (#818cf8) instead of emerald green
+- Updated bounce-sidebar.tsx:
+  * Default dotColor: indigo-500 (#6366f1)
+  * Active nav item: bg-gradient-to-r from-indigo-500 to-purple-600 with shadow-lg shadow-indigo-500/20 (was solid bg-primary)
+  * Inactive items: text-sidebar-foreground/60 hover:bg-sidebar-accent (was text-foreground/50 hover:bg-muted)
+  * Rounded corners: rounded-xl (was rounded-lg)
+  * Heading: text-sidebar-foreground/40
+- Updated login-screen.tsx: indigo→purple gradient background and logo (was emerald→teal)
+- Did NOT change: structure, data, components, features, pink Upload buttons (kept for visual distinction), any functionality
+- Deployed: commit 6e98c32, Vercel deployment SUCCEEDED.
+- Verified via Agent Browser:
+  * Sidebar has dark background (lab(3.59...) = very dark)
+  * Active nav item has indigo→purple gradient background
+  * Login screen has indigo→purple gradient logo and background
+  * Dashboard and Channel tab render correctly with new styling
+
+Stage Summary:
+- 4 files changed: globals.css (complete color palette redesign), app-shell.tsx (dark sidebar, indigo brand), bounce-sidebar.tsx (gradient active state, sidebar colors), login-screen.tsx (indigo gradient).
+- UI now matches the Figma dashboard design: dark sidebar, indigo/purple gradient accents, clean content area, rounded corners, polished shadows.
+- No structural changes — all data, features, components, and functionality remain exactly the same.
+- Both light and dark mode work; the sidebar is dark in both modes (matching the Figma design).
