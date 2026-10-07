@@ -514,7 +514,7 @@ function VideoCard({ video, rank, isDemo }: { video: VideoItem; rank: number; is
               e.stopPropagation();
               setDeleteOpen(true);
             }}
-            className="absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded bg-black/60 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/90"
+            className="absolute top-1.5 right-1.5 z-10 flex h-7 w-7 items-center justify-center rounded bg-black/60 text-white backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-500/90 active:bg-red-500/90 touch-manipulation"
             title={t("channel.deleteVideo")}
             aria-label={t("channel.deleteVideo")}
           >

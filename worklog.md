@@ -186,3 +186,26 @@ Stage Summary:
 - A confirmation dialog prevents accidental deletion.
 - The delete button is hidden in demo mode.
 - After deletion, the channel stats, tiktok stats, and promos queries are invalidated so the UI refreshes immediately.
+
+---
+Task ID: channel-delete-mobile
+Agent: main (Z.ai Code)
+Task: Fix delete button visibility on mobile (hover doesn't work on touch devices)
+
+Work Log:
+- The previous delete button used opacity-0 group-hover:opacity-100 — on mobile/touch devices, hover doesn't exist, so the button was never visible.
+- Fixed the className: opacity-100 md:opacity-0 md:group-hover:opacity-100
+  * On mobile (default): opacity-100 = always visible
+  * On desktop (md:): opacity-0, appears on hover
+- Also increased button size from h-6 w-6 to h-7 w-7 for better touch target (28px → 28px, closer to the 44px minimum), added active:bg-red-500/90 for touch feedback, and touch-manipulation for better touch scrolling.
+- Deployed: commit ca0da85, Vercel deployment SUCCEEDED.
+- Verified via Agent Browser with iPhone-sized viewport (390×844):
+  * Logged in, opened mobile menu, navigated to Channel tab
+  * Delete buttons are visible on all video cards (opacity: 1) without hovering
+  * Clicking a delete button opens the confirmation dialog correctly
+  * 26 delete buttons found (one per video card)
+
+Stage Summary:
+- 1 file changed: channel-view.tsx (delete button className updated).
+- Delete buttons are now always visible on mobile/touch devices, and hover-only on desktop.
+- Verified working on iPhone viewport (390×844).
