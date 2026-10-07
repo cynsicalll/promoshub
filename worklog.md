@@ -378,3 +378,27 @@ Stage Summary:
 - 5 files changed: globals.css (glass-sidebar background), app-shell.tsx (conditional bg-sidebar), customer-dashboard.tsx, share-view.tsx, money-viewer-dashboard.tsx (liquid-glass class + indigo gradient).
 - Liquid glass is now applied to: sidebar (desktop + mobile), header, all cards on all views, all dialogs, AND all customer access links (customer dashboard, share view, money viewer dashboard).
 - No promos or data were deleted or changed — only visual styling.
+
+---
+Task ID: fix-blank-stats + sidebar-glass
+Agent: main (Z.ai Code)
+Task: Fix Video Stats tab displaying blank + apply liquid glass to sidebar
+
+Work Log:
+- Issue 1 (Video Stats blank): The deployed production site still showed the old "Video Stats" nav item, and clicking it showed a blank page. Root cause: the local page.tsx and app-shell.tsx had been overwritten with old code (that still had the stats tab) during a previous sync from the deployed version. The StatsView component was still imported and routed, but was rendering blank.
+  * Fixed page.tsx: removed `import { StatsView }` and `{view === "stats" && <StatsView />}`
+  * Fixed app-shell.tsx: removed `{ key: "stats", label: "nav.stats", icon: BarChart3 }` from NAV array, removed unused BarChart3 import
+  * Now only "Channel" tab remains (which has all the merged stats content)
+- Issue 2 (sidebar liquid glass): The sidebar's glass effect wasn't visible because:
+  * The MoneySummary card used `bg-sidebar-accent/50` (solid dark) which blocked the glass transparency
+  * Fixed: when liquidGlass is enabled, MoneySummary now uses `border-white/10 bg-white/5 backdrop-blur-md` (translucent)
+- Deployed: commit 972e70f, Vercel deployment SUCCEEDED.
+- Verified via Agent Browser:
+  * Nav no longer has "Video Stats" — only Dashboard, Promos, Money, Monthly Overview, Channel, Sounds, Customers, Settings
+  * Sidebar has glass-sidebar class, transparent background
+  * MoneySummary card has translucent background (5% white) with backdrop-blur
+
+Stage Summary:
+- 2 files changed: page.tsx (removed stats tab), app-shell.tsx (removed stats from NAV + MoneySummary glass fix).
+- Video Stats blank tab is gone — all video stats are in the Channel tab.
+- Sidebar liquid glass now works — the MoneySummary card is translucent when glass is enabled.

@@ -10,7 +10,6 @@ import { PromosView } from "@/components/views/promos-view";
 import { PromoDetailView } from "@/components/views/promo-detail-view";
 import { MoneyView } from "@/components/views/money-view";
 import { MonthlyView } from "@/components/views/monthly-view";
-import { StatsView } from "@/components/views/stats-view";
 import { ChannelView } from "@/components/views/channel-view";
 import { SoundsView } from "@/components/views/sounds-view";
 import { CustomersView } from "@/components/views/customers-view";
@@ -42,7 +41,6 @@ function AdminApp() {
       {view === "promo-detail" && <PromoDetailView />}
       {view === "money" && <MoneyView />}
       {view === "monthly" && <MonthlyView />}
-      {view === "stats" && <StatsView />}
       {view === "channel" && <ChannelView />}
       {view === "sounds" && <SoundsView />}
       {view === "customers" && <CustomersView />}

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   }
   const sounds = await db.sound.findMany({
     include: { _count: { select: { promoSounds: true } } },
-    orderBy: { name: "asc" },
+    orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(sounds);
 }

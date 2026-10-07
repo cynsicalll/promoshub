@@ -22,7 +22,6 @@ import {
   Sun,
   CalendarRange,
   Video,
-  BarChart3,
   Radio,
 } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -48,7 +47,6 @@ const NAV: NavItem[] = [
   { key: "promos", label: "nav.promos", icon: Megaphone },
   { key: "money", label: "nav.money", icon: Wallet },
   { key: "monthly", label: "nav.monthly", icon: CalendarRange },
-  { key: "stats", label: "nav.stats", icon: BarChart3 },
   { key: "channel", label: "nav.channel", icon: Radio },
   { key: "sounds", label: "nav.sounds", icon: Music2 },
   { key: "customers", label: "nav.customers", icon: Users },
@@ -122,10 +120,11 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function MoneySummary() {
   const { t } = useI18n();
+  const liquidGlass = useUIPrefs((s) => s.liquidGlass);
   const { data } = useDashboard();
   if (!data) return null;
   return (
-    <div className="mt-auto rounded-xl border border-sidebar-border bg-sidebar-accent/50 p-3 space-y-1.5">
+    <div className={`mt-auto rounded-xl border p-3 space-y-1.5 ${liquidGlass ? "border-white/10 bg-white/5 backdrop-blur-md" : "border-sidebar-border bg-sidebar-accent/50"}`}>
       <p className="text-xs font-medium text-sidebar-foreground/60">{t("sidebar.openPayments")}</p>
       <p className="text-lg font-semibold tabular-nums text-sidebar-foreground">
         {formatCurrency(data.money.outstanding)}
