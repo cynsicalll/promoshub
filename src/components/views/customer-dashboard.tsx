@@ -181,7 +181,7 @@ export function CustomerDashboard({ token, demoMode }: { token?: string; demoMod
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-background to-teal-50/40 dark:from-emerald-950/10 dark:via-background dark:to-teal-950/10">
+    <div className={`min-h-screen bg-gradient-to-br from-indigo-50/40 via-background to-purple-50/40 dark:from-indigo-950/10 dark:via-background dark:to-purple-950/10 ${typeof window !== "undefined" && localStorage.getItem("promos-ui-prefs")?.includes('"liquidGlass":true') ? "liquid-glass" : ""}`}>
       {/* Header */}
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">

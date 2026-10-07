@@ -354,3 +354,27 @@ Stage Summary:
 - Toggle in Settings → Appearance: "Liquid Glass" (default OFF).
 - When enabled, the entire app gets the Apple iOS 26 liquid glass aesthetic.
 - When disabled, the app looks exactly as before (solid cards).
+
+---
+Task ID: liquid-glass-sidebar + customer-links
+Agent: main (Z.ai Code)
+Task: Apply liquid glass to the sidebar panel + customer access links
+
+Work Log:
+- Issue 1: Sidebar had glass-sidebar class but the solid bg-sidebar (dark background) was overriding the glass transparency.
+  * Fixed app-shell.tsx: changed from `bg-sidebar ... ${liquidGlass ? "glass-sidebar" : ""}` to `${liquidGlass ? "glass-sidebar" : "bg-sidebar"}` — when liquid glass is on, the solid bg-sidebar is NOT applied, letting the glass CSS provide the semi-transparent background.
+  * Applied to both desktop sidebar and mobile sidebar (Sheet).
+  * Updated glass-sidebar CSS: now provides its own background (oklch(0.20 0.02 275 / 0.40) light, oklch(0.14 0.015 275 / 0.35) dark), border-right, and inset box-shadows.
+- Issue 2: Customer access links (customer-dashboard, share-view, money-viewer-dashboard) don't use the AppShell — they have their own layouts and never got the liquid-glass class.
+  * Fixed all 3 views: added liquid-glass class to the root div, conditionally applied by checking localStorage for the liquidGlass preference (since these views don't have access to the Settings toggle).
+  * Also updated the gradient backgrounds from emerald/teal to indigo/purple to match the new design language.
+  * The liquid glass CSS ([data-slot="card"] selector) automatically applies to all cards within these views.
+- Deployed: commit 6d43a8e, Vercel deployment SUCCEEDED.
+- Verified via Agent Browser:
+  * Sidebar: has glass-sidebar class, transparent background (rgba(0,0,0,0)), glass border-right
+  * Customer access link: root div has "liquid-glass" class, all cards get the glass effect
+
+Stage Summary:
+- 5 files changed: globals.css (glass-sidebar background), app-shell.tsx (conditional bg-sidebar), customer-dashboard.tsx, share-view.tsx, money-viewer-dashboard.tsx (liquid-glass class + indigo gradient).
+- Liquid glass is now applied to: sidebar (desktop + mobile), header, all cards on all views, all dialogs, AND all customer access links (customer dashboard, share view, money viewer dashboard).
+- No promos or data were deleted or changed — only visual styling.

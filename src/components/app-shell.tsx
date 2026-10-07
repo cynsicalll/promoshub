@@ -161,7 +161,7 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Desktop sidebar */}
-      <aside className={`hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r border-sidebar-border bg-sidebar p-4 ${liquidGlass ? "glass-sidebar" : ""}`}>
+      <aside className={`hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r border-sidebar-border p-4 ${liquidGlass ? "glass-sidebar" : "bg-sidebar"}`}>
         <BrandLogo />
         <div className="mt-6">
           <NavLinks />
@@ -197,7 +197,7 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
 
       {/* Mobile sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className={`w-72 p-4 flex flex-col bg-sidebar border-r border-sidebar-border ${liquidGlass ? "glass-sidebar" : ""}`}>
+        <SheetContent side="left" className={`w-72 p-4 flex flex-col border-r border-sidebar-border ${liquidGlass ? "glass-sidebar" : "bg-sidebar"}`}>
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <BrandLogo />
           <div className="mt-6">

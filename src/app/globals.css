@@ -284,21 +284,33 @@
   -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.15);
 }
 
-/* ─── Glass sidebar (always visible, not just in liquid-glass mode) ─── */
+/* ─── Glass sidebar ─── */
 .liquid-glass .glass-sidebar {
-  backdrop-filter: blur(50px) saturate(200%);
-  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+  -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+  background: oklch(0.20 0.02 275 / 0.40);
+  border-right: 1px solid oklch(1 0 0 / 0.12);
+  box-shadow:
+    inset -1px 0 1px oklch(0 0 0 / 0.1),
+    inset 1px 0 1px oklch(1 0 0 / 0.08);
+}
+
+.dark .liquid-glass .glass-sidebar {
+  background: oklch(0.14 0.015 275 / 0.35);
+  border-right: 1px solid oklch(1 0 0 / 0.08);
 }
 
 /* ─── Glass header ─── */
 .liquid-glass .glass-header {
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
   background: oklch(1 0 0 / 0.45) !important;
+  border-bottom: 1px solid oklch(1 0 0 / 0.3) !important;
 }
 
 .dark .liquid-glass .glass-header {
   background: oklch(0.18 0.03 278 / 0.40) !important;
+  border-bottom: 1px solid oklch(1 0 0 / 0.08) !important;
 }
 
 /* ─── Glass nav buttons (sidebar items) ─── */

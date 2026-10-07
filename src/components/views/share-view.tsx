@@ -40,7 +40,7 @@ export function ShareView({ code }: { code: string }) {
   const { data, isLoading, error } = useShare(code);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-background to-teal-50 dark:from-emerald-950/20 dark:via-background dark:to-teal-950/20">
+    <div className={`min-h-screen bg-gradient-to-br from-indigo-50 via-background to-purple-50 dark:from-indigo-950/20 dark:via-background dark:to-purple-950/20 ${typeof window !== "undefined" && localStorage.getItem("promos-ui-prefs")?.includes('"liquidGlass":true') ? "liquid-glass" : ""}`}>
       <div className="mx-auto max-w-3xl px-4 py-8 md:py-12">
         {/* Brand header */}
         <header className="flex items-center justify-between mb-8">
