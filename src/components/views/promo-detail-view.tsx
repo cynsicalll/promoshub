@@ -46,6 +46,8 @@ import {
   Copy,
   Lock,
   Unlock,
+  Bell,
+  X,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -78,9 +80,41 @@ export function PromoDetailView() {
   const enableShare = useEnableShare();
   const disableShare = useDisableShare();
 
+  // PNR: track approval status for each payment
+  const [approvalStatuses, setApprovalStatuses] = React.useState<Record<string, { status: string; respondedAt?: string }>>({});
+
   const promo = promos.find((p) => p.id === promoId) || null;
   const [formOpen, setFormOpen] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState(false);
+
+  // PNR: Poll for approval status changes every 10 seconds
+  React.useEffect(() => {
+    if (!promo) return;
+    let cancelled = false;
+
+    async function fetchApprovals() {
+      if (!promo) return;
+      try {
+        // Fetch approval status for all payments in this promo
+        const results: Record<string, { status: string; respondedAt?: string }> = {};
+        for (const p of promo.payments) {
+          const res = await fetch(`/api/payment-approvals?paymentId=${p.id}`);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            // Get the latest approval request for this payment
+            const latest = data[0];
+            results[p.id] = { status: latest.status, respondedAt: latest.respondedAt };
+          }
+        }
+        if (!cancelled) setApprovalStatuses(results);
+      } catch { /* ignore */ }
+    }
+
+    fetchApprovals();
+    const interval = setInterval(fetchApprovals, 10000); // poll every 10s
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [promo?.id]);
 
   if (!promo) {
     return (
@@ -527,6 +561,69 @@ export function PromoDetailView() {
                           {p.notes}
                         </p>
                       )}
+                      {/* PNR: Request Approval button + status — sends to VIEWER (dad) */}
+                      <div className="border-t pt-2 flex items-center gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 text-xs"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch("/api/backup");
+                              const data = await res.json();
+                              const viewers = (data.users || []).filter((u: { role: string; shareToken?: string }) => u.role === "VIEWER");
+                              if (viewers.length === 0) {
+                                toast.error("No viewer user found. Create a viewer account first.");
+                                return;
+                              }
+                              const viewer = viewers[0];
+                              if (!viewer.shareToken) {
+                                toast.error("Viewer doesn't have a shareToken yet. Go to Settings to generate one.");
+                                return;
+                              }
+                              const promoName = promo.name;
+                              const pnrRes = await fetch("/api/payment-approvals", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  paymentId: p.id,
+                                  approverToken: viewer.shareToken,
+                                  amount: p.amount,
+                                  promoName,
+                                }),
+                              });
+                              if (!pnrRes.ok) throw new Error("Failed");
+                              toast.success(`Payment approval request sent to ${viewer.username || viewer.displayName || "viewer"}`);
+                              // Immediately update local status to PENDING
+                              setApprovalStatuses((prev) => ({ ...prev, [p.id]: { status: "PENDING" } }));
+                            } catch {
+                              toast.error("Failed to send approval request");
+                            }
+                          }}
+                        >
+                          <Bell className="h-3 w-3" />
+                          Request Approval
+                        </Button>
+                        {/* Approval status badge */}
+                        {approvalStatuses[p.id]?.status === "PENDING" && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-2 py-1 rounded-full">
+                            <Clock className="h-3 w-3 animate-pulse" />
+                            Awaiting approval...
+                          </span>
+                        )}
+                        {approvalStatuses[p.id]?.status === "APPROVED" && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/40 px-2 py-1 rounded-full">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Approved{approvalStatuses[p.id]?.respondedAt ? ` · ${new Date(approvalStatuses[p.id].respondedAt).toLocaleString("en", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+                          </span>
+                        )}
+                        {approvalStatuses[p.id]?.status === "DENIED" && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/40 px-2 py-1 rounded-full">
+                            <X className="h-3 w-3" />
+                            Denied
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
