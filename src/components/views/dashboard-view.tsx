@@ -23,9 +23,11 @@ import {
   AlertTriangle,
   ArrowRight,
   CircleSlash,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 import { useI18n } from "@/components/language-provider";
 import {
   ResponsiveContainer,
@@ -62,11 +64,47 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("dashboard.title")}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t("dashboard.subtitle")}
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("dashboard.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t("dashboard.subtitle")}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/push/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  type: "overall",
+                  data: {
+                    total: data?.money?.total?.toFixed(2) || "0",
+                    received: data?.money?.received?.toFixed(2) || "0",
+                    outstanding: data?.money?.outstanding?.toFixed(2) || "0",
+                    promoCount: data?.promos?.total || 0,
+                    tiktokCount: data?.promos?.tiktokDone || 0,
+                  },
+                }),
+              });
+              if (!res.ok) throw new Error("Failed");
+              const result = await res.json();
+              if (result.sent > 0) {
+                toast.success(`Overall summary sent: "${result.title}"`);
+              } else {
+                toast.error("Viewer hasn't enabled notifications yet.");
+              }
+            } catch {
+              toast.error("Failed to send notification");
+            }
+          }}
+        >
+          <Bell className="h-4 w-4" /> Send Summary
+        </Button>
       </div>
 
       {/* Promos KPIs */}

@@ -44,7 +44,9 @@ import {
   CalendarRange,
   ChevronLeft,
   ChevronRight,
+  Bell,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export function MonthlyView() {
   const { t } = useI18n();
@@ -122,6 +124,44 @@ export function MonthlyView() {
             aria-label={t("monthly.nextYear")}
           >
             <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+            onClick={async () => {
+              try {
+                const yearTotal = monthlyData.reduce((s, m) => s + (m.earned || 0), 0);
+                const yearReceived = monthlyData.reduce((s, m) => s + (m.received || 0), 0);
+                const yearOutstanding = yearTotal - yearReceived;
+                const promoCount = monthlyData.reduce((s, m) => s + (m.promos || 0), 0);
+                const res = await fetch("/api/push/send", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    type: "monthly",
+                    data: {
+                      month: String(year),
+                      earnings: yearTotal.toFixed(2),
+                      received: yearReceived.toFixed(2),
+                      outstanding: yearOutstanding.toFixed(2),
+                      promoCount,
+                    },
+                  }),
+                });
+                if (!res.ok) throw new Error("Failed");
+                const result = await res.json();
+                if (result.sent > 0) {
+                  toast.success(`Monthly summary sent: "${result.title}"`);
+                } else {
+                  toast.error("Viewer hasn't enabled notifications yet.");
+                }
+              } catch {
+                toast.error("Failed to send notification");
+              }
+            }}
+          >
+            <Bell className="h-4 w-4" /> Send Summary
           </Button>
         </div>
       </div>

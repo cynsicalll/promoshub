@@ -273,6 +273,40 @@ export function PromoDetailView() {
           <Button
             variant="outline"
             size="sm"
+            className="gap-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+            onClick={async () => {
+              try {
+                const total = promoTotal(promo);
+                const res = await fetch("/api/push/send", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    type: "promo",
+                    data: {
+                      name: promo.name,
+                      amount: total,
+                      customer: promo.customer?.name || "",
+                      date: formatDate(promo.date),
+                    },
+                  }),
+                });
+                if (!res.ok) throw new Error("Failed");
+                const result = await res.json();
+                if (result.sent > 0) {
+                  toast.success(`Notification sent to viewer: "${result.title}"`);
+                } else {
+                  toast.error("Viewer hasn't enabled notifications yet. Ask them to tap the bell button on their link.");
+                }
+              } catch {
+                toast.error("Failed to send notification");
+              }
+            }}
+          >
+            <Bell className="h-4 w-4" /> Notify
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setDeleteConfirm(true)}
             className="gap-2 text-rose-600 hover:text-rose-700"
           >
