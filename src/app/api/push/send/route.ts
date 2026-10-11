@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
   const url = `${baseUrl}/?customer=${viewer.shareToken}`;
 
   if (type === "promo") {
-    // New promo notification
-    title = `New Promo: ${data.name}`;
+    // Money received notification
+    title = `💸 Money: ${data.name}`;
     bodyText = `${data.amount}€${data.customer ? ` · ${data.customer}` : ""}${data.date ? ` · ${data.date}` : ""}`;
   } else if (type === "monthly") {
     // Monthly summary notification
