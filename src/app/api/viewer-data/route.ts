@@ -19,6 +19,9 @@ export async function GET(req: NextRequest) {
   }
 
   const payments = await db.payment.findMany({
+    where: {
+      promo: { viewerVisible: true },
+    },
     include: {
       promo: { select: { name: true, date: true } },
     },

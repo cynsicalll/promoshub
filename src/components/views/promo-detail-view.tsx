@@ -48,6 +48,8 @@ import {
   Unlock,
   Bell,
   X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -269,6 +271,28 @@ export function PromoDetailView() {
             className="gap-2"
           >
             <Pencil className="h-4 w-4" /> {t("action.edit")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`gap-2 ${promo.viewerVisible ? "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}
+            title={promo.viewerVisible ? "Visible in viewer link — click to hide" : "Hidden from viewer link — click to show"}
+            onClick={async () => {
+              try {
+                const res = await fetch(`/api/promos/${promo.id}/viewer-visible`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ visible: !promo.viewerVisible }),
+                });
+                if (!res.ok) throw new Error("Failed");
+                toast.success(promo.viewerVisible ? "Hidden from viewer link" : "Now visible in viewer link");
+              } catch {
+                toast.error("Failed to update visibility");
+              }
+            }}
+          >
+            {promo.viewerVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {promo.viewerVisible ? "Viewer: On" : "Viewer: Off"}
           </Button>
           <Button
             variant="outline"

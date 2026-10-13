@@ -78,6 +78,7 @@ export interface Promo {
   tiktokTarget: number;
   shareCode: string | null;
   shareEnabled: boolean;
+  viewerVisible: boolean;
   createdAt: string;
   updatedAt: string;
   customer: Customer | null;

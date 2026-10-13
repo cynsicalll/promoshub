@@ -48,6 +48,7 @@ model Promo {
   tiktokTarget  Int           @default(0) // how many TikToks must be produced for this promo
   shareCode     String?       @unique // access code for the customer-facing share page
   shareEnabled  Boolean       @default(false)
+  viewerVisible Boolean       @default(true) // whether this promo is visible in the viewer (dad's) link
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
