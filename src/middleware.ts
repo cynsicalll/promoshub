@@ -23,6 +23,7 @@ const ADMIN_API_PREFIXES = [
   "/api/export",
   "/api/seed",
   "/api/users",
+  "/api/notes",
 ];
 
 const SESSION_COOKIE = "promohub_session";

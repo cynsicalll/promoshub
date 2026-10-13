@@ -116,6 +116,18 @@ model Setting {
   @@map("settings")
 }
 
+model Note {
+  id        String   @id @default(cuid())
+  title     String   @default("Untitled")
+  content   String   @default("")
+  color     String   @default("default") // default | yellow | green | blue | pink | orange
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notes")
+}
+
 model User {
   id           String             @id @default(cuid())
   username     String             @unique

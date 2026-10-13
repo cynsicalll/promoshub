@@ -23,6 +23,7 @@ import {
   CalendarRange,
   Video,
   Radio,
+  StickyNote,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { GlobalSearch, SearchTrigger } from "@/components/global-search";
@@ -47,9 +48,10 @@ const NAV: NavItem[] = [
   { key: "promos", label: "nav.promos", icon: Megaphone },
   { key: "money", label: "nav.money", icon: Wallet },
   { key: "monthly", label: "nav.monthly", icon: CalendarRange },
-  { key: "channel", label: "nav.channel", icon: Radio },
+  // { key: "channel", label: "nav.channel", icon: Radio }, // hidden — ask to re-enable
   { key: "sounds", label: "nav.sounds", icon: Music2 },
   { key: "customers", label: "nav.customers", icon: Users },
+  { key: "notes", label: "Notes", icon: StickyNote },
   { key: "settings", label: "nav.settings", icon: Settings },
 ];
 

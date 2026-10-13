@@ -8,6 +8,7 @@ export type ViewKey =
   | "monthly"
   | "sounds"
   | "customers"
+  | "notes"
   | "stats"
   | "channel"
   | "settings";

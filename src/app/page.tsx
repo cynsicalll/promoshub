@@ -13,6 +13,7 @@ import { MonthlyView } from "@/components/views/monthly-view";
 import { ChannelView } from "@/components/views/channel-view";
 import { SoundsView } from "@/components/views/sounds-view";
 import { CustomersView } from "@/components/views/customers-view";
+import { NotesView } from "@/components/views/notes-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { ShareView } from "@/components/views/share-view";
 import { LoginScreen } from "@/components/views/login-screen";
@@ -44,6 +45,7 @@ function AdminApp() {
       {view === "channel" && <ChannelView />}
       {view === "sounds" && <SoundsView />}
       {view === "customers" && <CustomersView />}
+      {view === "notes" && <NotesView />}
       {view === "settings" && <SettingsView />}
     </AppShell>
   );
