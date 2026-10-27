@@ -70,10 +70,31 @@ export async function GET(
   }
 
   const user = await db.user.findFirst({
-    where: { shareToken: token, role: "CUSTOMER" },
+    where: { shareToken: token },
   });
 
   if (!user) {
+    return NextResponse.json(
+      { error: "Ungültiger oder deaktivierter Link." },
+      { status: 404 }
+    );
+  }
+
+  // If the user is a VIEWER or COLLABORATOR, return their role so frontend can route correctly
+  if (user.role === "VIEWER" || user.role === "COLLABORATOR") {
+    return NextResponse.json({
+      user: {
+        displayName: user.displayName,
+        username: user.username,
+        role: user.role,
+        shareToken: token,
+      },
+      promos: [],
+    });
+  }
+
+  // Only CUSTOMER users see promo data
+  if (user.role !== "CUSTOMER") {
     return NextResponse.json(
       { error: "Ungültiger oder deaktivierter Link." },
       { status: 404 }

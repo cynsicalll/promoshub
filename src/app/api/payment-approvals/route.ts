@@ -58,16 +58,25 @@ export async function GET(req: NextRequest) {
     // Get pending approvals for this approver
     const approvals = await db.paymentApproval.findMany({
       where: { approverToken, status: "PENDING" },
-      include: {
-        payment: {
-          include: {
-            promo: { select: { name: true } },
-          },
-        },
-      },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(approvals);
+    // Fetch payment + promo info separately (no foreign key relation)
+    const enrichedApprovals = await Promise.all(
+      approvals.map(async (a) => {
+        const payment = await db.payment.findUnique({
+          where: { id: a.paymentId },
+          include: { promo: { select: { name: true } } },
+        });
+        return {
+          ...a,
+          payment: payment ? {
+            amount: payment.amount,
+            promo: payment.promo ? { name: payment.promo.name } : null,
+          } : null,
+        };
+      })
+    );
+    return NextResponse.json(enrichedApprovals);
   }
 
   if (paymentId) {

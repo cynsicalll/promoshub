@@ -91,15 +91,22 @@ export function DashboardView() {
                   },
                 }),
               });
-              if (!res.ok) throw new Error("Failed");
+              if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || errData.detail || `HTTP ${res.status}`);
+              }
               const result = await res.json();
               if (result.sent > 0) {
                 toast.success(`Overall summary sent: "${result.title}"`);
               } else {
-                toast.error("Viewer hasn't enabled notifications yet.");
+                toast.error("Viewer hasn't enabled notifications yet.", {
+                  description: "Ask your dad to open his viewer link and tap the bell button to enable notifications.",
+                });
               }
-            } catch {
-              toast.error("Failed to send notification");
+            } catch (e) {
+              toast.error("Failed to send notification", {
+                description: e instanceof Error ? e.message : "Unknown error",
+              });
             }
           }}
         >

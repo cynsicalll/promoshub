@@ -69,14 +69,30 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // For /api/my-promos, /api/viewer-data, /api/demo-data, require any logged-in user
-  if (pathname === "/api/my-promos" || pathname === "/api/viewer-data" || pathname === "/api/demo-data") {
+  // For /api/my-promos, /api/demo-data, require any logged-in user
+  if (pathname === "/api/my-promos" || pathname === "/api/demo-data") {
     if (!hasSessionCookie(req)) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
+    return NextResponse.next();
+  }
+
+  // /api/viewer-data: allow with session cookie OR with ?token= param (for viewer/collaborator access links)
+  if (pathname === "/api/viewer-data") {
+    if (!hasSessionCookie(req) && !req.nextUrl.searchParams.get("token")) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+    return NextResponse.next();
+  }
+
+  // /api/payment-approvals and /api/push: allow without session (handles auth internally)
+  if (pathname.startsWith("/api/payment-approvals") || pathname.startsWith("/api/push/")) {
     return NextResponse.next();
   }
 

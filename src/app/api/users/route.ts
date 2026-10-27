@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   }
 
   const users = await db.user.findMany({
-    where: { role: { in: ["CUSTOMER", "VIEWER", "DEMO"] } },
+    where: { role: { in: ["CUSTOMER", "VIEWER", "DEMO", "COLLABORATOR"] } },
     include: {
       promoAccess: {
         include: {

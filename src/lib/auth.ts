@@ -15,7 +15,7 @@ const ADMIN_PASSWORD = "CarDay123!.";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type Role = "ADMIN" | "CUSTOMER";
+export type Role = "ADMIN" | "CUSTOMER" | "VIEWER" | "DEMO" | "COLLABORATOR";
 
 export interface SessionUser {
   userId: string;

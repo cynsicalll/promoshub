@@ -20,7 +20,6 @@ export async function POST(
 
   const approval = await db.paymentApproval.findUnique({
     where: { id },
-    include: { payment: { include: { promo: { select: { name: true } } } } },
   });
 
   if (!approval) {
@@ -30,6 +29,12 @@ export async function POST(
   if (approval.approverToken !== approverToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
+
+  // Fetch payment + promo info separately (no foreign key relation)
+  const payment = await db.payment.findUnique({
+    where: { id: approval.paymentId },
+    include: { promo: { select: { name: true } } },
+  });
 
   if (approval.status !== "PENDING") {
     return NextResponse.json({ error: "Already responded" }, { status: 400 });
@@ -56,7 +61,7 @@ export async function POST(
   return NextResponse.json({
     success: true,
     status: newStatus,
-    promoName: approval.payment.promo?.name,
-    amount: approval.payment.amount,
+    promoName: payment?.promo?.name,
+    amount: payment?.amount,
   });
 }

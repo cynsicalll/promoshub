@@ -6,10 +6,15 @@ let webpushInitialized = false;
 async function getWebPush() {
   const webpush = (await import("web-push")).default;
   if (!webpushInitialized) {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
+    if (!publicKey || !privateKey) {
+      throw new Error("VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.");
+    }
     webpush.setVapidDetails(
       process.env.VAPID_SUBJECT || "mailto:admin@promos.app",
-      process.env.VAPID_PUBLIC_KEY || "",
-      process.env.VAPID_PRIVATE_KEY || ""
+      publicKey,
+      privateKey
     );
     webpushInitialized = true;
   }

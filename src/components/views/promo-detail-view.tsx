@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePromos, useDeletePromo } from "@/hooks/use-data";
 import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
@@ -61,6 +62,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/stat-card";
 import { TikTokThumbnail } from "@/components/tiktok-thumbnail";
 import { toast } from "sonner";
@@ -74,6 +83,7 @@ import { formatDateInput, toISODate } from "@/lib/format";
 
 export function PromoDetailView() {
   const { t } = useI18n();
+  const qc = useQueryClient();
   const promoId = useAppStore((s) => s.selectedPromoId);
   const setView = useAppStore((s) => s.setView);
   const { data: promos = [] } = usePromos();
@@ -84,6 +94,19 @@ export function PromoDetailView() {
 
   // PNR: track approval status for each payment
   const [approvalStatuses, setApprovalStatuses] = React.useState<Record<string, { status: string; respondedAt?: string }>>({});
+  // Collaborators for visibility selector
+  const [collaborators, setCollaborators] = React.useState<Array<{ id: string; username: string; displayName: string | null }>>([]);
+
+  // Fetch collaborators
+  React.useEffect(() => {
+    fetch("/api/backup")
+      .then((r) => r.json())
+      .then((data) => {
+        const cols = (data.users || []).filter((u: { role: string }) => u.role === "COLLABORATOR");
+        setCollaborators(cols);
+      })
+      .catch(() => {});
+  }, []);
 
   const promo = promos.find((p) => p.id === promoId) || null;
   const [formOpen, setFormOpen] = React.useState(false);
@@ -272,28 +295,40 @@ export function PromoDetailView() {
           >
             <Pencil className="h-4 w-4" /> {t("action.edit")}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className={`gap-2 ${promo.viewerVisible ? "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}
-            title={promo.viewerVisible ? "Visible in viewer link — click to hide" : "Hidden from viewer link — click to show"}
-            onClick={async () => {
-              try {
-                const res = await fetch(`/api/promos/${promo.id}/viewer-visible`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ visible: !promo.viewerVisible }),
-                });
-                if (!res.ok) throw new Error("Failed");
-                toast.success(promo.viewerVisible ? "Hidden from viewer link" : "Now visible in viewer link");
-              } catch {
-                toast.error("Failed to update visibility");
-              }
-            }}
-          >
-            {promo.viewerVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-            {promo.viewerVisible ? "Viewer: On" : "Viewer: Off"}
-          </Button>
+          {/* Visible to: Viewer (dad) or Collaborator — not both */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Visible to:</span>
+            <Select
+              value={(promo as Record<string, unknown>).visibleTo as string || "viewer"}
+              onValueChange={async (value) => {
+                try {
+                  const res = await fetch(`/api/promos/${promo.id}/viewer-visible`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ visibleTo: value }),
+                  });
+                  if (!res.ok) throw new Error("Failed");
+                  const colName = collaborators.find((c) => `collaborator:${c.id}` === value)?.displayName || "collaborator";
+                  toast.success(value === "viewer" ? "Now visible to viewer (dad)" : `Now visible to ${colName} only`);
+                  qc.invalidateQueries({ queryKey: ["promos"] });
+                } catch {
+                  toast.error("Failed to update visibility");
+                }
+              }}
+            >
+              <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="viewer">Viewer (Dad)</SelectItem>
+                {collaborators.map((c) => (
+                  <SelectItem key={c.id} value={`collaborator:${c.id}`}>
+                    {c.displayName || c.username}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -563,6 +598,17 @@ export function PromoDetailView() {
                           <p className="font-semibold tabular-nums">
                             {formatCurrency(p.amount)}
                           </p>
+                          {/* Split info */}
+                          {(p as Record<string, unknown>).splitAmount ? (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Split: {formatCurrency((p as Record<string, unknown>).splitAmount as number)} →{" "}
+                              {collaborators.find((c) => c.id === (p as Record<string, unknown>).splitUserId)?.displayName || "collaborator"}
+                              {" · "}
+                              <span className="text-emerald-600 dark:text-emerald-400">
+                                You keep: {formatCurrency(p.amount - ((p as Record<string, unknown>).splitAmount as number))}
+                              </span>
+                            </p>
+                          ) : null}
                           <PaymentStatusBadge
                             paidOut={p.paidOut}
                             received={p.received}
@@ -619,6 +665,86 @@ export function PromoDetailView() {
                           {p.notes}
                         </p>
                       )}
+                      {/* Split amount editor */}
+                      <div className="border-t pt-2 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">Split to:</span>
+                        <Select
+                          value={(p as Record<string, unknown>).splitUserId as string || "none"}
+                          onValueChange={async (value) => {
+                            const splitUserId = value === "none" ? null : value;
+                            const currentSplit = (p as Record<string, unknown>).splitAmount as number || 0;
+                            try {
+                              const res = await fetch("/api/payments/update-split", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  paymentId: p.id,
+                                  splitUserId,
+                                  splitAmount: splitUserId ? currentSplit : 0,
+                                }),
+                              });
+                              if (!res.ok) {
+                                const errData = await res.json().catch(() => ({}));
+                                throw new Error(errData.error || errData.detail || `HTTP ${res.status}`);
+                              }
+                              toast.success(splitUserId ? "Split assigned to " + (collaborators.find((c) => c.id === splitUserId)?.displayName || "collaborator") : "Split removed");
+                              qc.invalidateQueries({ queryKey: ["promos"] });
+                            } catch (e) {
+                              toast.error("Failed to update split: " + (e instanceof Error ? e.message : "Unknown"));
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-[120px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">— None —</SelectItem>
+                            {collaborators.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.displayName || c.username}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {(p as Record<string, unknown>).splitUserId ? (
+                          <>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              defaultValue={(p as Record<string, unknown>).splitAmount as number || 0}
+                              className="h-7 w-[80px] text-xs"
+                              onBlur={async (e) => {
+                                const amount = parseFloat(e.target.value) || 0;
+                                const currentSplitUserId = (p as Record<string, unknown>).splitUserId as string | null;
+                                if (!currentSplitUserId) return; // No collaborator selected, skip
+                                try {
+                                  const res = await fetch("/api/payments/update-split", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      paymentId: p.id,
+                                      splitUserId: currentSplitUserId,
+                                      splitAmount: amount,
+                                    }),
+                                  });
+                                  if (!res.ok) {
+                                    const errData = await res.json().catch(() => ({}));
+                                    throw new Error(errData.error || errData.detail || `HTTP ${res.status}`);
+                                  }
+                                  toast.success(`Split updated: ${amount.toFixed(2)}€`);
+                                  qc.invalidateQueries({ queryKey: ["promos"] });
+                                } catch (e) {
+                                  toast.error("Failed to update split: " + (e instanceof Error ? e.message : "Unknown"));
+                                }
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              of {formatCurrency(p.amount)} · You keep: {formatCurrency(p.amount - ((p as Record<string, unknown>).splitAmount as number || 0))}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
                       {/* PNR: Request Approval button + status — sends to VIEWER (dad) */}
                       <div className="border-t pt-2 flex items-center gap-2 flex-wrap">
                         <Button

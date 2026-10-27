@@ -50,6 +50,8 @@ export interface Payment {
   paidOut: boolean;
   received: boolean;
   notes: string | null;
+  splitAmount: number | null;
+  splitUserId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -79,6 +81,7 @@ export interface Promo {
   shareCode: string | null;
   shareEnabled: boolean;
   viewerVisible: boolean;
+  visibleTo: string;
   createdAt: string;
   updatedAt: string;
   customer: Customer | null;

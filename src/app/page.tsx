@@ -60,8 +60,10 @@ function AuthRouter() {
   // Public share view (no auth needed)
   if (shareCode) return <ShareView code={shareCode} />;
 
-  // Public customer direct-access link (no auth needed)
-  if (customerToken) return <CustomerDashboard token={customerToken} />;
+  // Public customer/viewer/collaborator direct-access link (no auth needed)
+  if (customerToken) {
+    return <AccessLinkRouter token={customerToken} />;
+  }
 
   // Loading state
   if (loading) {
@@ -84,8 +86,41 @@ function AuthRouter() {
   // Viewer → money viewer dashboard (only sees financial data)
   if (user.role === "VIEWER") return <MoneyViewerDashboard />;
 
+  // Collaborator → money viewer dashboard (sees only their split amounts)
+  if (user.role === "COLLABORATOR") return <MoneyViewerDashboard />;
+
   // Customer → customer dashboard
   return <CustomerDashboard />;
+}
+
+// Router for ?customer=TOKEN links — checks role and renders the right dashboard
+function AccessLinkRouter({ token }: { token: string }) {
+  const [role, setRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch(`/api/customer-link/${encodeURIComponent(token)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setRole(data.user?.role || "CUSTOMER");
+      })
+      .catch(() => setRole("CUSTOMER"));
+  }, [token]);
+
+  if (role === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-emerald-500" />
+      </div>
+    );
+  }
+
+  // VIEWER and COLLABORATOR → MoneyViewerDashboard
+  if (role === "VIEWER" || role === "COLLABORATOR") {
+    return <MoneyViewerDashboard externalToken={token} />;
+  }
+
+  // CUSTOMER → CustomerDashboard
+  return <CustomerDashboard token={token} />;
 }
 
 export default function Home() {

@@ -15,15 +15,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Upsert: if endpoint exists, update; otherwise create
-  await db.pushSubscription.upsert({
-    where: { endpoint },
-    create: {
+  // Remove any existing subscription with the same endpoint, then create new
+  await db.pushSubscription.deleteMany({ where: { endpoint } });
+  await db.pushSubscription.create({
+    data: {
       endpoint,
-      p256dh: keys.p256dh,
-      auth: keys.auth,
-      userToken: userToken || null,
-    },
-    update: {
       p256dh: keys.p256dh,
       auth: keys.auth,
       userToken: userToken || null,
