@@ -82,15 +82,30 @@ export async function GET(req: NextRequest) {
   });
 
   // Calculate totals for full amounts (overview)
+  // For collaborators: Paid Out = your share paid out (amount - splitAmount for paidOut payments)
+  // Not Paid Out = Total - Your Paid Out - Collaborator's Total Split
   const totalAmount = safePayments.reduce((s, p) => s + p.amount, 0);
   const totalReceived = safePayments
     .filter((p) => p.received)
     .reduce((s, p) => s + p.amount, 0);
+
+  // For collaborators: paid out = (amount - splitAmount) for paid-out payments (your share only)
+  // For viewer: paid out = full amount for paid-out payments
+  const totalCollabSplit = safePayments.reduce((s, p) => s + (p.splitAmount || 0), 0);
   const totalPaidOut = safePayments
     .filter((p) => p.paidOut)
-    .reduce((s, p) => s + p.amount, 0);
-  // Outstanding = what hasn't been paid out yet (Total - Paid Out)
-  const totalOutstanding = totalAmount - totalPaidOut;
+    .reduce((s, p) => {
+      if (session.role === "COLLABORATOR") {
+        // Your share = amount - splitAmount (what you keep after paying the collaborator)
+        return s + (p.amount - (p.splitAmount || 0));
+      }
+      return s + p.amount;
+    }, 0);
+  // Not Paid Out = Total - Your Paid Out - Collaborator's Total Split (for collaborators)
+  // For viewer: Not Paid Out = Total - Paid Out
+  const totalOutstanding = session.role === "COLLABORATOR"
+    ? totalAmount - totalPaidOut - totalCollabSplit
+    : totalAmount - totalPaidOut;
   const totalOverdue = safePayments
     .filter((p) => {
       const st = computePaymentStatus(p.paidOut, p.received, p.expectedDate || null);
