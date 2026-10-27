@@ -392,16 +392,16 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
                 tone="teal"
               />
               <StatCard
-                label={t("viewer.received")}
-                value={formatCurrency(activeTotals.totalReceived)}
-                icon={TrendingUp}
-                tone="emerald"
-              />
-              <StatCard
-                label={t("viewer.outstanding")}
+                label="Not Paid Out"
                 value={formatCurrency(activeTotals.totalOutstanding)}
                 icon={TrendingDown}
                 tone="amber"
+              />
+              <StatCard
+                label="Received"
+                value={formatCurrency(activeTotals.totalReceived)}
+                icon={TrendingUp}
+                tone="emerald"
               />
               <StatCard
                 label={t("viewer.overdue")}

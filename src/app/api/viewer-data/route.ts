@@ -89,7 +89,8 @@ export async function GET(req: NextRequest) {
   const totalPaidOut = safePayments
     .filter((p) => p.paidOut)
     .reduce((s, p) => s + p.amount, 0);
-  const totalOutstanding = totalAmount - totalReceived;
+  // Outstanding = what hasn't been paid out yet (Total - Paid Out)
+  const totalOutstanding = totalAmount - totalPaidOut;
   const totalOverdue = safePayments
     .filter((p) => {
       const st = computePaymentStatus(p.paidOut, p.received, p.expectedDate || null);
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
       totalAmount: splitTotal,
       totalReceived: splitReceived,
       totalPaidOut: splitPaidOut,
-      totalOutstanding: splitTotal - splitReceived,
+      totalOutstanding: splitTotal - splitPaidOut,
       totalOverdue: mySplits
         .filter((p) => {
           const st = computePaymentStatus(p.paidOut, p.received, p.expectedDate || null);
