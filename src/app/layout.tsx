@@ -19,6 +19,12 @@ export const metadata: Metadata = {
   title: "Promos – Sound Promo Manager",
   description:
     "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Promos",
+  },
   openGraph: {
     title: "Promos – Sound Promo Manager",
     description:
@@ -31,6 +37,18 @@ export const metadata: Metadata = {
     description:
       "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
   },
+};
+
+export const viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
