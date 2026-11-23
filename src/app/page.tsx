@@ -20,6 +20,7 @@ import { LoginScreen } from "@/components/views/login-screen";
 import { CustomerDashboard } from "@/components/views/customer-dashboard";
 import { MoneyViewerDashboard } from "@/components/views/money-viewer-dashboard";
 import { BioPage } from "@/components/views/bio-page";
+import { BioEditorView } from "@/components/views/bio-editor-view";
 
 function AdminApp() {
   const view = useAppStore((s) => s.view);
@@ -47,6 +48,7 @@ function AdminApp() {
       {view === "sounds" && <SoundsView />}
       {view === "customers" && <CustomersView />}
       {view === "notes" && <NotesView />}
+      {view === "bio" && <BioEditorView />}
       {view === "settings" && <SettingsView />}
     </AppShell>
   );

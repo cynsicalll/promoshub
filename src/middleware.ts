@@ -8,6 +8,7 @@ const PUBLIC_API_PATHS = [
   "/api/share/",
   "/api/customer-link/",
   "/api/tiktok-resolve",
+  "/api/bio", // GET is public; PUT is admin-gated in the handler
 ];
 
 // Admin API routes that require admin role

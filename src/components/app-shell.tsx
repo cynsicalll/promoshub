@@ -24,6 +24,7 @@ import {
   Video,
   Radio,
   StickyNote,
+  Sparkles,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { GlobalSearch, SearchTrigger } from "@/components/global-search";
@@ -52,6 +53,7 @@ const NAV: NavItem[] = [
   { key: "sounds", label: "nav.sounds", icon: Music2 },
   { key: "customers", label: "nav.customers", icon: Users },
   { key: "notes", label: "Notes", icon: StickyNote },
+  { key: "bio", label: "Bio Page", icon: Sparkles },
   { key: "settings", label: "nav.settings", icon: Settings },
 ];
 

@@ -16,26 +16,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Promos – Sound Promo Manager",
+  title: "Cynsical",
   description:
-    "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
+    "Cynsical — sound producer, TikTok creator, building cool things on the web.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Promos",
+    title: "Cynsical",
   },
   openGraph: {
-    title: "Promos – Sound Promo Manager",
+    title: "Cynsical",
     description:
-      "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
+      "Cynsical — sound producer, TikTok creator, building cool things on the web.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Promos – Sound Promo Manager",
+    title: "Cynsical",
     description:
-      "Modern promo management for sounds: manage promos, payments, customers and sounds in one place.",
+      "Cynsical — sound producer, TikTok creator, building cool things on the web.",
   },
 };
 

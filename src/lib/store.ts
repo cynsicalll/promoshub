@@ -11,6 +11,7 @@ export type ViewKey =
   | "notes"
   | "stats"
   | "channel"
+  | "bio"
   | "settings";
 
 interface AppState {
