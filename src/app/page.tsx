@@ -19,6 +19,7 @@ import { ShareView } from "@/components/views/share-view";
 import { LoginScreen } from "@/components/views/login-screen";
 import { CustomerDashboard } from "@/components/views/customer-dashboard";
 import { MoneyViewerDashboard } from "@/components/views/money-viewer-dashboard";
+import { BioPage } from "@/components/views/bio-page";
 
 function AdminApp() {
   const view = useAppStore((s) => s.view);
@@ -56,6 +57,7 @@ function AuthRouter() {
   const searchParams = useSearchParams();
   const shareCode = searchParams.get("share");
   const customerToken = searchParams.get("customer");
+  const [showLogin, setShowLogin] = React.useState(false);
 
   // Public share view (no auth needed)
   if (shareCode) return <ShareView code={shareCode} />;
@@ -74,23 +76,18 @@ function AuthRouter() {
     );
   }
 
-  // Not logged in → show login
-  if (!user) return <LoginScreen />;
+  // If user clicked the login button → show login screen
+  if (showLogin && !user) return <LoginScreen />;
 
-  // Admin → full app
-  if (user.role === "ADMIN") return <AdminApp />;
+  // Already logged in → go straight to app
+  if (user) {
+    if (user.role === "ADMIN" || user.role === "DEMO") return <AdminApp />;
+    if (user.role === "VIEWER" || user.role === "COLLABORATOR") return <MoneyViewerDashboard />;
+    return <CustomerDashboard />;
+  }
 
-  // Demo → full app UI but with example data (read-only)
-  if (user.role === "DEMO") return <AdminApp />;
-
-  // Viewer → money viewer dashboard (only sees financial data)
-  if (user.role === "VIEWER") return <MoneyViewerDashboard />;
-
-  // Collaborator → money viewer dashboard (sees only their split amounts)
-  if (user.role === "COLLABORATOR") return <MoneyViewerDashboard />;
-
-  // Customer → customer dashboard
-  return <CustomerDashboard />;
+  // Not logged in → show bio page with hidden login button
+  return <BioPage onLogin={() => setShowLogin(true)} />;
 }
 
 // Router for ?customer=TOKEN links — checks role and renders the right dashboard
