@@ -16,8 +16,17 @@ import {
   Users,
   ThumbsUp,
   Film,
+  Wallet,
+  Pencil,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { BioProfile } from "@/app/api/bio/route";
+
+export type LoginDestination = "financial" | "edit";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -72,7 +81,7 @@ const FALLBACK: BioProfile = {
   videos: [],
 };
 
-export function BioPage({ onLogin }: { onLogin: () => void }) {
+export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) => void }) {
   const { data, isLoading } = useQuery<BioProfile>({
     queryKey: ["bio-profile"],
     queryFn: async () => {
@@ -339,15 +348,48 @@ export function BioPage({ onLogin }: { onLogin: () => void }) {
         </div>
       </div>
 
-      {/* Bottom-left login button */}
-      <button
-        onClick={onLogin}
-        className="fixed bottom-4 left-4 z-50 flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 backdrop-blur-md border border-white/10 text-zinc-500 hover:text-white hover:bg-white/10 transition-all"
-        title="Staff Login"
-        aria-label="Login"
-      >
-        <Lock className="h-3.5 w-3.5" />
-      </button>
+      {/* Bottom-left login button with destination menu */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            className="fixed bottom-4 left-4 z-50 flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 backdrop-blur-md border border-white/10 text-zinc-500 hover:text-white hover:bg-white/10 transition-all"
+            title="Login"
+            aria-label="Login"
+          >
+            <Lock className="h-3.5 w-3.5" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          side="top"
+          align="start"
+          sideOffset={8}
+          className="w-52 p-1.5 bg-zinc-900 border-white/10"
+        >
+          <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+            Sign in to…
+          </div>
+          <button
+            onClick={() => onLogin("financial")}
+            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-sm text-zinc-200 hover:bg-white/10 transition-colors"
+          >
+            <Wallet className="h-4 w-4 text-emerald-400 shrink-0" />
+            <div className="flex flex-col items-start min-w-0">
+              <span className="font-medium">Financial</span>
+              <span className="text-[10px] text-zinc-500">Promo manager & payments</span>
+            </div>
+          </button>
+          <button
+            onClick={() => onLogin("edit")}
+            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-sm text-zinc-200 hover:bg-white/10 transition-colors"
+          >
+            <Pencil className="h-4 w-4 text-fuchsia-400 shrink-0" />
+            <div className="flex flex-col items-start min-w-0">
+              <span className="font-medium">Edit Page</span>
+              <span className="text-[10px] text-zinc-500">Update this bio page</span>
+            </div>
+          </button>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

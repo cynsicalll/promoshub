@@ -25,6 +25,7 @@ import {
   Radio,
   StickyNote,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { GlobalSearch, SearchTrigger } from "@/components/global-search";
@@ -142,7 +143,7 @@ function MoneySummary() {
 
 export function AppShell({ children, onOpenDemoCustomer }: { children: React.ReactNode; onOpenDemoCustomer?: () => void }) {
   const { t } = useI18n();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const liquidGlass = useUIPrefs((s) => s.liquidGlass);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [formOpen, setFormOpen] = React.useState(false);
@@ -284,6 +285,15 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
             </Button>
             <LanguageToggle />
             <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              aria-label="Log out"
+              title="Log out — back to bio page"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </header>
 

@@ -19,7 +19,7 @@ import { ShareView } from "@/components/views/share-view";
 import { LoginScreen } from "@/components/views/login-screen";
 import { CustomerDashboard } from "@/components/views/customer-dashboard";
 import { MoneyViewerDashboard } from "@/components/views/money-viewer-dashboard";
-import { BioPage } from "@/components/views/bio-page";
+import { BioPage, type LoginDestination } from "@/components/views/bio-page";
 import { BioEditorView } from "@/components/views/bio-editor-view";
 
 function AdminApp() {
@@ -60,6 +60,28 @@ function AuthRouter() {
   const shareCode = searchParams.get("share");
   const customerToken = searchParams.get("customer");
   const [showLogin, setShowLogin] = React.useState(false);
+  const [loginDestination, setLoginDestination] = React.useState<LoginDestination>("financial");
+  const setView = useAppStore((s) => s.setView);
+
+  // Track the previous user so we can detect a logout (user goes from
+  // truthy → null) and drop back to the public bio page instead of the
+  // stale login screen.
+  const prevUser = React.useRef(user);
+  React.useEffect(() => {
+    if (prevUser.current && !user) {
+      setShowLogin(false);
+      setLoginDestination("financial");
+    }
+    prevUser.current = user;
+  }, [user]);
+
+  // When the user signs in via "Edit Page", switch to the bio editor
+  // right after the session is established.
+  React.useEffect(() => {
+    if (user && showLogin && loginDestination === "edit") {
+      setView("bio");
+    }
+  }, [user, showLogin, loginDestination, setView]);
 
   // Public share view (no auth needed)
   if (shareCode) return <ShareView code={shareCode} />;
@@ -78,8 +100,15 @@ function AuthRouter() {
     );
   }
 
-  // If user clicked the login button → show login screen
-  if (showLogin && !user) return <LoginScreen />;
+  // If user clicked the login button → show login screen (with destination context)
+  if (showLogin && !user) {
+    return (
+      <LoginScreen
+        destination={loginDestination}
+        onBack={() => setShowLogin(false)}
+      />
+    );
+  }
 
   // Already logged in → go straight to app
   if (user) {
@@ -89,7 +118,17 @@ function AuthRouter() {
   }
 
   // Not logged in → show bio page with hidden login button
-  return <BioPage onLogin={() => setShowLogin(true)} />;
+  return (
+    <BioPage
+      onLogin={(destination) => {
+        setLoginDestination(destination);
+        // Set the view up-front so that when the session resolves we land
+        // on the right tab without a flash of the dashboard.
+        setView(destination === "edit" ? "bio" : "dashboard");
+        setShowLogin(true);
+      }}
+    />
+  );
 }
 
 // Router for ?customer=TOKEN links — checks role and renders the right dashboard
