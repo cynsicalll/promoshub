@@ -86,9 +86,17 @@ const DEFAULT_PROFILE: BioProfile = {
       id: "project-promos",
       title: "Promos",
       description:
-        "Sound promo management system — manage promos, payments, customers & TikTok analytics.",
-      url: "https://sigmadude.vercel.app",
+        "Sound promo management system — track payments, splits, TikTok analytics and send push notifications for approvals.",
+      url: "/?demo=viewer",
       tags: ["Next.js", "TypeScript", "Prisma", "TikTok API"],
+    },
+    {
+      id: "project-clipvault",
+      title: "ClipVault",
+      description:
+        "Watches Twitch streams 24/7, catches the moments chat reacts to, and edits them into vertical clips with facecam, titles and a rating. Closed beta.",
+      url: "https://clipvault.live",
+      tags: ["Twitch", "AI", "Video", "Automation"],
     },
   ],
   achievements: [

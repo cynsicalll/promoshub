@@ -30,6 +30,8 @@ import {
   X,
   Loader2,
   Banknote,
+  ArrowLeft,
+  Sparkles,
 } from "lucide-react";
 import {
   formatCurrency,
@@ -92,7 +94,7 @@ interface ViewerData {
   isCollaborator: boolean;
 }
 
-export function MoneyViewerDashboard({ externalToken }: { externalToken?: string }) {
+export function MoneyViewerDashboard({ externalToken, demo }: { externalToken?: string; demo?: boolean }) {
   const { t } = useI18n();
   const { user, logout } = useAuth();
   const [data, setData] = React.useState<ViewerData | null>(null);
@@ -111,6 +113,7 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
 
   // Fetch viewer's shareToken + display name
   React.useEffect(() => {
+    if (demo) return; // demo mode — no auth, no token needed
     if (externalToken) {
       // Accessed via shareToken URL — fetch viewer info from customer-link API
       setViewerToken(externalToken);
@@ -131,11 +134,11 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
         }
       })
       .catch(() => {});
-  }, [externalToken]);
+  }, [externalToken, demo]);
 
   // Fetch pending approvals
   React.useEffect(() => {
-    if (!viewerToken) return;
+    if (demo || !viewerToken) return;
     let cancelled = false;
     async function fetchApprovals() {
       try {
@@ -178,7 +181,11 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
   }
 
   React.useEffect(() => {
-    const url = externalToken ? `/api/viewer-data?token=${externalToken}` : "/api/viewer-data";
+    const url = demo
+      ? "/api/demo-viewer-data"
+      : externalToken
+        ? `/api/viewer-data?token=${externalToken}`
+        : "/api/viewer-data";
     fetch(url)
       .then(async (r) => {
         if (!r.ok) throw new Error("Failed");
@@ -189,7 +196,7 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [demo, externalToken]);
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-indigo-50/40 via-background to-purple-50/40 dark:from-indigo-950/10 dark:via-background dark:to-purple-950/10 ${typeof window !== "undefined" && localStorage.getItem("promos-ui-prefs")?.includes('"liquidGlass":true') ? "liquid-glass" : ""}`}>
@@ -201,16 +208,24 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
               <AudioLines className="h-5 w-5" />
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-semibold tracking-tight">Promos</p>
+              <p className="text-sm font-semibold tracking-tight flex items-center gap-1.5">
+                Promos
+                {demo && (
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-500 border border-fuchsia-500/20">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    Demo
+                  </span>
+                )}
+              </p>
               <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Eye className="h-2.5 w-2.5" />
-                {viewerName || user?.displayName || user?.username || "Viewer"}
+                {demo ? "Sample data" : viewerName || user?.displayName || user?.username || "Viewer"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Push notification toggle — always show when viewerToken is available */}
-            {viewerToken && (
+            {/* Push notification toggle — hidden in demo mode */}
+            {!demo && viewerToken && (
               <Button
                 variant={push.subscribed ? "default" : "outline"}
                 onClick={() => {
@@ -279,12 +294,20 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
                 )}
               </Button>
             )}
-            <LanguageToggle />
-            {/* Only show logout button when logged in (not when accessed via externalToken) */}
-            {!externalToken && user && (
-              <Button variant="outline" size="sm" onClick={logout} className="gap-2">
-                <LogOut className="h-4 w-4" /> {t("customer.logout")}
+            {demo ? (
+              <Button variant="outline" size="sm" onClick={() => window.history.back()} className="gap-2">
+                <ArrowLeft className="h-4 w-4" /> Back
               </Button>
+            ) : (
+              <>
+                <LanguageToggle />
+                {/* Only show logout button when logged in (not when accessed via externalToken) */}
+                {!externalToken && user && (
+                  <Button variant="outline" size="sm" onClick={logout} className="gap-2">
+                    <LogOut className="h-4 w-4" /> {t("customer.logout")}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -592,7 +615,7 @@ export function MoneyViewerDashboard({ externalToken }: { externalToken?: string
       </main>
 
       <footer className="border-t mt-10 py-4 text-center text-xs text-muted-foreground">
-        Promos · Viewer
+        {demo ? "Promos · Demo (sample data)" : "Promos · Viewer"}
       </footer>
     </div>
   );

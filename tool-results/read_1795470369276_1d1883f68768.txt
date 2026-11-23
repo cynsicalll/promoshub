@@ -1,0 +1,600 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { useAuth } from "@/components/auth-provider";
+     5→import { Card } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { StatCard } from "@/components/stat-card";
+     8→import { PaymentStatusBadge } from "@/components/status-badges";
+     9→import { Checkbox } from "@/components/ui/checkbox";
+    10→import {
+    11→  Table,
+    12→  TableBody,
+    13→  TableCell,
+    14→  TableHead,
+    15→  TableHeader,
+    16→  TableRow,
+    17→} from "@/components/ui/table";
+    18→import {
+    19→  AudioLines,
+    20→  Wallet,
+    21→  TrendingUp,
+    22→  TrendingDown,
+    23→  AlertTriangle,
+    24→  LogOut,
+    25→  Eye,
+    26→  BarChart3,
+    27→  Bell,
+    28→  BellOff,
+    29→  Check,
+    30→  X,
+    31→  Loader2,
+    32→  Banknote,
+    33→} from "lucide-react";
+    34→import {
+    35→  formatCurrency,
+    36→  formatDate,
+    37→  computePaymentStatus,
+    38→} from "@/lib/format";
+    39→import {
+    40→  ResponsiveContainer,
+    41→  BarChart,
+    42→  Bar,
+    43→  XAxis,
+    44→  YAxis,
+    45→  Tooltip,
+    46→  CartesianGrid,
+    47→  Legend,
+    48→  PieChart,
+    49→  Pie,
+    50→  Cell,
+    51→} from "recharts";
+    52→import { useI18n } from "@/components/language-provider";
+    53→import { LanguageToggle } from "@/components/language-toggle";
+    54→import { usePushNotifications } from "@/hooks/use-push";
+    55→import { toast } from "sonner";
+    56→
+    57→interface ViewerPayment {
+    58→  id: string;
+    59→  date: string;
+    60→  amount: number;
+    61→  splitAmount: number;
+    62→  splitUserId: string | null;
+    63→  isMySplit: boolean;
+    64→  paidOut: boolean;
+    65→  received: boolean;
+    66→  expectedDate: string | null;
+    67→  receivedDate: string | null;
+    68→  payoutDate: string | null;
+    69→  status: string;
+    70→  promoName: string | null;
+    71→}
+    72→
+    73→interface ViewerData {
+    74→  user: { userId: string; username: string; role: string; displayName: string | null };
+    75→  payments: ViewerPayment[];
+    76→  totals: {
+    77→    totalAmount: number;
+    78→    totalReceived: number;
+    79→    totalOutstanding: number;
+    80→    totalOverdue: number;
+    81→    totalPaidOut: number;
+    82→    count: number;
+    83→  };
+    84→  splitTotals: {
+    85→    totalAmount: number;
+    86→    totalReceived: number;
+    87→    totalOutstanding: number;
+    88→    totalOverdue: number;
+    89→    totalPaidOut: number;
+    90→    count: number;
+    91→  } | null;
+    92→  isCollaborator: boolean;
+    93→}
+    94→
+    95→export function MoneyViewerDashboard({ externalToken }: { externalToken?: string }) {
+    96→  const { t } = useI18n();
+    97→  const { user, logout } = useAuth();
+    98→  const [data, setData] = React.useState<ViewerData | null>(null);
+    99→  const [loading, setLoading] = React.useState(true);
+   100→  const [activeTab, setActiveTab] = React.useState<"overview" | "mysplit">("overview");
+   101→  const [pendingApprovals, setPendingApprovals] = React.useState<Array<{
+   102→    id: string;
+   103→    payment: { amount: number; promo?: { name: string } };
+   104→    message: string | null;
+   105→    createdAt: string;
+   106→  }>>([]);
+   107→  const [approving, setApproving] = React.useState<string | null>(null);
+   108→  const [viewerToken, setViewerToken] = React.useState<string | null>(externalToken || null);
+   109→  const [viewerName, setViewerName] = React.useState<string | null>(null);
+   110→  const push = usePushNotifications(viewerToken);
+   111→
+   112→  // Fetch viewer's shareToken + display name
+   113→  React.useEffect(() => {
+   114→    if (externalToken) {
+   115→      // Accessed via shareToken URL — fetch viewer info from customer-link API
+   116→      setViewerToken(externalToken);
+   117→      fetch(`/api/customer-link/${externalToken}`)
+   118→        .then((r) => r.json())
+   119→        .then((data) => {
+   120→          if (data.user?.displayName) setViewerName(data.user.displayName);
+   121→        })
+   122→        .catch(() => {});
+   123→      return;
+   124→    }
+   125→    // Accessed via login — get shareToken from auth
+   126→    fetch("/api/auth/me")
+   127→      .then((r) => r.json())
+   128→      .then((userData) => {
+   129→        if (userData.user?.shareToken) {
+   130→          setViewerToken(userData.user.shareToken);
+   131→        }
+   132→      })
+   133→      .catch(() => {});
+   134→  }, [externalToken]);
+   135→
+   136→  // Fetch pending approvals
+   137→  React.useEffect(() => {
+   138→    if (!viewerToken) return;
+   139→    let cancelled = false;
+   140→    async function fetchApprovals() {
+   141→      try {
+   142→        const res = await fetch(`/api/payment-approvals?approverToken=${viewerToken}`);
+   143→        if (!res.ok) return;
+   144→        const data = await res.json();
+   145→        if (!cancelled) setPendingApprovals(data);
+   146→      } catch { /* ignore */ }
+   147→    }
+   148→    fetchApprovals();
+   149→    const interval = setInterval(fetchApprovals, 15000);
+   150→    return () => { cancelled = true; clearInterval(interval); };
+   151→  }, [viewerToken]);
+   152→
+   153→  // Handle approve/deny
+   154→  async function handleApproval(approvalId: string, action: "approve" | "deny") {
+   155→    if (!viewerToken) return;
+   156→    setApproving(approvalId);
+   157→    try {
+   158→      const res = await fetch(`/api/payment-approvals/${approvalId}`, {
+   159→        method: "POST",
+   160→        headers: { "Content-Type": "application/json" },
+   161→        body: JSON.stringify({ approverToken: viewerToken, action }),
+   162→      });
+   163→      if (!res.ok) throw new Error("Failed");
+   164→      setPendingApprovals((prev) => prev.filter((a) => a.id !== approvalId));
+   165→      // Refresh data to show updated payment status
+   166→      if (action === "approve") {
+   167→        const url = externalToken ? `/api/viewer-data?token=${externalToken}` : "/api/viewer-data";
+   168→        fetch(url)
+   169→          .then((r) => r.json())
+   170→          .then((d: ViewerData) => setData(d))
+   171→          .catch(() => {});
+   172→      }
+   173→    } catch {
+   174→      // ignore
+   175→    } finally {
+   176→      setApproving(null);
+   177→    }
+   178→  }
+   179→
+   180→  React.useEffect(() => {
+   181→    const url = externalToken ? `/api/viewer-data?token=${externalToken}` : "/api/viewer-data";
+   182→    fetch(url)
+   183→      .then(async (r) => {
+   184→        if (!r.ok) throw new Error("Failed");
+   185→        return r.json();
+   186→      })
+   187→      .then((d: ViewerData) => {
+   188→        setData(d);
+   189→        setLoading(false);
+   190→      })
+   191→      .catch(() => setLoading(false));
+   192→  }, []);
+   193→
+   194→  return (
+   195→    <div className={`min-h-screen bg-gradient-to-br from-indigo-50/40 via-background to-purple-50/40 dark:from-indigo-950/10 dark:via-background dark:to-purple-950/10 ${typeof window !== "undefined" && localStorage.getItem("promos-ui-prefs")?.includes('"liquidGlass":true') ? "liquid-glass" : ""}`}>
+   196→      {/* Header */}
+   197→      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
+   198→        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
+   199→          <div className="flex items-center gap-2.5">
+   200→            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
+   201→              <AudioLines className="h-5 w-5" />
+   202→            </div>
+   203→            <div className="leading-tight">
+   204→              <p className="text-sm font-semibold tracking-tight">Promos</p>
+   205→              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+   206→                <Eye className="h-2.5 w-2.5" />
+   207→                {viewerName || user?.displayName || user?.username || "Viewer"}
+   208→              </p>
+   209→            </div>
+   210→          </div>
+   211→          <div className="flex items-center gap-2">
+   212→            {/* Push notification toggle — always show when viewerToken is available */}
+   213→            {viewerToken && (
+   214→              <Button
+   215→                variant={push.subscribed ? "default" : "outline"}
+   216→                onClick={() => {
+   217→                  if (!push.supported) {
+   218→                    // Show helpful message based on platform
+   219→                    if (push.platform.isIOS && !push.platform.isStandalone) {
+   220→                      toast.info("To enable notifications on iPhone:", {
+   221→                        description: "1. Tap the Share button at the bottom\n2. Scroll down and tap 'Add to Home Screen'\n3. Open the app from your Home Screen\n4. Then tap the bell button again",
+   222→                        duration: 10000,
+   223→                      });
+   224→                    } else {
+   225→                      toast.error("Push notifications not supported in this browser.", {
+   226→                        description: "Try Chrome on Android/desktop, or Safari on iOS (Add to Home Screen first).",
+   227→                        duration: 8000,
+   228→                      });
+   229→                    }
+   230→                    return;
+   231→                  }
+   232→                  if (push.subscribed) {
+   233→                    push.unsubscribe();
+   234→                  } else {
+   235→                    push.subscribe().then((result) => {
+   236→                      if (!result.success) {
+   237→                        toast.error("Failed to enable notifications", {
+   238→                          description: result.error,
+   239→                          duration: 10000,
+   240→                        });
+   241→                      } else {
+   242→                        toast.success("Notifications enabled!", {
+   243→                          description: "You'll receive push notifications for payment approvals.",
+   244→                        });
+   245→                      }
+   246→                    });
+   247→                  }
+   248→                }}
+   249→                disabled={push.loading}
+   250→                className="gap-2 h-10 px-3 touch-manipulation relative z-40"
+   251→                title={
+   252→                  !push.supported
+   253→                    ? push.platform.isIOS && !push.platform.isStandalone
+   254→                      ? "Add to Home Screen first, then enable notifications"
+   255→                      : "Push notifications not supported in this browser"
+   256→                    : push.subscribed
+   257→                      ? "Notifications enabled — click to disable"
+   258→                      : "Enable push notifications"
+   259→                }
+   260→              >
+   261→                {push.loading ? (
+   262→                  <Loader2 className="h-4 w-4 animate-spin" />
+   263→                ) : push.subscribed ? (
+   264→                  <>
+   265→                    <Bell className="h-4 w-4" />
+   266→                    {pendingApprovals.length > 0 && (
+   267→                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+   268→                        {pendingApprovals.length}
+   269→                      </span>
+   270→                    )}
+   271→                  </>
+   272→                ) : (
+   273→                  <>
+   274→                    <BellOff className="h-4 w-4" />
+   275→                    <span className="text-xs font-medium">
+   276→                      {push.supported ? "Enable" : push.platform.isIOS ? "Add to Home" : "N/A"}
+   277→                    </span>
+   278→                  </>
+   279→                )}
+   280→              </Button>
+   281→            )}
+   282→            <LanguageToggle />
+   283→            {/* Only show logout button when logged in (not when accessed via externalToken) */}
+   284→            {!externalToken && user && (
+   285→              <Button variant="outline" size="sm" onClick={logout} className="gap-2">
+   286→                <LogOut className="h-4 w-4" /> {t("customer.logout")}
+   287→              </Button>
+   288→            )}
+   289→          </div>
+   290→        </div>
+   291→      </header>
+   292→
+   293→      <main className="mx-auto max-w-5xl px-4 py-6 space-y-5">
+   294→        <div>
+   295→          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+   296→            <Wallet className="h-6 w-6 text-muted-foreground" />
+   297→            {t("viewer.title")}
+   298→          </h1>
+   299→          <p className="text-sm text-muted-foreground mt-1">
+   300→            {t("viewer.subtitle")}
+   301→          </p>
+   302→        </div>
+   303→
+   304→        {/* Pending payment approvals (PNR) */}
+   305→        {pendingApprovals.length > 0 && (
+   306→          <Card className="p-4 space-y-3 border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20">
+   307→            <div className="flex items-center gap-2">
+   308→              <Bell className="h-4 w-4 text-amber-500" />
+   309→              <h3 className="font-semibold text-sm">Payment Approvals Needed</h3>
+   310→            </div>
+   311→            {pendingApprovals.map((a) => (
+   312→              <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3">
+   313→                <div className="min-w-0 flex-1">
+   314→                  <p className="text-sm font-medium">
+   315→                    {a.payment.promo?.name || "Payment"}:{" "}
+   316→                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+   317→                      {a.payment.amount.toLocaleString("en-US", { style: "currency", currency: "EUR" })}
+   318→                    </span>
+   319→                  </p>
+   320→                  {a.message && <p className="text-xs text-muted-foreground truncate">{a.message}</p>}
+   321→                </div>
+   322→                <div className="flex gap-2 shrink-0">
+   323→                  <Button
+   324→                    size="sm"
+   325→                    onClick={() => handleApproval(a.id, "approve")}
+   326→                    disabled={approving === a.id}
+   327→                    className="gap-1 bg-emerald-600 hover:bg-emerald-700"
+   328→                  >
+   329→                    {approving === a.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+   330→                    Approve
+   331→                  </Button>
+   332→                  <Button
+   333→                    size="sm"
+   334→                    variant="outline"
+   335→                    onClick={() => handleApproval(a.id, "deny")}
+   336→                    disabled={approving === a.id}
+   337→                    className="gap-1"
+   338→                  >
+   339→                    <X className="h-3 w-3" />
+   340→                    Deny
+   341→                  </Button>
+   342→                </div>
+   343→              </div>
+   344→            ))}
+   345→          </Card>
+   346→        )}
+   347→
+   348→        {loading ? (
+   349→          <Card className="p-10 text-center">
+   350→            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-emerald-500" />
+   351→            <p className="mt-3 text-sm text-muted-foreground">{t("action.loading")}</p>
+   352→          </Card>
+   353→        ) : !data ? (
+   354→          <Card className="p-10 text-center">
+   355→            <p className="text-sm text-muted-foreground">{t("viewer.noData")}</p>
+   356→          </Card>
+   357→        ) : (
+   358→          <>
+   359→            {/* Tabs for collaborator: Overview vs My Split */}
+   360→            {data.isCollaborator && data.splitTotals && (
+   361→              <div className="flex gap-2 border-b">
+   362→                <button
+   363→                  onClick={() => setActiveTab("overview")}
+   364→                  className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === "overview" ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+   365→                >
+   366→                  Overview (All)
+   367→                </button>
+   368→                <button
+   369→                  onClick={() => setActiveTab("mysplit")}
+   370→                  className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === "mysplit" ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+   371→                >
+   372→                  My Split
+   373→                </button>
+   374→              </div>
+   375→            )}
+   376→
+   377→            {/* KPIs — use split totals when on My Split tab */}
+   378→            {(() => {
+   379→              const activeTotals = activeTab === "mysplit" && data.splitTotals ? data.splitTotals : data.totals;
+   380→              return (
+   381→            <>
+   382→            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+   383→              <StatCard
+   384→                label={activeTab === "mysplit" ? "My Split Total" : t("viewer.total")}
+   385→                value={formatCurrency(activeTotals.totalAmount)}
+   386→                icon={Wallet}
+   387→              />
+   388→              <StatCard
+   389→                label="Paid Out"
+   390→                value={formatCurrency(activeTotals.totalPaidOut || 0)}
+   391→                icon={Banknote}
+   392→                tone="teal"
+   393→              />
+   394→              <StatCard
+   395→                label="Not Paid Out"
+   396→                value={formatCurrency(activeTotals.totalOutstanding)}
+   397→                icon={TrendingDown}
+   398→                tone="amber"
+   399→              />
+   400→              <StatCard
+   401→                label="Received"
+   402→                value={formatCurrency(activeTotals.totalReceived)}
+   403→                icon={TrendingUp}
+   404→                tone="emerald"
+   405→              />
+   406→              <StatCard
+   407→                label={t("viewer.overdue")}
+   408→                value={formatCurrency(activeTotals.totalOverdue)}
+   409→                icon={AlertTriangle}
+   410→                tone={activeTotals.totalOverdue > 0 ? "rose" : "default"}
+   411→              />
+   412→            </div>
+   413→
+   414→            {/* Charts */}
+   415→            <div className="grid gap-4 lg:grid-cols-3">
+   416→              {/* Monthly bar chart */}
+   417→              <Card className="lg:col-span-2 p-5">
+   418→                <div className="flex items-center gap-2 mb-4">
+   419→                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+   420→                  <h3 className="font-semibold">{t("viewer.chartTitle")}</h3>
+   421→                </div>
+   422→                <div className="h-64">
+   423→                  <ResponsiveContainer width="100%" height="100%">
+   424→                    <BarChart
+   425→                      data={(() => {
+   426→                        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+   427→                        const months = new Map<string, { label: string; earned: number; received: number }>();
+   428→                        for (const p of data.payments) {
+   429→                          const d = new Date(p.date);
+   430→                          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+   431→                          const label = `${monthNames[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
+   432→                          if (!months.has(key)) months.set(key, { label, earned: 0, received: 0 });
+   433→                          const entry = months.get(key)!;
+   434→                          entry.earned += p.amount;
+   435→                          if (p.received) entry.received += p.amount;
+   436→                        }
+   437→                        // Sort chronologically by key (oldest first for the chart)
+   438→                        return Array.from(months.entries())
+   439→                          .sort((a, b) => a[0].localeCompare(b[0]))
+   440→                          .map(([, val]) => val);
+   441→                      })()}
+   442→                      barGap={4}
+   443→                    >
+   444→                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+   445→                      <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} className="fill-muted-foreground" />
+   446→                      <YAxis tickLine={false} axisLine={false} fontSize={11} className="fill-muted-foreground" width={48} tickFormatter={(v) => `${v}€`} />
+   447→                      <Tooltip
+   448→                        formatter={(v: number) => formatCurrency(v)}
+   449→                        contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
+   450→                      />
+   451→                      <Legend wrapperStyle={{ fontSize: 12 }} />
+   452→                      <Bar dataKey="earned" name={t("viewer.earned")} fill="#10b981" radius={[4, 4, 0, 0]} />
+   453→                      <Bar dataKey="received" name={t("viewer.received")} fill="#0d9488" radius={[4, 4, 0, 0]} />
+   454→                    </BarChart>
+   455→                  </ResponsiveContainer>
+   456→                </div>
+   457→              </Card>
+   458→
+   459→              {/* Status pie chart */}
+   460→              <Card className="p-5">
+   461→                <div className="flex items-center gap-2 mb-4">
+   462→                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+   463→                  <h3 className="font-semibold">{t("viewer.statusChart")}</h3>
+   464→                </div>
+   465→                <div className="h-64">
+   466→                  <ResponsiveContainer width="100%" height="100%">
+   467→                    {(() => {
+   468→                      const statusCounts = { OFFEN: 0, AUSGEZAHLT: 0, ANGEKOMMEN: 0, UEBERFAELLIG: 0 };
+   469→                      for (const p of data.payments) {
+   470→                        const s = computePaymentStatus(p.paidOut, p.received, p.expectedDate) as keyof typeof statusCounts;
+   471→                        statusCounts[s]++;
+   472→                      }
+   473→                      const chartData = [
+   474→                        { name: t("payStatus.OFFEN"), value: statusCounts.OFFEN, color: "#94a3b8" },
+   475→                        { name: t("payStatus.AUSGEZAHLT"), value: statusCounts.AUSGEZAHLT, color: "#f59e0b" },
+   476→                        { name: t("payStatus.ANGEKOMMEN"), value: statusCounts.ANGEKOMMEN, color: "#10b981" },
+   477→                        { name: t("payStatus.UEBERFAELLIG"), value: statusCounts.UEBERFAELLIG, color: "#f43f5e" },
+   478→                      ].filter(d => d.value > 0);
+   479→
+   480→                      if (chartData.length === 0) {
+   481→                        return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t("viewer.noPayments")}</div>;
+   482→                      }
+   483→
+   484→                      return (
+   485→                        <PieChart>
+   486→                          <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} paddingAngle={2}>
+   487→                            {chartData.map((entry, i) => (
+   488→                              <Cell key={i} fill={entry.color} />
+   489→                            ))}
+   490→                          </Pie>
+   491→                          <Tooltip
+   492→                            formatter={(v: number) => `${v} ${t("viewer.payments")}`}
+   493→                            contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
+   494→                          />
+   495→                          <Legend wrapperStyle={{ fontSize: 11 }} />
+   496→                        </PieChart>
+   497→                      );
+   498→                    })()}
+   499→                  </ResponsiveContainer>
+   500→                </div>
+   501→              </Card>
+   502→            </div>
+   503→            </>
+   504→            );
+   505→            })()}
+   506→
+   507→            {/* Payments table */}
+   508→            <Card className="overflow-hidden">
+   509→              <div className="overflow-x-auto">
+   510→                <Table>
+   511→                  <TableHeader>
+   512→                    <TableRow className="bg-muted/40 hover:bg-muted/40">
+   513→                      <TableHead>{t("viewer.col.date")}</TableHead>
+   514→                      <TableHead>Promo</TableHead>
+   515→                      <TableHead className="text-right">{activeTab === "mysplit" ? "My Split" : t("viewer.col.amount")}</TableHead>
+   516→                      {activeTab === "overview" && data.isCollaborator && <TableHead className="text-right">Split</TableHead>}
+   517→                      <TableHead className="text-center">Paid Out</TableHead>
+   518→                      <TableHead className="text-center">Received</TableHead>
+   519→                      <TableHead>{t("viewer.col.status")}</TableHead>
+   520→                    </TableRow>
+   521→                  </TableHeader>
+   522→                  <TableBody>
+   523→                    {(activeTab === "mysplit" ? data.payments.filter((p) => p.isMySplit) : data.payments).length === 0 ? (
+   524→                      <TableRow>
+   525→                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+   526→                          {t("viewer.noPayments")}
+   527→                        </TableCell>
+   528→                      </TableRow>
+   529→                    ) : (
+   530→                      (activeTab === "mysplit" ? data.payments.filter((p) => p.isMySplit) : data.payments).map((p) => {
+   531→                        const overdue = p.status === "UEBERFAELLIG";
+   532→                        const displayAmount = activeTab === "mysplit" ? p.splitAmount : p.amount;
+   533→                        return (
+   534→                          <TableRow
+   535→                            key={p.id}
+   536→                            className={overdue ? "bg-rose-50/40 dark:bg-rose-950/10" : ""}
+   537→                          >
+   538→                            <TableCell className="text-sm text-muted-foreground">
+   539→                              {formatDate(p.date)}
+   540→                            </TableCell>
+   541→                            <TableCell className="text-sm font-medium">
+   542→                              {p.promoName || "—"}
+   543→                            </TableCell>
+   544→                            <TableCell className="text-right font-semibold tabular-nums">
+   545→                              {formatCurrency(displayAmount)}
+   546→                            </TableCell>
+   547→                            {activeTab === "overview" && data.isCollaborator && (
+   548→                              <TableCell className="text-right tabular-nums text-muted-foreground">
+   549→                                {p.isMySplit ? formatCurrency(p.splitAmount) : "—"}
+   550→                              </TableCell>
+   551→                            )}
+   552→                            <TableCell className="text-center">
+   553→                              <Checkbox checked={p.paidOut} disabled className="mx-auto" />
+   554→                            </TableCell>
+   555→                            <TableCell className="text-center">
+   556→                              <Checkbox checked={p.received} disabled className="mx-auto" />
+   557→                            </TableCell>
+   558→                            <TableCell>
+   559→                              <PaymentStatusBadge
+   560→                                paidOut={p.paidOut}
+   561→                                received={p.received}
+   562→                                expectedDate={p.expectedDate}
+   563→                              />
+   564→                            </TableCell>
+   565→                          </TableRow>
+   566→                        );
+   567→                      })
+   568→                    )}
+   569→                  </TableBody>
+   570→                </Table>
+   571→              </div>
+   572→            </Card>
+   573→
+   574→            {/* Summary row */}
+   575→            {(() => {
+   576→              const activeTotals = activeTab === "mysplit" && data.splitTotals ? data.splitTotals : data.totals;
+   577→              return (
+   578→            <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+   579→              <span className="text-muted-foreground">
+   580→                {activeTotals.count} {t("viewer.payments")}
+   581→              </span>
+   582→              <span className="font-semibold tabular-nums">
+   583→                <span className="text-emerald-600">{formatCurrency(activeTotals.totalReceived)}</span>
+   584→                {" / "}
+   585→                <span className="text-amber-600">{formatCurrency(activeTotals.totalOutstanding)}</span>
+   586→              </span>
+   587→            </div>
+   588→              );
+   589→            })()}
+   590→          </>
+   591→        )}
+   592→      </main>
+   593→
+   594→      <footer className="border-t mt-10 py-4 text-center text-xs text-muted-foreground">
+   595→        Promos · Viewer
+   596→      </footer>
+   597→    </div>
+   598→  );
+   599→}
+   600→

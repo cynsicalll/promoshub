@@ -122,23 +122,121 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-fuchsia-600 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-emerald-600 rounded-full blur-[100px] opacity-50" />
+    <div className="min-h-screen bg-[#08070d] text-white relative overflow-hidden">
+      {/* Animated aurora background — slow, organic drift */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        {/* Base wash */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0810] via-[#0b0913] to-[#08070d]" />
+
+        {/* Aurora layer 1 — deep violet, top-left */}
+        <div
+          className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 55%)",
+            animation: "auroraA 28s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+        {/* Aurora layer 2 — magenta, right side */}
+        <div
+          className="absolute top-[25%] -right-[15%] w-[55vw] h-[55vw] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(217,70,239,0.16) 0%, transparent 55%)",
+            animation: "auroraB 34s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+        {/* Aurora layer 3 — warm teal accent, bottom */}
+        <div
+          className="absolute -bottom-[15%] left-[20%] w-[50vw] h-[50vw] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(13,148,136,0.14) 0%, transparent 55%)",
+            animation: "auroraC 40s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+        {/* Aurora layer 4 — subtle warm rose, center */}
+        <div
+          className="absolute top-[40%] left-[35%] w-[40vw] h-[40vw] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(244,63,94,0.08) 0%, transparent 60%)",
+            animation: "auroraD 46s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
       </div>
 
-      {/* Grid overlay */}
+      {/* Film grain texture — breaks up flat gradients */}
       <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        className="absolute inset-0 pointer-events-none opacity-[0.07] mix-blend-overlay"
         style={{
           backgroundImage:
-            "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='250' height='250'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")",
+          backgroundRepeat: "repeat",
+          backgroundSize: "250px 250px",
         }}
+        aria-hidden="true"
       />
+
+      {/* Equalizer / waveform motif — on-brand for a sound producer.
+          Thin animated bars sitting at the very bottom, ambient. */}
+      <div
+        className="fixed bottom-0 left-0 right-0 flex items-end justify-center gap-[3px] h-20 pointer-events-none opacity-25"
+        aria-hidden="true"
+      >
+        {Array.from({ length: 80 }).map((_, i) => (
+          <div
+            key={i}
+            className="w-[3px] sm:w-[4px] bg-gradient-to-t from-fuchsia-500 via-purple-400 to-violet-300 rounded-full"
+            style={{
+              height: "100%",
+              transformOrigin: "bottom",
+              animation: `eq ${0.5 + (i % 9) * 0.15}s ease-in-out ${i * 0.03}s infinite alternate`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Vignette — adds depth */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 40%, transparent 50%, rgba(0,0,0,0.5) 100%)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes auroraA {
+          0%,100% { transform: translate(0,0) scale(1); }
+          33% { transform: translate(8vw,5vh) scale(1.08); }
+          66% { transform: translate(-4vw,8vh) scale(0.95); }
+        }
+        @keyframes auroraB {
+          0%,100% { transform: translate(0,0) scale(1); }
+          33% { transform: translate(-6vw,-4vh) scale(1.06); }
+          66% { transform: translate(5vw,6vh) scale(0.97); }
+        }
+        @keyframes auroraC {
+          0%,100% { transform: translate(0,0) scale(1); }
+          33% { transform: translate(5vw,-6vh) scale(1.05); }
+          66% { transform: translate(-7vw,-3vh) scale(1.04); }
+        }
+        @keyframes auroraD {
+          0%,100% { transform: translate(0,0) scale(1); opacity: 0.7; }
+          50% { transform: translate(4vw,-5vh) scale(1.12); opacity: 1; }
+        }
+        @keyframes eq {
+          0% { transform: scaleY(0.08); }
+          100% { transform: scaleY(0.85); }
+        }
+      `}</style>
 
       <div className="relative z-10 flex flex-col items-center min-h-screen px-4 py-8 sm:py-12">
         {/* Avatar / Name */}

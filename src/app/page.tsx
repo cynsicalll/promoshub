@@ -59,6 +59,7 @@ function AuthRouter() {
   const searchParams = useSearchParams();
   const shareCode = searchParams.get("share");
   const customerToken = searchParams.get("customer");
+  const demoMode = searchParams.get("demo");
   const [showLogin, setShowLogin] = React.useState(false);
   const [loginDestination, setLoginDestination] = React.useState<LoginDestination>("financial");
   const setView = useAppStore((s) => s.setView);
@@ -82,6 +83,11 @@ function AuthRouter() {
       setView("bio");
     }
   }, [user, showLogin, loginDestination, setView]);
+
+  // Public demo of the viewer dashboard (showcased from the bio page)
+  if (demoMode === "viewer") {
+    return <MoneyViewerDashboard demo />;
+  }
 
   // Public share view (no auth needed)
   if (shareCode) return <ShareView code={shareCode} />;
