@@ -42,6 +42,34 @@ function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// Resize an image file to a square data URI using canvas.
+// Works entirely client-side — no server upload needed (Vercel-safe).
+function resizeImage(file: File, w: number, h: number, quality: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas not supported"));
+        // Cover-fit (crop to center)
+        const scale = Math.max(w / img.width, h / img.height);
+        const sw = img.width * scale;
+        const sh = img.height * scale;
+        ctx.drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
 // ─── Section shell ───────────────────────────────────────────────────────────
 
 function SectionCard({
@@ -420,27 +448,14 @@ function ProfileImageEditor({
       toast.error("File must be an image");
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image must be under 2MB");
-      return;
-    }
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/bio/upload-image", {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Upload failed");
-      }
-      const data = await res.json();
-      onChange(data.url);
-      toast.success("Profile picture uploaded");
+      // Resize + compress client-side (works on Vercel — no filesystem needed)
+      const dataUri = await resizeImage(file, 256, 256, 0.85);
+      onChange(dataUri);
+      toast.success("Profile picture set — click Save to apply");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      toast.error(err instanceof Error ? err.message : "Failed to process image");
     } finally {
       setUploading(false);
     }
