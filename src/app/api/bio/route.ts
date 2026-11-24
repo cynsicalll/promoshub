@@ -162,3 +162,12 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json(sanitized);
 }
+
+// DELETE — admin only, resets the bio profile to defaults
+export async function DELETE(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
+  await db.setting.deleteMany({ where: { key: SETTING_KEY } });
+  return NextResponse.json({ ok: true, message: "Reset to defaults" });
+}
