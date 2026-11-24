@@ -35,7 +35,7 @@ export interface BioProfile {
   displayName: string;
   bio: string;
   tagline?: string;
-  profileImage?: string; // URL or empty for default avatar
+  profileImage?: string; // URL, base64 data URI, or empty for default avatar
   tiktokHandle: string;
   tiktokUrl: string;
   // Stats (editable numbers; 0 means hidden)
@@ -43,11 +43,13 @@ export interface BioProfile {
   following: number;
   totalLikes: number;
   videoCount: number;
+  totalViews: number;
   // Show/hide stat tiles
   showFollowers: boolean;
   showFollowing: boolean;
   showTotalLikes: boolean;
   showVideoCount: boolean;
+  showTotalViews: boolean;
   // Collections
   socials: BioSocial[];
   projects: BioProject[];
@@ -59,19 +61,21 @@ export interface BioProfile {
 
 const DEFAULT_PROFILE: BioProfile = {
   displayName: "Cynsical",
-  tagline: "Sound producer · TikTok creator · Building cool things on the web",
+  tagline: "Sound producer · TikTok creator · Skier · MTB & Moto",
   bio: "Sound producer · TikTok creator · Building cool things on the web",
   profileImage: "",
   tiktokHandle: "sigmadudereal",
   tiktokUrl: "https://www.tiktok.com/@sigmadudereal",
   followers: 100000,
   following: 0,
-  totalLikes: 15000,
-  videoCount: 33,
+  totalLikes: 10000000,
+  videoCount: 50,
+  totalViews: 100000000,
   showFollowers: true,
   showFollowing: false,
   showTotalLikes: true,
   showVideoCount: true,
+  showTotalViews: true,
   socials: [
     {
       id: "social-tiktok",
@@ -101,10 +105,11 @@ const DEFAULT_PROFILE: BioProfile = {
   ],
   achievements: [
     "100K+ TikTok followers",
-    "Videos with 1M+ views each",
-    "Managing 15+ active promo campaigns",
-    "33+ TikTok videos tracked with analytics",
-    "Custom PWA with push notifications",
+    "100M+ total views across content",
+    "10M+ total likes on TikTok",
+    "17-year-old entrepreneur & developer",
+    "Skier — winter is always in season",
+    "Mountain biker & motocross rider",
   ],
   videos: [],
 };

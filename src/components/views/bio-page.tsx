@@ -16,6 +16,7 @@ import {
   Users,
   ThumbsUp,
   Film,
+  Eye,
   Wallet,
   Pencil,
 } from "lucide-react";
@@ -40,18 +41,20 @@ function formatCompact(n: number): string {
 const FALLBACK: BioProfile = {
   displayName: "Cynsical",
   bio: "Sound producer · TikTok creator · Building cool things on the web",
-  tagline: "Sound producer · TikTok creator · Building cool things on the web",
+  tagline: "Sound producer · TikTok creator · Skier · MTB & Moto",
   profileImage: "",
   tiktokHandle: "sigmadudereal",
   tiktokUrl: "https://www.tiktok.com/@sigmadudereal",
   followers: 100000,
   following: 0,
-  totalLikes: 15000,
-  videoCount: 33,
+  totalLikes: 10000000,
+  videoCount: 50,
+  totalViews: 100000000,
   showFollowers: true,
   showFollowing: false,
   showTotalLikes: true,
   showVideoCount: true,
+  showTotalViews: true,
   socials: [
     {
       id: "tiktok",
@@ -67,19 +70,91 @@ const FALLBACK: BioProfile = {
       title: "Promos",
       description:
         "Sound promo management system — manage promos, payments, customers & TikTok analytics.",
-      url: "https://sigmadude.vercel.app",
+      url: "/?demo=viewer",
       tags: ["Next.js", "TypeScript", "Prisma", "TikTok API"],
+    },
+    {
+      id: "clipvault",
+      title: "ClipVault",
+      description:
+        "Watches Twitch streams 24/7, catches the moments chat reacts to, and edits them into vertical clips with facecam, titles and a rating. Closed beta.",
+      url: "https://clipvault.live",
+      tags: ["Twitch", "AI", "Video", "Automation"],
     },
   ],
   achievements: [
     "100K+ TikTok followers",
-    "Videos with 1M+ views each",
-    "Managing 15+ active promo campaigns",
-    "33+ TikTok videos tracked with analytics",
-    "Custom PWA with push notifications",
+    "100M+ total views across content",
+    "10M+ total likes on TikTok",
+    "17-year-old entrepreneur & developer",
+    "Skier — winter is always in season",
+    "Mountain biker & motocross rider",
   ],
   videos: [],
 };
+
+// ─── TikTok Profile Embed ────────────────────────────────────────────────────
+// Uses TikTok's official profile embed via an iframe.
+// Shows a live preview of the creator's TikTok profile card.
+
+function TikTokProfileEmbed({ handle }: { handle: string }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = React.useState(false);
+
+  // TikTok's embed script creates a profile card from a blockquote.
+  // We render the blockquote and load the embed script.
+  React.useEffect(() => {
+    // Load TikTok embed script if not already present
+    const existing = document.getElementById("tiktok-embed-script");
+    if (!existing) {
+      const script = document.createElement("script");
+      script.id = "tiktok-embed-script";
+      script.src = "https://www.tiktok.com/embed.js";
+      script.async = true;
+      document.head.appendChild(script);
+    } else {
+      // Re-run the embed processing
+      // @ts-expect-error - TikTok embed API
+      if (window.tiktokEmbed?.lib?.render) {
+        // @ts-expect-error - TikTok embed API
+        window.tiktokEmbed.lib.render();
+      }
+    }
+    const timer = setTimeout(() => setLoaded(true), 1500);
+    return () => clearTimeout(timer);
+  }, [handle]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 p-4 overflow-hidden flex justify-center"
+    >
+      <blockquote
+        className="tiktok-embed"
+        cite={`https://www.tiktok.com/@${handle}`}
+        data-unique-id={handle}
+        data-embed-type="creator"
+        style={{ maxWidth: "780px", minWidth: "288px" }}
+      >
+        <section>
+          <a
+            href={`https://www.tiktok.com/@${handle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            @{handle}
+          </a>
+        </section>
+      </blockquote>
+      {!loaded && (
+        <div className="flex items-center justify-center text-xs text-zinc-500 ml-4">
+          <div className="h-3 w-3 animate-spin rounded-full border border-zinc-700 border-t-zinc-400 mr-2" />
+          Loading TikTok profile…
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) => void }) {
   const { data, isLoading } = useQuery<BioProfile>({
@@ -96,20 +171,20 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
 
   // Build the visible stat tiles dynamically
   const stats: { label: string; value: string; icon: React.ElementType; color: string }[] = [];
-  if (profile.showVideoCount) {
-    stats.push({
-      label: "Videos",
-      value: profile.videoCount > 0 ? `${formatCompact(profile.videoCount)}+` : "—",
-      icon: Film,
-      color: "text-white",
-    });
-  }
   if (profile.showFollowers) {
     stats.push({
       label: "Followers",
-      value: profile.followers > 0 ? `${formatCompact(profile.followers)}` : "—",
+      value: profile.followers > 0 ? formatCompact(profile.followers) : "—",
       icon: Users,
       color: "text-emerald-400",
+    });
+  }
+  if (profile.showTotalViews) {
+    stats.push({
+      label: "Total Views",
+      value: profile.totalViews > 0 ? `${formatCompact(profile.totalViews)}+` : "—",
+      icon: Eye,
+      color: "text-violet-400",
     });
   }
   if (profile.showTotalLikes) {
@@ -118,6 +193,14 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
       value: profile.totalLikes > 0 ? `${formatCompact(profile.totalLikes)}+` : "—",
       icon: ThumbsUp,
       color: "text-rose-400",
+    });
+  }
+  if (profile.showVideoCount) {
+    stats.push({
+      label: "Videos",
+      value: profile.videoCount > 0 ? `${formatCompact(profile.videoCount)}+` : "—",
+      icon: Film,
+      color: "text-white",
     });
   }
 
@@ -316,6 +399,17 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* TikTok Profile Embed — live widget from TikTok */}
+        {profile.tiktokHandle && (
+          <div className="w-full max-w-2xl mb-10">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
+              <Music2 className="h-3.5 w-3.5" />
+              TikTok Profile
+            </h2>
+            <TikTokProfileEmbed handle={profile.tiktokHandle} />
           </div>
         )}
 

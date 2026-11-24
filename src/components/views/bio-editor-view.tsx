@@ -31,6 +31,8 @@ import {
   Wand2,
   ExternalLink,
   GripVertical,
+  Upload,
+  Eye,
 } from "lucide-react";
 import type { BioProfile, BioVideo, BioSocial, BioProject } from "@/app/api/bio/route";
 
@@ -203,37 +205,12 @@ export function BioEditorView() {
             description="Your avatar, display name and bio shown at the top of the page."
           >
             <div className="space-y-4">
-              {/* Avatar */}
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-fuchsia-500 via-purple-500 to-emerald-500 p-0.5 shrink-0">
-                  <div className="w-full h-full rounded-full bg-zinc-950 overflow-hidden flex items-center justify-center">
-                    {draft.profileImage ? (
-                       
-                      <img
-                        src={draft.profileImage}
-                        alt={draft.displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <ImageIcon className="h-6 w-6 text-zinc-500" />
-                    )}
-                  </div>
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  <Label htmlFor="profileImage" className="text-xs">
-                    Profile picture URL
-                  </Label>
-                  <Input
-                    id="profileImage"
-                    placeholder="https://…/avatar.jpg"
-                    value={draft.profileImage ?? ""}
-                    onChange={(e) => update({ profileImage: e.target.value })}
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    Paste a direct image URL. Leave empty to use the default icon.
-                  </p>
-                </div>
-              </div>
+              {/* Avatar with upload + URL */}
+              <ProfileImageEditor
+                currentImage={draft.profileImage ?? ""}
+                displayName={draft.displayName}
+                onChange={(url) => update({ profileImage: url })}
+              />
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
@@ -324,14 +301,6 @@ export function BioEditorView() {
           >
             <div className="space-y-3">
               <StatRow
-                label="Videos"
-                show={draft.showVideoCount}
-                onToggle={(v) => update({ showVideoCount: v })}
-                value={draft.videoCount}
-                onChange={(n) => update({ videoCount: n })}
-                placeholder="33"
-              />
-              <StatRow
                 label="Followers"
                 show={draft.showFollowers}
                 onToggle={(v) => update({ showFollowers: v })}
@@ -340,12 +309,12 @@ export function BioEditorView() {
                 placeholder="100000"
               />
               <StatRow
-                label="Following"
-                show={draft.showFollowing}
-                onToggle={(v) => update({ showFollowing: v })}
-                value={draft.following}
-                onChange={(n) => update({ following: n })}
-                placeholder="0"
+                label="Total Views"
+                show={draft.showTotalViews ?? false}
+                onToggle={(v) => update({ showTotalViews: v })}
+                value={draft.totalViews ?? 0}
+                onChange={(n) => update({ totalViews: n })}
+                placeholder="100000000"
               />
               <StatRow
                 label="Total Likes"
@@ -353,7 +322,23 @@ export function BioEditorView() {
                 onToggle={(v) => update({ showTotalLikes: v })}
                 value={draft.totalLikes}
                 onChange={(n) => update({ totalLikes: n })}
-                placeholder="15000"
+                placeholder="10000000"
+              />
+              <StatRow
+                label="Videos"
+                show={draft.showVideoCount}
+                onToggle={(v) => update({ showVideoCount: v })}
+                value={draft.videoCount}
+                onChange={(n) => update({ videoCount: n })}
+                placeholder="50"
+              />
+              <StatRow
+                label="Following"
+                show={draft.showFollowing}
+                onToggle={(v) => update({ showFollowing: v })}
+                value={draft.following}
+                onChange={(n) => update({ following: n })}
+                placeholder="0"
               />
               <p className="text-[11px] text-muted-foreground pt-1">
                 Tip: enter raw numbers (e.g. <code>100000</code>) — they'll be
@@ -405,6 +390,129 @@ export function BioEditorView() {
           </SectionCard>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// ─── Profile image editor (upload + URL) ─────────────────────────────────────
+
+function ProfileImageEditor({
+  currentImage,
+  displayName,
+  onChange,
+}: {
+  currentImage: string;
+  displayName: string;
+  onChange: (url: string) => void;
+}) {
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = React.useState(false);
+
+  async function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("File must be an image");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/bio/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
+      }
+      const data = await res.json();
+      onChange(data.url);
+      toast.success("Profile picture uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      {/* Avatar preview */}
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-fuchsia-500 via-purple-500 to-emerald-500 p-0.5 shrink-0">
+        <div className="w-full h-full rounded-full bg-zinc-950 overflow-hidden flex items-center justify-center relative">
+          {currentImage ? (
+             
+            <img
+              src={currentImage}
+              alt={displayName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <ImageIcon className="h-6 w-6 text-zinc-500" />
+          )}
+          {uploading && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-white" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-2">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+            className="gap-1.5"
+          >
+            {uploading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Upload className="h-3.5 w-3.5" />
+            )}
+            Upload
+          </Button>
+          {currentImage && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange("")}
+              className="gap-1.5 text-muted-foreground"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Remove
+            </Button>
+          )}
+        </div>
+        <Input
+          placeholder="…or paste an image URL"
+          value={currentImage.startsWith("/avatars/") ? "" : currentImage}
+          onChange={(e) => onChange(e.target.value)}
+          className="text-xs"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Upload an image from your device, or paste a URL. Max 2MB.
+        </p>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
     </div>
   );
 }
