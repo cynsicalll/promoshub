@@ -118,6 +118,16 @@
   --sidebar-ring: oklch(0.62 0.24 278);
 }
 
+/* ─── Bio page design tokens (always dark, independent of theme) ─── */
+:root {
+  --bp-bg: #0c0c0e;
+  --bp-surface: #161618;
+  --bp-border: #26262a;
+  --bp-text: #ededf0;
+  --bp-text-muted: #8a8a92;
+  --bp-accent: #e8b339;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

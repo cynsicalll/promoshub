@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/img/app-icons/favicon.ico" sizes="any">
+<link rel="icon" href="assets/img/app-icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/app-icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/img/app-icons/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/img/app-icons/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#0c0c0d">
+<meta name="apple-mobile-web-app-title" content="ThinkUI">
+<title>ThinkUI — UI references for your coding agent, over MCP</title>
+<meta name="description" content="ThinkUI is an MCP server that gives your coding agent real interface references: screens, flows, ready-made components, fonts and animated icons.">
+<link rel="canonical" href="https://thinkui.xyz/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="ThinkUI">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ThinkUI">
+<meta property="og:title" content="ThinkUI — UI references for your coding agent, over MCP">
+<meta property="og:description" content="Real screens, flows, components, fonts and icons for your agent to build with. Every result traceable to its source.">
+<meta property="og:url" content="https://thinkui.xyz/">
+<meta property="og:image" content="https://thinkui.xyz/assets/img/og.png?v=cloud">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ThinkUI — UI references for your coding agent">
+<meta name="twitter:description" content="An MCP server that answers design questions with evidence: the screen, the flow, the component, the source.">
+<meta name="twitter:image" content="https://thinkui.xyz/assets/img/og.png?v=cloud">
+
+<link rel="preload" href="assets/fonts/instrument-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css?v=c6a7c74896">
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://thinkui.xyz/#org",
+      "name": "ThinkUI",
+      "url": "https://thinkui.xyz/",
+      "description": "An MCP server that provides interface references to coding agents."
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://thinkui.xyz/#site",
+      "url": "https://thinkui.xyz/",
+      "name": "ThinkUI",
+      "publisher": {
+        "@id": "https://thinkui.xyz/#org"
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://thinkui.xyz/#app",
+      "name": "ThinkUI MCP server",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS, Windows, Linux",
+      "description": "An MCP server that returns real interface references, screens, flows, UI components, fonts and animated icons, for coding agents to design and build with.",
+      "url": "https://thinkui.xyz/",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Starter",
+          "price": "7.99",
+          "priceCurrency": "USD",
+          "description": "3-day free trial, then $7.99 a month. Unlimited tool calls. Components and icons are MIT; each screenshot keeps its own licence and many are study-only."
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro",
+          "price": "15.99",
+          "priceCurrency": "USD",
+          "description": "3-day free trial, then $15.99 a month. Priority access, unlimited tool calls and commercial use."
+        },
+        {
+          "@type": "Offer",
+          "name": "Lifetime",
+          "price": "152",
+          "priceCurrency": "USD",
+          "description": "One payment, permanent access. No trial."
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is MCP?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Model Context Protocol is the standard way an AI coding agent connects to an outside tool. You add a server to your agent's config once, and its tools become available in every conversation you have in that client."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which clients does it work with?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Any client that speaks MCP: Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Zed, and agent frameworks with an MCP client. The config block is the same everywhere."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does anything about my project get sent anywhere?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Your agent sends ThinkUI a design question and gets an answer from ThinkUI's own reference library. Your code, files and repository are never sent, and the server cannot reach them."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens when it does not know something?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "find_ui_elements returns no component and lists the categories that do exist. find_ui_references returns its nearest match and shows why it matched, so a weak hit is visible as a weak hit instead of passing for an answer."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use what it returns in commercial work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Components, icons and materials are MIT and yours to ship. Screenshots are mixed: 428 of 1,565 are permissively licensed and the rest are study-only, marked do not ship in the result that returns them. Every result names its source and its licence, so you can tell which is which before you use it."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I cancel?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "From the billing portal in your account. Cancelling stops the next charge and your key keeps working until the end of the period you paid for. Partial periods are not refunded; if the server returns nothing useful in your first week, write to us and we refund that month."
+          }
+        }
+      ]
+    }
+  ]
+}</script>
+</head>
+<body>
+<svg class="lg-svg" aria-hidden="true" focusable="false"><filter id="lg-lens" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="22" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<script>if (window.chrome) document.documentElement.classList.add("lg-lens");</script>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a class="brand" href="/"><svg class="brand__logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96.31 26.0" width="96.31" height="26.0" role="img" aria-label="ThinkUI"><title>ThinkUI</title><g transform="translate(-3.600 -6.256) scale(0.55814)"><circle cx="24.30" cy="28" r="12.0" fill="#f0dcc8"/><circle cx="39.70" cy="25" r="9.0" fill="#f0dcc8"/><circle cx="47.40" cy="33" r="7.0" fill="#f0dcc8"/><circle cx="38.60" cy="40" r="9.0" fill="#f0dcc8"/><circle cx="24.30" cy="40" r="9.5" fill="#f0dcc8"/><circle cx="33.10" cy="33" r="10.5" fill="#f0dcc8"/><circle cx="9.45" cy="53.0" r="3.0" fill="#f0dcc8"/></g><g transform="translate(40.0 19.0938) scale(0.016785)"><path fill="#faf9f7" d="M211.8086954727769 0.0V-660.0H338.81083170324564V0.0ZM19.23781331628561 -552.4268827885389V-660.0H531.9055335558951V-552.4268827885389ZM594.9040309377015 0.0V-310.4764055609703L594.7611767016351 -705.9766075499356H722.1680050827563V-548.643482029438Q722.1680050827563 -528.072092693299 720.5846535842866 -503.8219989594072Q719.0013020858169 -479.57190522551537 715.7512635756284 -453.7384411022067Q712.5012250654399 -427.90497697889805 708.9178735669702 -401.8453623447567Q705.3345220685005 -375.7857477106154 701.2868826761842 -351.261990506202H719.5250345878303Q732.5725940540433 -411.5715317539871 754.858254570514 -452.66683451645076Q777.1439150869846 -493.76213727891445 812.584400722757 -514.881251744926Q848.0248863585293 -536.0003662109375 899.2155209481716 -536.0003662109375Q988.858471095562 -536.0003662109375 1033.0370788536966 -473.03601292334497Q1077.2156866118312 -410.07165963575244 1077.2156866118312 -282.3808782733977V0.0H950.2849774993956V-266.5472266897559Q950.2849774993956 -349.80858939513564 925.868528816849 -389.0226912740618Q901.4520801343024 -428.23679315298796 852.0476655513048 -428.23679315298796Q810.5480041541159 -428.23679315298796 782.3934827577323 -402.52265058271587Q754.2389613613486 -376.8085080124438 738.9534272737801 -331.7253309022635Q723.6678931862116 -286.64215379208326 721.0490344837308 -226.9755699597299V0.0ZM1180.1659168079495 0.0V-522.5241379514337H1306.3109203539789V0.0ZM1243.3574611134827 -598.7375895157456Q1204.8026305550416 -598.7375895157456 1184.6628959719876 -614.9010055632772Q1164.5231613889337 -631.0644216108087 1164.5231613889337 -662.1952872584786Q1164.5231613889337 -693.5981625848267 1184.757823819347 -709.847192980759Q1204.9924862497605 -726.0962233766913 1243.2645764331478 -726.0962233766913Q1282.3686685770435 -726.0962233766913 1302.5778446543804 -709.7984037846327Q1322.7870207317173 -693.500584192574 1322.7870207317173 -662.1734107714911Q1322.7870207317173 -631.3695702401823 1302.515935204147 -615.053579877964Q1282.2448496765767 -598.7375895157456 1243.3574611134827 -598.7375895157456ZM1415.9040309377015 0.0V-309.9760102927685L1415.7611767016351 -522.5241379514337H1522.500778928399L1518.3106195405126 -349.16675386577845H1534.8344450481236Q1546.8581557534635 -412.4525262787938 1570.1200299970806 -453.8454539012164Q1593.3819042406976 -495.23838152363896 1630.3104974664748 -515.6193738672882Q1667.239090692252 -536.0003662109375 1718.024921234697 -536.0003662109375Q1806.8583969809115 -536.0003662109375 1852.5370417963713 -473.5122499037534Q1898.2156866118312 -411.0241335965693 1898.2156866118312 -280.9047822654247V0.0H1771.2849774993956V-268.1187192052603Q1771.2849774993956 -350.73730033263564 1746.8208843376487 -389.3680042102933Q1722.356791175902 -427.99870808795094 1673.4047502800822 -427.99870808795094Q1631.5241713784635 -427.99870808795094 1602.5720905158669 -401.4275207519531Q1573.6200096532702 -374.8563334159553 1558.3582938089967 -328.7613525427878Q1543.096577964723 -282.6663716696203 1542.0490344837308 -223.02356394007802V0.0ZM2000.9040309377015 0.0V-706.5004272460938H2125.167992003262V-312.9293023981154Q2160.3105861134827 -332.78642927110195 2191.357862200588 -358.0958455428481Q2222.4051382876933 -383.40526181459427 2248.107184998691 -411.54800052009523Q2273.809231709689 -439.6907392255962 2292.868523729965 -468.1430736742914Q2311.9278157502413 -496.59540812298656 2323.165881924331 -522.6669921875H2468.144465852529Q2453.239904489368 -484.61931355670094 2428.109157010913 -446.86929103173316Q2402.9784095324576 -409.11926850676537 2369.0142437089235 -376.60735720582306Q2335.0500778853893 -344.09544590488076 2292.669025234878 -320.2859061099589Q2250.287972584367 -296.476366315037 2201.287554062903 -286.3096531443298V-272.8095703125Q2262.9785911887884 -281.5241146981716 2304.85972231254 -267.90520222857594Q2346.740853436291 -254.28628975898027 2374.5740908570588 -225.8458956759423Q2402.4073282778263 -197.40550159290433 2420.9427344836295 -159.79840741865337Q2439.4781406894326 -122.19131324440241 2454.2158290296793 -82.2628551647067L2480.001268658787 0.0H2341.7609470896423L2326.142258413136 -54.929042272269726Q2310.1190025620162 -102.7621227428317 2291.0480775292963 -139.4761635903269Q2271.9771524965763 -176.1902044378221 2242.084684090689 -197.16624378040433Q2212.1922156848013 -218.14228312298656 2162.7161821611226 -218.21371024101973L2125.167992003262 -218.2851373590529V0.0ZM2823.3807750865817 13.547655377537012Q2765.856756299734 13.547655377537012 2720.1066407691687 1.4761912021785975Q2674.3565252386034 -10.595272973179817 2640.2612399142236 -33.76199050247669Q2606.1659545898438 -56.92870803177357 2583.6183151975274 -89.89304896816611Q2561.070675805211 -122.85738990455866 2549.7135431207716 -164.7621845062822Q2538.356410436332 -206.66697910800576 2538.356410436332 -256.40508015826344V-660.0H2665.358546666801V-261.3813374824822Q2665.358546666801 -207.47691417485476 2682.929800853133 -171.42960103042424Q2700.5010550394654 -135.38228788599372 2735.464984714985 -117.56106857955456Q2770.4289143905044 -99.7398492731154 2822.8569553904235 -99.7398492731154Q2876.618309378624 -99.7398492731154 2911.415582560003 -117.4658392034471Q2946.2128557413816 -135.1918291337788 2963.6174534335732 -171.29865155555308Q2981.022051125765 -207.40547397732735 2981.022051125765 -261.3813374824822V-660.0H3107.4289405420423V-256.40508015826344Q3107.4289405420423 -127.71446155384183 3035.5717213917524 -57.08340308815241Q2963.7145022414625 13.547655377537012 2823.3807750865817 13.547655377537012ZM3226.4040018729866 0.0V-660.0H3354.9299577996135V0.0Z"/></g></svg></a>
+    <nav class="nav" aria-label="Main" id="site-nav">
+      <a href="/examples">Examples</a>
+      <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/#how">How it works</a>
+      <!-- Inside the nav on purpose: on a phone the sheet IS the nav, so the actions have
+           to travel with it. As a header sibling they wrapped inside a 64px bar and pushed
+           "Sign in" off the top edge at 320px. -->
+      <div class="nav__cta">
+        <a class="btn btn--text" href="/login">Sign in</a>
+        <a class="btn btn--primary" href="/signup">Start free trial</a>
+      </div>
+    </nav>
+    <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="site-nav"><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============================================================ hero -->
+  <section class="hero">
+    <div class="hero__stage" aria-hidden="true">
+<div class="tile" aria-hidden="true" style="--x:1.5%;--y:24%;--w:268px;--r:-8deg;--o:0.82;--b:0px;--fx:14px;--fy:-10px;--dur:15s;--dl:0ms;--d:1.12"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/stripe-519466.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:6.0%;--y:62%;--w:224px;--r:5deg;--o:0.8;--b:0px;--fx:-12px;--fy:-14px;--dur:18s;--dl:700ms;--d:0.93"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/vanta-ede36c.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:-2.0%;--y:8%;--w:208px;--r:11deg;--o:0.45;--b:2px;--fx:10px;--fy:12px;--dur:21s;--dl:1400ms;--d:0.87"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/float-04884a.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:77.0%;--y:22%;--w:268px;--r:7deg;--o:0.78;--b:0px;--fx:-14px;--fy:-8px;--dur:17s;--dl:300ms;--d:1.12"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/oura-2564c1.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:70.5%;--y:66%;--w:228px;--r:-6deg;--o:0.8;--b:0px;--fx:12px;--fy:-12px;--dur:19s;--dl:950ms;--d:0.95"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/porsche-b666e5.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:86.0%;--y:4%;--w:200px;--r:-11deg;--o:0.42;--b:2px;--fx:-10px;--fy:10px;--dur:22s;--dl:1600ms;--d:0.83"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/owid-life-expectancy-c512d4.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:19.0%;--y:80%;--w:188px;--r:-4deg;--o:0.48;--b:1px;--fx:8px;--fy:-10px;--dur:20s;--dl:450ms;--d:0.78"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/anthropic-bad3f4.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:64.0%;--y:84%;--w:188px;--r:5deg;--o:0.48;--b:1px;--fx:-8px;--fy:-9px;--dur:23s;--dl:1100ms;--d:0.78"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/reflect-b769e1.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:30.0%;--y:1%;--w:168px;--r:-12deg;--o:0.28;--b:3px;--fx:6px;--fy:10px;--dur:24s;--dl:800ms;--d:0.70"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/google-fonts-78c23b.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+<div class="tile" aria-hidden="true" style="--x:57.0%;--y:2%;--w:168px;--r:12deg;--o:0.28;--b:3px;--fx:-6px;--fy:10px;--dur:25s;--dl:1300ms;--d:0.70"><span class="tile__bar"><i></i><i></i><i></i></span><img src="assets/img/wall/porsche-motorsport-039efe.jpg" alt="" width="640" height="400" loading="eager" decoding="async"></div>
+    </div>
+    <div class="wrap">
+      <div class="hero__inner">
+        <h1 class="display">UI references for your coding agent.</h1>
+        <p class="lede">
+          Ask how a paywall frames a trial; get the screens other products shipped, with the
+          project and the source attached.</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary btn--lg" href="/signup">
+            Start 3-day free trial
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>
+          </a>
+          <a class="btn btn--ghost btn--lg" href="/examples">See what the tools return</a>
+        </div>
+        <p class="hero__micro">Card required <span>&middot;</span> cancel anytime before day&nbsp;3</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== library -->
+  <section class="wall-section" id="library">
+    <div class="wrap">
+      <div class="wall__head">
+        <p class="eyebrow">In the library</p>
+        <h2>The interfaces your agent has only ever guessed at.</h2>
+        <p class="lede">Screens captured from live products, each named after the product it came
+          from and the day it was captured. The server returns the same provenance with every answer.</p>
+      </div>
+      <div class="chips" role="group" aria-label="Filter screens by kind">
+<button class="chip is-active" type="button" data-filter="all">All <span>28</span></button>
+<button class="chip" type="button" data-filter="product">Product & work <span>8</span></button>
+<button class="chip" type="button" data-filter="life">Life & travel <span>6</span></button>
+<button class="chip" type="button" data-filter="devdata">Developer & data <span>6</span></button>
+<button class="chip" type="button" data-filter="commerce">Commerce & marketing <span>4</span></button>
+<button class="chip" type="button" data-filter="ai">AI & design <span>4</span></button>
+      </div>
+      <p class="wall__count" data-wall-count>28 screens &middot; 28 products</p>
+    </div>
+    <div class="wall" data-wall>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/stripe-519466.jpg" alt="Stripe, Finance screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Stripe</b><span>Finance &middot; captured 2026-11-02</span></figcaption></figure>
+<figure class="wall__card" data-tags="commerce"><img src="assets/img/wall/apple-configurator-1f532e.jpg" alt="Apple, Commerce screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Apple</b><span>Commerce &middot; captured 2026-11-02</span></figcaption></figure>
+<figure class="wall__card" data-tags="ai"><img src="assets/img/wall/anthropic-bad3f4.jpg" alt="Anthropic, AI screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Anthropic</b><span>AI &middot; captured 2026-10-24</span></figcaption></figure>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/athena-v2-c8eb0d0c-c8eb0d.jpg" alt="TradingView, Finance screen" width="640" height="360" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>TradingView</b><span>Finance &middot; captured 2026-11-04</span></figcaption></figure>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/float-04884a.jpg" alt="Float, Project management screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Float</b><span>Project management &middot; captured 2026-10-24</span></figcaption></figure>
+<figure class="wall__card" data-tags="life"><img src="assets/img/wall/google-maps-ed0741.jpg" alt="Google Maps, Travel &amp; maps screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Google Maps</b><span>Travel &amp; maps &middot; captured 2026-10-28</span></figcaption></figure>
+<figure class="wall__card" data-tags="ai"><img src="assets/img/wall/google-fonts-78c23b.jpg" alt="Google Fonts, Design tools screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Google Fonts</b><span>Design tools &middot; captured 2026-10-28</span></figcaption></figure>
+<figure class="wall__card" data-tags="ai"><img src="assets/img/wall/hugging-face-07e72c.jpg" alt="Hugging Face, AI screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Hugging Face</b><span>AI &middot; captured 2026-10-21</span></figcaption></figure>
+<figure class="wall__card" data-tags="commerce"><img src="assets/img/wall/porsche-b666e5.jpg" alt="Porsche, Commerce screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Porsche</b><span>Commerce &middot; captured 2026-10-30</span></figcaption></figure>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/slack-197abd.jpg" alt="Slack, Collaboration screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Slack</b><span>Collaboration &middot; captured 2026-11-02</span></figcaption></figure>
+<figure class="wall__card" data-tags="devdata"><img src="assets/img/wall/vanta-ede36c.jpg" alt="Vanta, Security screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Vanta</b><span>Security &middot; captured 2026-10-28</span></figcaption></figure>
+<figure class="wall__card" data-tags="devdata"><img src="assets/img/wall/tailwindcss-74d70c.jpg" alt="Tailwind CSS, Developer tools screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Tailwind CSS</b><span>Developer tools &middot; captured 2026-10-24</span></figcaption></figure>
+<figure class="wall__card" data-tags="life"><img src="assets/img/wall/oura-2564c1.jpg" alt="Oura, Health &amp; lifestyle screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Oura</b><span>Health &amp; lifestyle &middot; captured 2026-10-29</span></figcaption></figure>
+<figure class="wall__card" data-tags="life"><img src="assets/img/wall/athena-v2-7d1df4b4-7d1df4.jpg" alt="Behance, Social &amp; community screen" width="640" height="360" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Behance</b><span>Social &amp; community &middot; captured 2026-11-11</span></figcaption></figure>
+<figure class="wall__card" data-tags="commerce"><img src="assets/img/wall/squarespace-e8fa7a.jpg" alt="Squarespace, CMS screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Squarespace</b><span>CMS &middot; captured 2026-10-27</span></figcaption></figure>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/rippling-3bd99f.jpg" alt="Rippling, HR &amp; recruiting screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Rippling</b><span>HR &amp; recruiting &middot; captured 2026-10-24</span></figcaption></figure>
+<figure class="wall__card" data-tags="devdata"><img src="assets/img/wall/owid-life-expectancy-c512d4.jpg" alt="Our World in Data — Life Expectancy, Analytics screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Our World in Data — Life Expectancy</b><span>Analytics &middot; captured 2026-10-29</span></figcaption></figure>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/fibery-19bf0d.jpg" alt="Fibery, Productivity screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Fibery</b><span>Productivity &middot; captured 2026-10-28</span></figcaption></figure>
+<figure class="wall__card" data-tags="commerce"><img src="assets/img/wall/beehiiv-c32013.jpg" alt="beehiiv, Marketing screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>beehiiv</b><span>Marketing &middot; captured 2026-10-24</span></figcaption></figure>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/contra-61f4d7.jpg" alt="Contra, Productivity screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Contra</b><span>Productivity &middot; captured 2026-10-24</span></figcaption></figure>
+<figure class="wall__card" data-tags="product"><img src="assets/img/wall/reflect-b769e1.jpg" alt="Reflect, Notes &amp; docs screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Reflect</b><span>Notes &amp; docs &middot; captured 2026-10-28</span></figcaption></figure>
+<figure class="wall__card" data-tags="devdata"><img src="assets/img/wall/observable-plot-gallery-27e65a.jpg" alt="Observable Plot Gallery, Developer tools screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Observable Plot Gallery</b><span>Developer tools &middot; captured 2026-10-31</span></figcaption></figure>
+<figure class="wall__card" data-tags="life"><img src="assets/img/wall/porsche-motorsport-039efe.jpg" alt="Porsche Motorsport, Other screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Porsche Motorsport</b><span>Other &middot; captured 2026-10-29</span></figcaption></figure>
+<figure class="wall__card" data-tags="devdata"><img src="assets/img/wall/upstash-75eaad.jpg" alt="Upstash, Infrastructure &amp; monitoring screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>Upstash</b><span>Infrastructure &amp; monitoring &middot; captured 2026-10-21</span></figcaption></figure>
+<figure class="wall__card" data-tags="life"><img src="assets/img/wall/blue-corridors-dc17d2.jpg" alt="WWF Blue Corridors, Other screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>WWF Blue Corridors</b><span>Other &middot; captured 2026-10-30</span></figcaption></figure>
+<figure class="wall__card" data-tags="life"><img src="assets/img/wall/last-museum-71d6f2.jpg" alt="The Last Museum, Education screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>The Last Museum</b><span>Education &middot; captured 2026-10-30</span></figcaption></figure>
+<figure class="wall__card" data-tags="ai"><img src="assets/img/wall/athena-v2-05473e39-05473e.jpg" alt="RomM, Media &amp; entertainment screen" width="640" height="360" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>RomM</b><span>Media &amp; entertainment &middot; captured 2026-11-05</span></figcaption></figure>
+<figure class="wall__card" data-tags="devdata"><img src="assets/img/wall/how-india-lives-ce8ae6.jpg" alt="How India Lives — Interactive Atlas of India, Data &amp; databases screen" width="640" height="400" loading="lazy" decoding="async"><figcaption class="wall__meta"><b>How India Lives — Interactive Atlas of India</b><span>Data &amp; databases &middot; captured 2026-10-29</span></figcaption></figure>
+    </div>
+    <div class="wrap wall__foot">
+      <button class="btn btn--ghost" type="button" data-more>Show more screens</button>
+      <p class="price-line"><b>3-day free trial</b>
+        <span>&middot;</span> then from $7.99/mo, 20% off <span>&middot;</span> card required</p>
+    </div>
+    <div class="wrap">
+      <p class="small wall__note">Every screen is a capture of a live product and remains that
+        product's property. The server returns the source with every result.</p>
+    </div>
+  </section>
+
+  <!-- ========================================================== proof -->
+  <section class="section--tight">
+    <div class="wrap">
+      <div class="proof" data-reveal>
+        <div><b class="mono" data-count="1565">1,565</b><span>real screenshots</span></div>
+        <div><b class="mono" data-count="277">277</b><span>products covered</span></div>
+        <div><b class="mono" data-count="3802">3,802</b><span>ready-made components</span></div>
+        <div><b class="mono" data-count="1698">1,698</b><span>animated icons</span></div>
+        <div><b class="mono" data-count="1114">1,114</b><span>written design references</span></div>
+        <div><b class="mono" data-count="119">119</b><span>fonts, icon sets and systems</span></div>
+      </div>
+      <p class="small" style="margin-top:18px;--rd:80ms" data-reveal>
+        Measured from the library this server serves, not projections. Ask the server for
+        <span class="mono">corpus_stats</span> and it reports the same numbers.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================================================= features -->
+  <section class="section--soft">
+    <div class="wrap">
+      <div class="head" data-reveal>
+        <h2>Design decisions, with the reasoning attached.</h2>
+        <p class="lede">An agent that improvises a paywall produces a paywall nobody has ever shipped. ThinkUI gives it
+          something real to work from, and tells you what that something was.</p>
+      </div>
+
+      <div class="grid grid--3">
+        <article class="card card--lift card--glow" data-reveal style="--rd:0ms">
+          <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></div>
+          <h3>Answers with evidence</h3>
+          <p>Ask “how does a paywall frame its trial?” and get the screens, the flow they belong to, what components
+            they use and the project each one came from.</p>
+          <div class="card__foot">find_ui_references</div>
+        </article>
+
+        <article class="card card--lift card--glow" data-reveal style="--rd:60ms">
+          <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h13"/></svg></div>
+          <h3>Components you can paste</h3>
+          <p>Buttons, loaders, cards, forms, inputs, switches and tooltips. The first call returns
+            ranked digests with size and licence; call again with the slug it gives you and the
+            component's own markup and stylesheet come back.</p>
+          <div class="card__foot">find_ui_elements</div>
+        </article>
+
+        <article class="card card--lift card--glow" data-reveal style="--rd:120ms">
+          <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="3.4"/></svg></div>
+          <h3>Motion that actually moves</h3>
+          <p>Animated icons arrive as working SVG with the animation included, no JavaScript runtime, no icon font, nothing to
+            install. Paste it and it animates.</p>
+          <div class="card__foot">find_animated_icons</div>
+        </article>
+
+        <article class="card card--lift card--glow" data-reveal style="--rd:180ms">
+          <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 4h9l4 4v12H6z"/><path d="M15 4v4h4"/></svg></div>
+          <h3>Type and systems</h3>
+          <p>The right typeface for a brief, an icon set that is still maintained, the design system a product like yours
+            is built on, with the state of each project attached.</p>
+          <div class="card__foot">find_ui_materials</div>
+        </article>
+
+        <article class="card card--lift card--glow" data-reveal style="--rd:240ms">
+          <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 4 3.5 19h17z"/><path d="M12 10v4M12 16.5v.5"/></svg></div>
+          <h3>It tells you when it has nothing</h3>
+          <p>Ask find_ui_elements for a navigation bar and you get no result plus the categories
+            that do exist. find_ui_references will return its nearest match instead - and show you
+            why it matched, so you can discount it.</p>
+          <div class="card__foot">no invented results</div>
+        </article>
+
+        <article class="card card--lift card--glow" data-reveal style="--rd:300ms">
+          <div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg></div>
+          <h3>Fits your setup</h3>
+          <p>A hosted server your agent reaches over HTTPS. Add one block to its config and the tools appear in every
+            conversation you have in that client.</p>
+          <div class="card__foot">MCP over HTTPS</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================== how -->
+  <section id="how">
+    <div class="wrap">
+      <div class="head">
+        <h2>Three steps, once.</h2>
+      </div>
+
+      <div class="steps" data-reveal>
+        <div class="step">
+          <h3>Connect it</h3>
+          <p>Paste one block into your agent's MCP config. No keys to rotate daily, no build step, nothing installed into
+            your project.</p>
+        </div>
+        <div class="step">
+          <h3>Ask in plain language</h3>
+          <p>“Design the onboarding screen for a budgeting app.” The agent reaches for references instead of inventing
+            them.</p>
+        </div>
+        <div class="step">
+          <h3>Build from something real</h3>
+          <p>You get screens to follow, components to paste and assets to ship, with a trail back to where each came
+            from.</p>
+        </div>
+      </div>
+
+      <div class="grid grid--2" style="margin-top:52px; align-items:center; gap:34px">
+        <div>
+          <h3 style="margin-bottom:12px">One block of config.</h3>
+          <p class="small" style="font-size:15px">
+            ThinkUI runs as a hosted MCP server: your agent connects to one URL and sends your key in the
+            request header. Add it to Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Zed or any framework
+            with an MCP client. Nothing to install, nothing to keep running.
+          </p>
+          <p class="small" style="margin-top:16px">
+            Your account key goes in one place. Everything else (tools, prompts, transport) is handled by the server.
+          </p>
+          <a class="link-arrow" href="/docs" style="margin-top:20px">
+            Full quickstart
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>
+          </a>
+        </div>
+
+        <div class="code">
+          <div class="code__bar">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="name">mcp.json</span>
+            <button class="code__copy" type="button" data-copy aria-label="Copy configuration">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+<pre>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"thinkui"</span>: {
+      <span class="k">"url"</span>: <span class="s">"https://thinkui.xyz/mcp"</span>,
+      <span class="k">"headers"</span>: { <span class="k">"Authorization"</span>: <span class="s">"Bearer your-key"</span> }
+    }
+  }
+}</pre>
+          <div class="code__note">Then ask your agent something you would normally answer by opening ten apps.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+
+  <!-- ======================================================= pricing -->
+  <section class="section--soft" id="pricing">
+    <div class="wrap">
+      <div class="head">
+        <h2>Same server, same five tools on every plan.</h2>
+        <p class="lede">Pick the plan that fits the work. Monthly plans change or cancel from your account at any time,
+          and lifetime is a single payment.</p>
+        <p class="sale-note"><span class="sale-pill">20% off</span> Every plan is 20% off right now. The prices below are the sale prices, applied at checkout.</p>
+      </div>
+
+      <div class="pricing" data-reveal>
+        <article class="plan">
+          <span class="plan__name">Starter</span>
+          <p class="plan__price"><b>$7.99</b><span>per month</span><s>was $9.99</s></p>
+          <p class="plan__note">Try free for 3 days. Everything the server does, for one project at a time.</p>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Unlimited tool calls</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>All five tools, every category</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>MIT components, icons and materials</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Email support</li>
+          </ul>
+          <a class="btn btn--block" href="/signup?plan=starter">Try free for 3 days</a>
+        </article>
+
+        <article class="plan plan--best">
+          <span class="plan__tag">Most popular</span>
+          <span class="plan__name">Pro</span>
+          <p class="plan__price"><b>$15.99</b><span>per month</span><s>was $19.99</s></p>
+          <p class="plan__note">Try free for 3 days. For work you are shipping under a deadline.</p>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Everything in Starter</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Priority support</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>New sources land for you first</li>
+          </ul>
+          <a class="btn btn--primary btn--block" href="/signup?plan=pro">Try free for 3 days</a>
+        </article>
+
+        <article class="plan">
+          <span class="plan__name">Lifetime</span>
+          <p class="plan__price"><b>$152</b><span>once</span><s>was $190</s></p>
+          <p class="plan__note">One payment; access for as long as the service runs.</p>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Everything in Pro</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>No renewal, ever</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Same terms as Pro</li>
+          </ul>
+          <a class="btn btn--block" href="/signup?plan=lifetime">Get Lifetime</a>
+        </article>
+      </div>
+      <p class="small" style="margin-top:22px; text-align:center">
+        Starter and Pro include a 3-day free trial. Card required, nothing is charged until day 3. Lifetime has no trial. Prices in USD. <a href="/pricing" style="color:var(--brand-ink);font-weight:550">Compare plans in detail →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- =========================================================== faq -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="head">
+        <h2>The ones people ask before connecting it.</h2>
+      </div>
+      <div class="faq" data-reveal>
+        <details open>
+          <summary>What is MCP?</summary>
+          <div class="answer">
+            <p>The Model Context Protocol is the standard way an AI coding agent connects to an outside tool. You add a
+              server to your agent's config once, and its tools become available in every conversation you have in that
+              client.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Which clients does it work with?</summary>
+          <div class="answer">
+            <p>Any client that speaks MCP: Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Zed, and
+              agent frameworks with an MCP client. The config block is the same everywhere.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Does anything about my project get sent anywhere?</summary>
+          <div class="answer">
+            <p>No. Your agent sends ThinkUI a design question and gets an answer from ThinkUI's own reference
+              library. Your code, files and repository are never sent, and the server cannot reach them.</p>
+          </div>
+        </details>
+        <details>
+          <summary>What happens when it does not know something?</summary>
+          <div class="answer">
+            <p>find_ui_elements returns no component and lists the categories that do exist.
+              find_ui_references returns its nearest match and shows why it matched, so a weak hit is
+              visible as a weak hit instead of passing for an answer.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Can I use what it returns in commercial work?</summary>
+          <div class="answer">
+            <p>Components, icons and materials are MIT and yours to ship. Screenshots are mixed:
+              428 of 1,565 are permissively licensed and the rest are study-only, marked
+              <em>do not ship</em> in the result that returns them. Every result names its source and
+              its licence, so you can tell which is which before you use it.</p>
+          </div>
+        </details>
+        <details>
+          <summary>How do I cancel?</summary>
+          <div class="answer">
+            <p>From the billing portal in your account. Cancelling stops the next charge and your
+              key keeps working until the end of the period you paid for. Partial periods are not
+              refunded; if the server returns nothing useful in your first week, write to us and we
+              refund that month.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= closing -->
+  <section class="canvas closing">
+    <div class="wrap" data-reveal>
+      <h2 class="display">Stop describing interfaces to your agent. Show it some.</h2>
+      <p class="lede">Connect ThinkUI and give it something real to work from.</p>
+      <div class="closing__actions">
+        <a class="btn btn--light btn--lg" href="/signup">Start 3-day free trial</a>
+        <a class="btn btn--ghost btn--lg" href="/pricing">See pricing</a>
+      </div>
+      <p class="small" style="color:var(--on-ink-mute); margin-top:22px">
+        Starter and Pro include a 3-day free trial, then $7.99 or $15.99 a month — 20% off. Lifetime is $152 once, with no trial.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href="/"><svg class="brand__logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96.31 26.0" width="96.31" height="26.0" role="img" aria-label="ThinkUI"><title>ThinkUI</title><g transform="translate(-3.600 -6.256) scale(0.55814)"><circle cx="24.30" cy="28" r="12.0" fill="#f0dcc8"/><circle cx="39.70" cy="25" r="9.0" fill="#f0dcc8"/><circle cx="47.40" cy="33" r="7.0" fill="#f0dcc8"/><circle cx="38.60" cy="40" r="9.0" fill="#f0dcc8"/><circle cx="24.30" cy="40" r="9.5" fill="#f0dcc8"/><circle cx="33.10" cy="33" r="10.5" fill="#f0dcc8"/><circle cx="9.45" cy="53.0" r="3.0" fill="#f0dcc8"/></g><g transform="translate(40.0 19.0938) scale(0.016785)"><path fill="#faf9f7" d="M211.8086954727769 0.0V-660.0H338.81083170324564V0.0ZM19.23781331628561 -552.4268827885389V-660.0H531.9055335558951V-552.4268827885389ZM594.9040309377015 0.0V-310.4764055609703L594.7611767016351 -705.9766075499356H722.1680050827563V-548.643482029438Q722.1680050827563 -528.072092693299 720.5846535842866 -503.8219989594072Q719.0013020858169 -479.57190522551537 715.7512635756284 -453.7384411022067Q712.5012250654399 -427.90497697889805 708.9178735669702 -401.8453623447567Q705.3345220685005 -375.7857477106154 701.2868826761842 -351.261990506202H719.5250345878303Q732.5725940540433 -411.5715317539871 754.858254570514 -452.66683451645076Q777.1439150869846 -493.76213727891445 812.584400722757 -514.881251744926Q848.0248863585293 -536.0003662109375 899.2155209481716 -536.0003662109375Q988.858471095562 -536.0003662109375 1033.0370788536966 -473.03601292334497Q1077.2156866118312 -410.07165963575244 1077.2156866118312 -282.3808782733977V0.0H950.2849774993956V-266.5472266897559Q950.2849774993956 -349.80858939513564 925.868528816849 -389.0226912740618Q901.4520801343024 -428.23679315298796 852.0476655513048 -428.23679315298796Q810.5480041541159 -428.23679315298796 782.3934827577323 -402.52265058271587Q754.2389613613486 -376.8085080124438 738.9534272737801 -331.7253309022635Q723.6678931862116 -286.64215379208326 721.0490344837308 -226.9755699597299V0.0ZM1180.1659168079495 0.0V-522.5241379514337H1306.3109203539789V0.0ZM1243.3574611134827 -598.7375895157456Q1204.8026305550416 -598.7375895157456 1184.6628959719876 -614.9010055632772Q1164.5231613889337 -631.0644216108087 1164.5231613889337 -662.1952872584786Q1164.5231613889337 -693.5981625848267 1184.757823819347 -709.847192980759Q1204.9924862497605 -726.0962233766913 1243.2645764331478 -726.0962233766913Q1282.3686685770435 -726.0962233766913 1302.5778446543804 -709.7984037846327Q1322.7870207317173 -693.500584192574 1322.7870207317173 -662.1734107714911Q1322.7870207317173 -631.3695702401823 1302.515935204147 -615.053579877964Q1282.2448496765767 -598.7375895157456 1243.3574611134827 -598.7375895157456ZM1415.9040309377015 0.0V-309.9760102927685L1415.7611767016351 -522.5241379514337H1522.500778928399L1518.3106195405126 -349.16675386577845H1534.8344450481236Q1546.8581557534635 -412.4525262787938 1570.1200299970806 -453.8454539012164Q1593.3819042406976 -495.23838152363896 1630.3104974664748 -515.6193738672882Q1667.239090692252 -536.0003662109375 1718.024921234697 -536.0003662109375Q1806.8583969809115 -536.0003662109375 1852.5370417963713 -473.5122499037534Q1898.2156866118312 -411.0241335965693 1898.2156866118312 -280.9047822654247V0.0H1771.2849774993956V-268.1187192052603Q1771.2849774993956 -350.73730033263564 1746.8208843376487 -389.3680042102933Q1722.356791175902 -427.99870808795094 1673.4047502800822 -427.99870808795094Q1631.5241713784635 -427.99870808795094 1602.5720905158669 -401.4275207519531Q1573.6200096532702 -374.8563334159553 1558.3582938089967 -328.7613525427878Q1543.096577964723 -282.6663716696203 1542.0490344837308 -223.02356394007802V0.0ZM2000.9040309377015 0.0V-706.5004272460938H2125.167992003262V-312.9293023981154Q2160.3105861134827 -332.78642927110195 2191.357862200588 -358.0958455428481Q2222.4051382876933 -383.40526181459427 2248.107184998691 -411.54800052009523Q2273.809231709689 -439.6907392255962 2292.868523729965 -468.1430736742914Q2311.9278157502413 -496.59540812298656 2323.165881924331 -522.6669921875H2468.144465852529Q2453.239904489368 -484.61931355670094 2428.109157010913 -446.86929103173316Q2402.9784095324576 -409.11926850676537 2369.0142437089235 -376.60735720582306Q2335.0500778853893 -344.09544590488076 2292.669025234878 -320.2859061099589Q2250.287972584367 -296.476366315037 2201.287554062903 -286.3096531443298V-272.8095703125Q2262.9785911887884 -281.5241146981716 2304.85972231254 -267.90520222857594Q2346.740853436291 -254.28628975898027 2374.5740908570588 -225.8458956759423Q2402.4073282778263 -197.40550159290433 2420.9427344836295 -159.79840741865337Q2439.4781406894326 -122.19131324440241 2454.2158290296793 -82.2628551647067L2480.001268658787 0.0H2341.7609470896423L2326.142258413136 -54.929042272269726Q2310.1190025620162 -102.7621227428317 2291.0480775292963 -139.4761635903269Q2271.9771524965763 -176.1902044378221 2242.084684090689 -197.16624378040433Q2212.1922156848013 -218.14228312298656 2162.7161821611226 -218.21371024101973L2125.167992003262 -218.2851373590529V0.0ZM2823.3807750865817 13.547655377537012Q2765.856756299734 13.547655377537012 2720.1066407691687 1.4761912021785975Q2674.3565252386034 -10.595272973179817 2640.2612399142236 -33.76199050247669Q2606.1659545898438 -56.92870803177357 2583.6183151975274 -89.89304896816611Q2561.070675805211 -122.85738990455866 2549.7135431207716 -164.7621845062822Q2538.356410436332 -206.66697910800576 2538.356410436332 -256.40508015826344V-660.0H2665.358546666801V-261.3813374824822Q2665.358546666801 -207.47691417485476 2682.929800853133 -171.42960103042424Q2700.5010550394654 -135.38228788599372 2735.464984714985 -117.56106857955456Q2770.4289143905044 -99.7398492731154 2822.8569553904235 -99.7398492731154Q2876.618309378624 -99.7398492731154 2911.415582560003 -117.4658392034471Q2946.2128557413816 -135.1918291337788 2963.6174534335732 -171.29865155555308Q2981.022051125765 -207.40547397732735 2981.022051125765 -261.3813374824822V-660.0H3107.4289405420423V-256.40508015826344Q3107.4289405420423 -127.71446155384183 3035.5717213917524 -57.08340308815241Q2963.7145022414625 13.547655377537012 2823.3807750865817 13.547655377537012ZM3226.4040018729866 0.0V-660.0H3354.9299577996135V0.0Z"/></g></svg></a>
+        <p class="footer__about">Interface references for coding agents, over MCP. Screens, flows, components, fonts and
+          icons your agent can build with.</p>
+      </div>
+      <div>
+        <h4>Start here</h4>
+        <ul>
+          <li><a href="/pricing">Pricing</a></li>
+          <li><a href="/docs">Docs</a></li>
+          <li><a href="/examples">Examples</a></li>
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Guides</h4>
+        <ul>
+          <li><a href="/mcp-server-for-ui-design">MCP server for UI design</a></li>
+          <li><a href="/claude-code-ui-design">Claude Code UI design</a></li>
+          <li><a href="/cursor-ui-design">Cursor UI design</a></li>
+          <li><a href="/figma-mcp-alternative">vs Figma MCP</a></li>
+          <li><a href="/skills">Agent skills</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Your account</h4>
+        <ul>
+          <li><a href="/login">Sign in</a></li>
+          <li><a href="/signup">Create account</a></li>
+          <li><a href="/account">Account &amp; keys</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>The fine print</h4>
+        <ul>
+          <li><a href="/terms">Terms</a></li>
+          <li><a href="/privacy">Privacy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>&copy; 2026 ThinkUI</span>
+      <span class="sep">Built for agents that would rather cite than guess.</span>
+    </div>
+  </div>
+</footer>
+<script src="assets/js/app.js?v=816efdc23c" defer></script>
+<script src="assets/js/field.js?v=d5a6010572" defer></script>
+<script src="assets/js/analytics.js?v=8eb1039edd" defer></script>
+</body>
+</html>
