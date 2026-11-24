@@ -61,8 +61,8 @@ export interface BioProfile {
 
 const DEFAULT_PROFILE: BioProfile = {
   displayName: "Cynsical",
-  tagline: "Sound producer · TikTok creator · Skier · MTB & Moto",
-  bio: "Sound producer · TikTok creator · Building cool things on the web",
+  tagline: "Influencer · Entrepreneur · Yapper",
+  bio: "i like money & fast things",
   profileImage: "",
   tiktokHandle: "sigmadudereal",
   tiktokUrl: "https://www.tiktok.com/@sigmadudereal",
@@ -107,9 +107,9 @@ const DEFAULT_PROFILE: BioProfile = {
     "100K+ TikTok followers",
     "100M+ total views across content",
     "10M+ total likes on TikTok",
-    "17-year-old entrepreneur & developer",
-    "Skier — winter is always in season",
-    "Mountain biker & motocross rider",
+    "17-year-old entrepreneur & professional yapper",
+    "Passionate skier (mainly park)",
+    "Motocross/Surron rider & mountain biker",
   ],
   videos: [],
 };

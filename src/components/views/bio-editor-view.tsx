@@ -101,7 +101,14 @@ export function BioEditorView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("save failed");
+      if (!res.ok) {
+        let msg = `Save failed (HTTP ${res.status})`;
+        try {
+          const err = await res.json();
+          if (err.error) msg = err.error;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
       return res.json();
     },
     onSuccess: (saved) => {
@@ -109,7 +116,7 @@ export function BioEditorView() {
       qc.setQueryData(["bio-profile"], saved);
       toast.success("Bio page saved");
     },
-    onError: () => toast.error("Failed to save bio page"),
+    onError: (err: Error) => toast.error(`Failed to save: ${err.message}`),
   });
 
   if (isLoading || !draft) {

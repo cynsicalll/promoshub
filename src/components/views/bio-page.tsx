@@ -40,8 +40,8 @@ function formatCompact(n: number): string {
 
 const FALLBACK: BioProfile = {
   displayName: "Cynsical",
-  bio: "Sound producer · TikTok creator · Building cool things on the web",
-  tagline: "Sound producer · TikTok creator · Skier · MTB & Moto",
+  bio: "i like money & fast things",
+  tagline: "Influencer · Entrepreneur · Yapper",
   profileImage: "",
   tiktokHandle: "sigmadudereal",
   tiktokUrl: "https://www.tiktok.com/@sigmadudereal",
@@ -86,9 +86,9 @@ const FALLBACK: BioProfile = {
     "100K+ TikTok followers",
     "100M+ total views across content",
     "10M+ total likes on TikTok",
-    "17-year-old entrepreneur & developer",
-    "Skier — winter is always in season",
-    "Mountain biker & motocross rider",
+    "17-year-old entrepreneur & professional yapper",
+    "Passionate skier (mainly park)",
+    "Motocross/Surron rider & mountain biker",
   ],
   videos: [],
 };
