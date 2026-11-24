@@ -1,0 +1,931 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { useQueryClient } from "@tanstack/react-query";
+     5→import { usePromos, useDeletePromo } from "@/hooks/use-data";
+     6→import { useAppStore } from "@/lib/store";
+     7→import { Card } from "@/components/ui/card";
+     8→import { Button } from "@/components/ui/button";
+     9→import { Separator } from "@/components/ui/separator";
+    10→import { Checkbox } from "@/components/ui/checkbox";
+    11→import {
+    12→  PromoStatusBadge,
+    13→  PaymentStatusBadge,
+    14→} from "@/components/status-badges";
+    15→import { PromoFormDialog } from "./promo-form-dialog";
+    16→import {
+    17→  formatCurrency,
+    18→  formatDate,
+    19→  computePaymentStatus,
+    20→  promoSoundsTotal,
+    21→  promoSoundsUsed,
+    22→  promoSoundsRemaining,
+    23→  promoReceived,
+    24→  promoTotal,
+    25→  promoTiktokDone,
+    26→  promoTiktokRemaining,
+    27→  normalizeUrl,
+    28→  domainFromUrl,
+    29→  PROMO_STATUS_STYLES,
+    30→} from "@/lib/format";
+    31→import {
+    32→  ArrowLeft,
+    33→  Pencil,
+    34→  Trash2,
+    35→  Calendar,
+    36→  User,
+    37→  Music2,
+    38→  Wallet,
+    39→  CheckCircle2,
+    40→  Clock,
+    41→  TrendingUp,
+    42→  StickyNote,
+    43→  Video,
+    44→  Link2,
+    45→  ExternalLink,
+    46→  Share2,
+    47→  Copy,
+    48→  Lock,
+    49→  Unlock,
+    50→  Bell,
+    51→  X,
+    52→  Eye,
+    53→  EyeOff,
+    54→} from "lucide-react";
+    55→import {
+    56→  AlertDialog,
+    57→  AlertDialogAction,
+    58→  AlertDialogCancel,
+    59→  AlertDialogContent,
+    60→  AlertDialogDescription,
+    61→  AlertDialogFooter,
+    62→  AlertDialogHeader,
+    63→  AlertDialogTitle,
+    64→} from "@/components/ui/alert-dialog";
+    65→import {
+    66→  Select,
+    67→  SelectContent,
+    68→  SelectItem,
+    69→  SelectTrigger,
+    70→  SelectValue,
+    71→} from "@/components/ui/select";
+    72→import { Input } from "@/components/ui/input";
+    73→import { StatCard } from "@/components/stat-card";
+    74→import { TikTokThumbnail } from "@/components/tiktok-thumbnail";
+    75→import { toast } from "sonner";
+    76→import { useI18n } from "@/components/language-provider";
+    77→import {
+    78→  useUpdatePayment,
+    79→  useEnableShare,
+    80→  useDisableShare,
+    81→} from "@/hooks/use-data";
+    82→import { formatDateInput, toISODate } from "@/lib/format";
+    83→
+    84→export function PromoDetailView() {
+    85→  const { t } = useI18n();
+    86→  const qc = useQueryClient();
+    87→  const promoId = useAppStore((s) => s.selectedPromoId);
+    88→  const setView = useAppStore((s) => s.setView);
+    89→  const { data: promos = [] } = usePromos();
+    90→  const deletePromo = useDeletePromo();
+    91→  const updatePayment = useUpdatePayment();
+    92→  const enableShare = useEnableShare();
+    93→  const disableShare = useDisableShare();
+    94→
+    95→  // PNR: track approval status for each payment
+    96→  const [approvalStatuses, setApprovalStatuses] = React.useState<Record<string, { status: string; respondedAt?: string }>>({});
+    97→  // Collaborators for visibility selector
+    98→  const [collaborators, setCollaborators] = React.useState<Array<{ id: string; username: string; displayName: string | null }>>([]);
+    99→
+   100→  // Fetch collaborators
+   101→  React.useEffect(() => {
+   102→    fetch("/api/backup")
+   103→      .then((r) => r.json())
+   104→      .then((data) => {
+   105→        const cols = (data.users || []).filter((u: { role: string }) => u.role === "COLLABORATOR");
+   106→        setCollaborators(cols);
+   107→      })
+   108→      .catch(() => {});
+   109→  }, []);
+   110→
+   111→  const promo = promos.find((p) => p.id === promoId) || null;
+   112→  const [formOpen, setFormOpen] = React.useState(false);
+   113→  const [deleteConfirm, setDeleteConfirm] = React.useState(false);
+   114→
+   115→  // PNR: Poll for approval status changes every 10 seconds
+   116→  React.useEffect(() => {
+   117→    if (!promo) return;
+   118→    let cancelled = false;
+   119→
+   120→    async function fetchApprovals() {
+   121→      if (!promo) return;
+   122→      try {
+   123→        // Fetch approval status for all payments in this promo
+   124→        const results: Record<string, { status: string; respondedAt?: string }> = {};
+   125→        for (const p of promo.payments) {
+   126→          const res = await fetch(`/api/payment-approvals?paymentId=${p.id}`);
+   127→          if (!res.ok) continue;
+   128→          const data = await res.json();
+   129→          if (Array.isArray(data) && data.length > 0) {
+   130→            // Get the latest approval request for this payment
+   131→            const latest = data[0];
+   132→            results[p.id] = { status: latest.status, respondedAt: latest.respondedAt };
+   133→          }
+   134→        }
+   135→        if (!cancelled) setApprovalStatuses(results);
+   136→      } catch { /* ignore */ }
+   137→    }
+   138→
+   139→    fetchApprovals();
+   140→    const interval = setInterval(fetchApprovals, 10000); // poll every 10s
+   141→    return () => { cancelled = true; clearInterval(interval); };
+   142→  }, [promo?.id]);
+   143→
+   144→  if (!promo) {
+   145→    return (
+   146→      <div className="flex flex-col items-center justify-center py-20 text-center">
+   147→        <p className="text-muted-foreground">{t("detail.notFound")}</p>
+   148→        <Button variant="outline" className="mt-4" onClick={() => setView("promos")}>
+   149→          {t("detail.back")}
+   150→        </Button>
+   151→      </div>
+   152→    );
+   153→  }
+   154→
+   155→  const total = promoTotal(promo);
+   156→  const received = promoReceived(promo);
+   157→  const outstanding = total - received;
+   158→  const soundsTotal = promoSoundsTotal(promo);
+   159→  const soundsUsed = promoSoundsUsed(promo);
+   160→  const soundsRemaining = promoSoundsRemaining(promo);
+   161→
+   162→  async function togglePayment(
+   163→    id: string,
+   164→    field: "paidOut" | "received",
+   165→    value: boolean
+   166→  ) {
+   167→    const patch: Record<string, unknown> = { [field]: value };
+   168→    if (field === "received" && value) {
+   169→      patch.receivedDate = toISODate(formatDateInput(new Date()));
+   170→    }
+   171→    if (field === "received" && !value) patch.receivedDate = null;
+   172→    if (field === "paidOut" && value) {
+   173→      patch.payoutDate = toISODate(formatDateInput(new Date()));
+   174→    }
+   175→    if (field === "paidOut" && !value) patch.payoutDate = null;
+   176→    try {
+   177→      await updatePayment.mutateAsync({ id, data: patch as never });
+   178→      toast.success(t("detail.updatedToast"));
+   179→    } catch {
+   180→      toast.error(t("detail.updateFailedToast"));
+   181→    }
+   182→  }
+   183→
+   184→  async function handleDelete() {
+   185→    try {
+   186→      await deletePromo.mutateAsync(promo!.id);
+   187→      toast.success(t("promos.deletedToast"));
+   188→      setView("promos");
+   189→    } catch {
+   190→      toast.error(t("action.deleteFailed"));
+   191→    }
+   192→  }
+   193→
+   194→  async function handleEnableShare() {
+   195→    try {
+   196→      const res = await enableShare.mutateAsync(promo!.id);
+   197→      const url = `${window.location.origin}/?share=${res.shareCode}`;
+   198→      await navigator.clipboard.writeText(url);
+   199→      toast.success(t("detail.shareEnabledToast"), {
+   200→        description: url,
+   201→      });
+   202→    } catch {
+   203→      toast.error(t("detail.shareEnableFailedToast"));
+   204→    }
+   205→  }
+   206→
+   207→  async function handleDisableShare() {
+   208→    try {
+   209→      await disableShare.mutateAsync(promo!.id);
+   210→      toast.success(t("detail.shareDisabledToast"));
+   211→    } catch {
+   212→      toast.error(t("detail.shareDisableFailedToast"));
+   213→    }
+   214→  }
+   215→
+   216→  async function copyShareLink() {
+   217→    if (!promo?.shareCode) return;
+   218→    const url = `${window.location.origin}/?share=${promo.shareCode}`;
+   219→    try {
+   220→      await navigator.clipboard.writeText(url);
+   221→      toast.success(t("detail.linkCopiedToast"), { description: url });
+   222→    } catch {
+   223→      toast.error(t("detail.copyFailedToast"));
+   224→    }
+   225→  }
+   226→
+   227→  return (
+   228→    <div className="space-y-5 max-w-5xl mx-auto">
+   229→      {/* Header */}
+   230→      <div className="flex items-start justify-between gap-3 flex-wrap">
+   231→        <div className="flex items-start gap-3 min-w-0">
+   232→          <Button
+   233→            variant="ghost"
+   234→            size="icon"
+   235→            onClick={() => setView("promos")}
+   236→            className="mt-0.5"
+   237→          >
+   238→            <ArrowLeft className="h-4 w-4" />
+   239→          </Button>
+   240→          <div className="min-w-0">
+   241→            <div className="flex items-center gap-2 flex-wrap">
+   242→              <h1 className="text-2xl font-semibold tracking-tight truncate">
+   243→                {promo.name}
+   244→              </h1>
+   245→              <PromoStatusBadge status={promo.status} />
+   246→            </div>
+   247→            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
+   248→              <span className="flex items-center gap-1">
+   249→                <Calendar className="h-3.5 w-3.5" /> {formatDate(promo.date)}
+   250→              </span>
+   251→              <span className="flex items-center gap-1">
+   252→                <User className="h-3.5 w-3.5" /> {promo.customer?.name || t("detail.noCustomer")}
+   253→                {promo.customer?.company ? ` · ${promo.customer.company}` : ""}
+   254→              </span>
+   255→            </p>
+   256→          </div>
+   257→        </div>
+   258→        <div className="flex gap-2 flex-wrap">
+   259→          {promo.shareEnabled && promo.shareCode ? (
+   260→            <Button
+   261→              variant="outline"
+   262→              size="sm"
+   263→              onClick={copyShareLink}
+   264→              className="gap-2"
+   265→            >
+   266→              <Share2 className="h-4 w-4" /> {t("detail.copyLink")}
+   267→            </Button>
+   268→          ) : null}
+   269→          {promo.shareEnabled ? (
+   270→            <Button
+   271→              variant="outline"
+   272→              size="sm"
+   273→              onClick={handleDisableShare}
+   274→              className="gap-2"
+   275→              disabled={disableShare.isPending}
+   276→            >
+   277→              <Lock className="h-4 w-4" /> {t("detail.stopShare")}
+   278→            </Button>
+   279→          ) : (
+   280→            <Button
+   281→              variant="outline"
+   282→              size="sm"
+   283→              onClick={handleEnableShare}
+   284→              className="gap-2"
+   285→              disabled={enableShare.isPending}
+   286→            >
+   287→              <Unlock className="h-4 w-4" /> {t("detail.shareWithCustomer")}
+   288→            </Button>
+   289→          )}
+   290→          <Button
+   291→            variant="outline"
+   292→            size="sm"
+   293→            onClick={() => setFormOpen(true)}
+   294→            className="gap-2"
+   295→          >
+   296→            <Pencil className="h-4 w-4" /> {t("action.edit")}
+   297→          </Button>
+   298→          {/* Visible to: Viewer (dad) or Collaborator — not both */}
+   299→          <div className="flex items-center gap-1.5">
+   300→            <span className="text-xs text-muted-foreground whitespace-nowrap">Visible to:</span>
+   301→            <Select
+   302→              value={(promo as Record<string, unknown>).visibleTo as string || "viewer"}
+   303→              onValueChange={async (value) => {
+   304→                try {
+   305→                  const res = await fetch(`/api/promos/${promo.id}/viewer-visible`, {
+   306→                    method: "POST",
+   307→                    headers: { "Content-Type": "application/json" },
+   308→                    body: JSON.stringify({ visibleTo: value }),
+   309→                  });
+   310→                  if (!res.ok) throw new Error("Failed");
+   311→                  const colName = collaborators.find((c) => `collaborator:${c.id}` === value)?.displayName || "collaborator";
+   312→                  toast.success(value === "viewer" ? "Now visible to viewer (dad)" : `Now visible to ${colName} only`);
+   313→                  qc.invalidateQueries({ queryKey: ["promos"] });
+   314→                } catch {
+   315→                  toast.error("Failed to update visibility");
+   316→                }
+   317→              }}
+   318→            >
+   319→              <SelectTrigger className="h-8 w-[140px] text-xs">
+   320→                <SelectValue />
+   321→              </SelectTrigger>
+   322→              <SelectContent>
+   323→                <SelectItem value="viewer">Viewer (Dad)</SelectItem>
+   324→                {collaborators.map((c) => (
+   325→                  <SelectItem key={c.id} value={`collaborator:${c.id}`}>
+   326→                    {c.displayName || c.username}
+   327→                  </SelectItem>
+   328→                ))}
+   329→              </SelectContent>
+   330→            </Select>
+   331→          </div>
+   332→          <Button
+   333→            variant="outline"
+   334→            size="sm"
+   335→            className="gap-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+   336→            onClick={async () => {
+   337→              try {
+   338→                const total = promoTotal(promo);
+   339→                const res = await fetch("/api/push/send", {
+   340→                  method: "POST",
+   341→                  headers: { "Content-Type": "application/json" },
+   342→                  body: JSON.stringify({
+   343→                    type: "promo",
+   344→                    data: {
+   345→                      name: promo.name,
+   346→                      amount: total,
+   347→                      customer: promo.customer?.name || "",
+   348→                      date: formatDate(promo.date),
+   349→                    },
+   350→                  }),
+   351→                });
+   352→                if (!res.ok) throw new Error("Failed");
+   353→                const result = await res.json();
+   354→                if (result.sent > 0) {
+   355→                  toast.success(`Notification sent to viewer: "${result.title}"`);
+   356→                } else {
+   357→                  toast.error("Viewer hasn't enabled notifications yet. Ask them to tap the bell button on their link.");
+   358→                }
+   359→              } catch {
+   360→                toast.error("Failed to send notification");
+   361→              }
+   362→            }}
+   363→          >
+   364→            <Bell className="h-4 w-4" /> Notify
+   365→          </Button>
+   366→          <Button
+   367→            variant="outline"
+   368→            size="sm"
+   369→            onClick={() => setDeleteConfirm(true)}
+   370→            className="gap-2 text-rose-600 hover:text-rose-700"
+   371→          >
+   372→            <Trash2 className="h-4 w-4" /> {t("action.delete")}
+   373→          </Button>
+   374→        </div>
+   375→      </div>
+   376→
+   377→      {/* Share banner when enabled */}
+   378→      {promo.shareEnabled && promo.shareCode && (
+   379→        <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/20 p-4 flex items-center gap-3 flex-wrap">
+   380→          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
+   381→            <Share2 className="h-4 w-4" />
+   382→          </div>
+   383→          <div className="min-w-0 flex-1">
+   384→            <p className="text-sm font-medium">{t("detail.shareActive")}</p>
+   385→            <p className="text-xs text-muted-foreground truncate">
+   386→              {t("detail.shareLink")} {typeof window !== "undefined" ? window.location.origin : ""}/?share={promo.shareCode}
+   387→            </p>
+   388→          </div>
+   389→          <div className="flex gap-2">
+   390→            <Button
+   391→              variant="outline"
+   392→              size="sm"
+   393→              onClick={copyShareLink}
+   394→              className="gap-2"
+   395→            >
+   396→              <Copy className="h-3.5 w-3.5" /> {t("action.copy")}
+   397→            </Button>
+   398→            <a
+   399→              href={`/?share=${promo.shareCode}`}
+   400→              target="_blank"
+   401→              rel="noopener noreferrer"
+   402→            >
+   403→              <Button variant="outline" size="sm" className="gap-2">
+   404→                <ExternalLink className="h-3.5 w-3.5" /> {t("detail.openShare")}
+   405→              </Button>
+   406→            </a>
+   407→          </div>
+   408→        </div>
+   409→      )}
+   410→
+   411→      {/* KPIs */}
+   412→      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+   413→        <StatCard
+   414→          label={t("detail.totalAmount")}
+   415→          value={formatCurrency(total)}
+   416→          icon={Wallet}
+   417→        />
+   418→        <StatCard
+   419→          label={t("detail.alreadyReceived")}
+   420→          value={formatCurrency(received)}
+   421→          icon={CheckCircle2}
+   422→          tone="emerald"
+   423→        />
+   424→        <StatCard
+   425→          label={t("detail.stillOpen")}
+   426→          value={formatCurrency(outstanding)}
+   427→          icon={Clock}
+   428→          tone={outstanding > 0 ? "amber" : "default"}
+   429→        />
+   430→        <StatCard
+   431→          label={t("detail.soundsRemaining")}
+   432→          value={`${soundsRemaining} / ${soundsTotal}`}
+   433→          hint={t("detail.soundsUsedHint", { count: soundsUsed })}
+   434→          icon={Music2}
+   435→          tone="teal"
+   436→        />
+   437→      </div>
+   438→
+   439→      <div className="grid gap-5 lg:grid-cols-3">
+   440→        {/* Left: Sounds + Customer */}
+   441→        <div className="space-y-5">
+   442→          <Card className="p-5">
+   443→            <h3 className="font-semibold flex items-center gap-2 mb-3">
+   444→              <Music2 className="h-4 w-4 text-muted-foreground" /> {t("detail.sounds")}
+   445→            </h3>
+   446→            {promo.sounds.length === 0 ? (
+   447→              <p className="text-sm text-muted-foreground py-2">
+   448→                {t("detail.noSounds")}
+   449→              </p>
+   450→            ) : (
+   451→              <div className="space-y-3">
+   452→                {promo.sounds.map((ps) => {
+   453→                  const remaining = ps.quantityTotal - ps.quantityUsed;
+   454→                  const over = ps.quantityUsed > ps.quantityTotal;
+   455→                  const pct =
+   456→                    ps.quantityTotal > 0
+   457→                      ? Math.min(
+   458→                          100,
+   459→                          (ps.quantityUsed / ps.quantityTotal) * 100
+   460→                        )
+   461→                      : 0;
+   462→                  return (
+   463→                    <div key={ps.id} className="space-y-1.5">
+   464→                      <div className="flex items-center justify-between gap-2">
+   465→                        <span className="text-sm font-medium truncate">
+   466→                          {ps.sound.name}
+   467→                        </span>
+   468→                        <span
+   469→                          className={`text-xs tabular-nums ${
+   470→                            over ? "text-rose-600" : "text-muted-foreground"
+   471→                          }`}
+   472→                        >
+   473→                          {ps.quantityUsed}/{ps.quantityTotal}
+   474→                        </span>
+   475→                      </div>
+   476→                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+   477→                        <div
+   478→                          className={`h-full rounded-full ${
+   479→                            over
+   480→                              ? "bg-rose-500"
+   481→                              : pct >= 100
+   482→                              ? "bg-teal-500"
+   483→                              : "bg-emerald-500"
+   484→                          }`}
+   485→                          style={{ width: `${pct}%` }}
+   486→                        />
+   487→                      </div>
+   488→                      <div className="flex justify-between items-center gap-2 text-xs text-muted-foreground">
+   489→                        <span className="truncate">
+   490→                          {ps.sound.artist || "—"}
+   491→                          {ps.sound.internalRef ? ` · ${ps.sound.internalRef}` : ""}
+   492→                        </span>
+   493→                        <div className="flex items-center gap-2 shrink-0">
+   494→                          {ps.sound.url && (
+   495→                            <a
+   496→                              href={normalizeUrl(ps.sound.url)}
+   497→                              target="_blank"
+   498→                              rel="noopener noreferrer"
+   499→                              className="inline-flex items-center gap-1 text-emerald-600 hover:underline dark:text-emerald-400"
+   500→                            >
+   501→                              <Link2 className="h-3 w-3" />
+   502→                              {domainFromUrl(ps.sound.url)}
+   503→                              <ExternalLink className="h-2.5 w-2.5" />
+   504→                            </a>
+   505→                          )}
+   506→                          <span className={over ? "text-rose-600" : ""}>
+   507→                            {remaining} {t("form.remaining")}
+   508→                            {over && " ⚠"}
+   509→                          </span>
+   510→                        </div>
+   511→                      </div>
+   512→                    </div>
+   513→                  );
+   514→                })}
+   515→              </div>
+   516→            )}
+   517→          </Card>
+   518→
+   519→          {promo.customer && (
+   520→            <Card className="p-5">
+   521→              <h3 className="font-semibold flex items-center gap-2 mb-3">
+   522→                <User className="h-4 w-4 text-muted-foreground" /> {t("detail.customer")}
+   523→              </h3>
+   524→              <dl className="space-y-2 text-sm">
+   525→                <div className="flex justify-between gap-2">
+   526→                  <dt className="text-muted-foreground">{t("detail.field.name")}</dt>
+   527→                  <dd className="font-medium text-right">{promo.customer.name}</dd>
+   528→                </div>
+   529→                {promo.customer.company && (
+   530→                  <div className="flex justify-between gap-2">
+   531→                    <dt className="text-muted-foreground">{t("detail.field.company")}</dt>
+   532→                    <dd className="text-right">{promo.customer.company}</dd>
+   533→                  </div>
+   534→                )}
+   535→                {promo.customer.contactPerson && (
+   536→                  <div className="flex justify-between gap-2">
+   537→                    <dt className="text-muted-foreground">{t("detail.field.contact")}</dt>
+   538→                    <dd className="text-right">{promo.customer.contactPerson}</dd>
+   539→                  </div>
+   540→                )}
+   541→                {promo.customer.email && (
+   542→                  <div className="flex justify-between gap-2">
+   543→                    <dt className="text-muted-foreground">{t("detail.field.email")}</dt>
+   544→                    <dd className="text-right">
+   545→                      <a
+   546→                        href={`mailto:${promo.customer.email}`}
+   547→                        className="text-emerald-600 hover:underline"
+   548→                      >
+   549→                        {promo.customer.email}
+   550→                      </a>
+   551→                    </dd>
+   552→                  </div>
+   553→                )}
+   554→                {promo.customer.phone && (
+   555→                  <div className="flex justify-between gap-2">
+   556→                    <dt className="text-muted-foreground">{t("detail.field.phone")}</dt>
+   557→                    <dd className="text-right">{promo.customer.phone}</dd>
+   558→                  </div>
+   559→                )}
+   560→              </dl>
+   561→              {promo.customer.notes && (
+   562→                <>
+   563→                  <Separator className="my-3" />
+   564→                  <p className="text-sm text-muted-foreground">
+   565→                    {promo.customer.notes}
+   566→                  </p>
+   567→                </>
+   568→              )}
+   569→            </Card>
+   570→          )}
+   571→        </div>
+   572→
+   573→        {/* Right: Payments + Notes */}
+   574→        <div className="space-y-5 lg:col-span-2">
+   575→          <Card className="p-5">
+   576→            <h3 className="font-semibold flex items-center gap-2 mb-4">
+   577→              <Wallet className="h-4 w-4 text-muted-foreground" /> {t("detail.payments")}
+   578→            </h3>
+   579→            {promo.payments.length === 0 ? (
+   580→              <p className="text-sm text-muted-foreground py-2">
+   581→                {t("detail.noPayments")}
+   582→              </p>
+   583→            ) : (
+   584→              <div className="space-y-3">
+   585→                {promo.payments.map((p) => {
+   586→                  const status = computePaymentStatus(
+   587→                    p.paidOut,
+   588→                    p.received,
+   589→                    p.expectedDate
+   590→                  );
+   591→                  return (
+   592→                    <div
+   593→                      key={p.id}
+   594→                      className="rounded-lg border p-3 space-y-3"
+   595→                    >
+   596→                      <div className="flex items-start justify-between gap-2">
+   597→                        <div>
+   598→                          <p className="font-semibold tabular-nums">
+   599→                            {formatCurrency(p.amount)}
+   600→                          </p>
+   601→                          {/* Split info */}
+   602→                          {(p as Record<string, unknown>).splitAmount ? (
+   603→                            <p className="text-xs text-muted-foreground mt-0.5">
+   604→                              Split: {formatCurrency((p as Record<string, unknown>).splitAmount as number)} →{" "}
+   605→                              {collaborators.find((c) => c.id === (p as Record<string, unknown>).splitUserId)?.displayName || "collaborator"}
+   606→                              {" · "}
+   607→                              <span className="text-emerald-600 dark:text-emerald-400">
+   608→                                You keep: {formatCurrency(p.amount - ((p as Record<string, unknown>).splitAmount as number))}
+   609→                              </span>
+   610→                            </p>
+   611→                          ) : null}
+   612→                          <PaymentStatusBadge
+   613→                            paidOut={p.paidOut}
+   614→                            received={p.received}
+   615→                            expectedDate={p.expectedDate}
+   616→                          />
+   617→                        </div>
+   618→                      </div>
+   619→
+   620→                      <div className="flex gap-6 flex-wrap">
+   621→                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+   622→                          <Checkbox
+   623→                            checked={p.paidOut}
+   624→                            onCheckedChange={(v) =>
+   625→                              togglePayment(p.id, "paidOut", !!v)
+   626→                            }
+   627→                            disabled={updatePayment.isPending}
+   628→                          />
+   629→                          <span>{t("form.paidOut")}</span>
+   630→                        </label>
+   631→                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+   632→                          <Checkbox
+   633→                            checked={p.received}
+   634→                            onCheckedChange={(v) =>
+   635→                              togglePayment(p.id, "received", !!v)
+   636→                            }
+   637→                            disabled={updatePayment.isPending}
+   638→                          />
+   639→                          <span>{t("form.received")}</span>
+   640→                        </label>
+   641→                      </div>
+   642→
+   643→                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+   644→                        <div>
+   645→                          <p className="text-muted-foreground">{t("money.col.expected")}</p>
+   646→                          <p className="font-medium">
+   647→                            {formatDate(p.expectedDate)}
+   648→                          </p>
+   649→                        </div>
+   650→                        <div>
+   651→                          <p className="text-muted-foreground">{t("form.payoutDate")}</p>
+   652→                          <p className="font-medium">
+   653→                            {formatDate(p.payoutDate)}
+   654→                          </p>
+   655→                        </div>
+   656→                        <div>
+   657→                          <p className="text-muted-foreground">{t("money.col.received")}</p>
+   658→                          <p className="font-medium">
+   659→                            {formatDate(p.receivedDate)}
+   660→                          </p>
+   661→                        </div>
+   662→                      </div>
+   663→                      {p.notes && (
+   664→                        <p className="text-xs text-muted-foreground border-t pt-2">
+   665→                          {p.notes}
+   666→                        </p>
+   667→                      )}
+   668→                      {/* Split amount editor */}
+   669→                      <div className="border-t pt-2 flex items-center gap-2 flex-wrap">
+   670→                        <span className="text-xs text-muted-foreground whitespace-nowrap">Split to:</span>
+   671→                        <Select
+   672→                          value={(p as Record<string, unknown>).splitUserId as string || "none"}
+   673→                          onValueChange={async (value) => {
+   674→                            const splitUserId = value === "none" ? null : value;
+   675→                            const currentSplit = (p as Record<string, unknown>).splitAmount as number || 0;
+   676→                            try {
+   677→                              const res = await fetch("/api/payments/update-split", {
+   678→                                method: "POST",
+   679→                                headers: { "Content-Type": "application/json" },
+   680→                                body: JSON.stringify({
+   681→                                  paymentId: p.id,
+   682→                                  splitUserId,
+   683→                                  splitAmount: splitUserId ? currentSplit : 0,
+   684→                                }),
+   685→                              });
+   686→                              if (!res.ok) {
+   687→                                const errData = await res.json().catch(() => ({}));
+   688→                                throw new Error(errData.error || errData.detail || `HTTP ${res.status}`);
+   689→                              }
+   690→                              toast.success(splitUserId ? "Split assigned to " + (collaborators.find((c) => c.id === splitUserId)?.displayName || "collaborator") : "Split removed");
+   691→                              qc.invalidateQueries({ queryKey: ["promos"] });
+   692→                            } catch (e) {
+   693→                              toast.error("Failed to update split: " + (e instanceof Error ? e.message : "Unknown"));
+   694→                            }
+   695→                          }}
+   696→                        >
+   697→                          <SelectTrigger className="h-7 w-[120px] text-xs">
+   698→                            <SelectValue />
+   699→                          </SelectTrigger>
+   700→                          <SelectContent>
+   701→                            <SelectItem value="none">— None —</SelectItem>
+   702→                            {collaborators.map((c) => (
+   703→                              <SelectItem key={c.id} value={c.id}>
+   704→                                {c.displayName || c.username}
+   705→                              </SelectItem>
+   706→                            ))}
+   707→                          </SelectContent>
+   708→                        </Select>
+   709→                        {(p as Record<string, unknown>).splitUserId ? (
+   710→                          <>
+   711→                            <Input
+   712→                              type="number"
+   713→                              step="0.01"
+   714→                              placeholder="0.00"
+   715→                              defaultValue={(p as Record<string, unknown>).splitAmount as number || 0}
+   716→                              className="h-7 w-[80px] text-xs"
+   717→                              onBlur={async (e) => {
+   718→                                const amount = parseFloat(e.target.value) || 0;
+   719→                                const currentSplitUserId = (p as Record<string, unknown>).splitUserId as string | null;
+   720→                                if (!currentSplitUserId) return; // No collaborator selected, skip
+   721→                                try {
+   722→                                  const res = await fetch("/api/payments/update-split", {
+   723→                                    method: "POST",
+   724→                                    headers: { "Content-Type": "application/json" },
+   725→                                    body: JSON.stringify({
+   726→                                      paymentId: p.id,
+   727→                                      splitUserId: currentSplitUserId,
+   728→                                      splitAmount: amount,
+   729→                                    }),
+   730→                                  });
+   731→                                  if (!res.ok) {
+   732→                                    const errData = await res.json().catch(() => ({}));
+   733→                                    throw new Error(errData.error || errData.detail || `HTTP ${res.status}`);
+   734→                                  }
+   735→                                  toast.success(`Split updated: ${amount.toFixed(2)}€`);
+   736→                                  qc.invalidateQueries({ queryKey: ["promos"] });
+   737→                                } catch (e) {
+   738→                                  toast.error("Failed to update split: " + (e instanceof Error ? e.message : "Unknown"));
+   739→                                }
+   740→                              }}
+   741→                            />
+   742→                            <span className="text-xs text-muted-foreground">
+   743→                              of {formatCurrency(p.amount)} · You keep: {formatCurrency(p.amount - ((p as Record<string, unknown>).splitAmount as number || 0))}
+   744→                            </span>
+   745→                          </>
+   746→                        ) : null}
+   747→                      </div>
+   748→                      {/* PNR: Request Approval button + status — sends to VIEWER (dad) */}
+   749→                      <div className="border-t pt-2 flex items-center gap-2 flex-wrap">
+   750→                        <Button
+   751→                          size="sm"
+   752→                          variant="outline"
+   753→                          className="gap-1.5 text-xs"
+   754→                          onClick={async () => {
+   755→                            try {
+   756→                              const res = await fetch("/api/backup");
+   757→                              const data = await res.json();
+   758→                              const viewers = (data.users || []).filter((u: { role: string; shareToken?: string }) => u.role === "VIEWER");
+   759→                              if (viewers.length === 0) {
+   760→                                toast.error("No viewer user found. Create a viewer account first.");
+   761→                                return;
+   762→                              }
+   763→                              const viewer = viewers[0];
+   764→                              if (!viewer.shareToken) {
+   765→                                toast.error("Viewer doesn't have a shareToken yet. Go to Settings to generate one.");
+   766→                                return;
+   767→                              }
+   768→                              const promoName = promo.name;
+   769→                              const pnrRes = await fetch("/api/payment-approvals", {
+   770→                                method: "POST",
+   771→                                headers: { "Content-Type": "application/json" },
+   772→                                body: JSON.stringify({
+   773→                                  paymentId: p.id,
+   774→                                  approverToken: viewer.shareToken,
+   775→                                  amount: p.amount,
+   776→                                  promoName,
+   777→                                }),
+   778→                              });
+   779→                              if (!pnrRes.ok) throw new Error("Failed");
+   780→                              toast.success(`Payment approval request sent to ${viewer.username || viewer.displayName || "viewer"}`);
+   781→                              // Immediately update local status to PENDING
+   782→                              setApprovalStatuses((prev) => ({ ...prev, [p.id]: { status: "PENDING" } }));
+   783→                            } catch {
+   784→                              toast.error("Failed to send approval request");
+   785→                            }
+   786→                          }}
+   787→                        >
+   788→                          <Bell className="h-3 w-3" />
+   789→                          Request Approval
+   790→                        </Button>
+   791→                        {/* Approval status badge */}
+   792→                        {approvalStatuses[p.id]?.status === "PENDING" && (
+   793→                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-2 py-1 rounded-full">
+   794→                            <Clock className="h-3 w-3 animate-pulse" />
+   795→                            Awaiting approval...
+   796→                          </span>
+   797→                        )}
+   798→                        {approvalStatuses[p.id]?.status === "APPROVED" && (
+   799→                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/40 px-2 py-1 rounded-full">
+   800→                            <CheckCircle2 className="h-3 w-3" />
+   801→                            Approved{approvalStatuses[p.id]?.respondedAt ? ` · ${new Date(approvalStatuses[p.id].respondedAt).toLocaleString("en", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+   802→                          </span>
+   803→                        )}
+   804→                        {approvalStatuses[p.id]?.status === "DENIED" && (
+   805→                          <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/40 px-2 py-1 rounded-full">
+   806→                            <X className="h-3 w-3" />
+   807→                            Denied
+   808→                          </span>
+   809→                        )}
+   810→                      </div>
+   811→                    </div>
+   812→                  );
+   813→                })}
+   814→              </div>
+   815→            )}
+   816→            <div className="mt-4 pt-3 border-t flex items-center justify-between text-sm">
+   817→              <span className="text-muted-foreground">{t("detail.totalReceivedOpen")}</span>
+   818→              <span className="font-semibold tabular-nums">
+   819→                <span className="text-emerald-600">{formatCurrency(received)}</span>
+   820→                {" / "}
+   821→                <span className="text-amber-600">{formatCurrency(outstanding)}</span>
+   822→              </span>
+   823→            </div>
+   824→          </Card>
+   825→
+   826→          {/* TikTok card */}
+   827→          <Card className="p-5">
+   828→            <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+   829→              <h3 className="font-semibold flex items-center gap-2">
+   830→                <Video className="h-4 w-4 text-muted-foreground" /> {t("detail.tiktoks")}
+   831→              </h3>
+   832→              <div className="text-right">
+   833→                <p className="text-lg font-semibold tabular-nums">
+   834→                  {promoTiktokDone(promo)}
+   835→                  <span className="text-sm text-muted-foreground">
+   836→                    /{promo.tiktokTarget || 0}
+   837→                  </span>
+   838→                </p>
+   839→                <p className="text-[11px] text-muted-foreground">{t("detail.createdDone")}</p>
+   840→              </div>
+   841→            </div>
+   842→
+   843→            {(promo.tiktokTarget || 0) > 0 && (
+   844→              <div className="mb-4 h-2 w-full rounded-full bg-muted overflow-hidden">
+   845→                <div
+   846→                  className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all"
+   847→                  style={{
+   848→                    width: `${Math.min(
+   849→                      100,
+   850→                      (promoTiktokDone(promo) / (promo.tiktokTarget || 1)) * 100
+   851→                    )}%`,
+   852→                  }}
+   853→                />
+   854→              </div>
+   855→            )}
+   856→
+   857→            {promo.tiktoks.length === 0 ? (
+   858→              <p className="text-sm text-muted-foreground py-2">
+   859→                {t("detail.noTiktoks")}
+   860→              </p>
+   861→            ) : (
+   862→              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+   863→                {promo.tiktoks.map((tk, i) => {
+   864→                  const sound = promo.sounds.find((ps) => ps.soundId === tk.soundId);
+   865→                  return (
+   866→                    <TikTokThumbnail
+   867→                      key={tk.id}
+   868→                      url={tk.url}
+   869→                      title={tk.title}
+   870→                      soundName={sound?.sound.name || null}
+   871→                      postedDate={tk.createdAt}
+   872→                      index={i + 1}
+   873→                      fallbackLabel={t("share.noTitle")}
+   874→                      accentColor="pink"
+   875→                    />
+   876→                  );
+   877→                })}
+   878→              </div>
+   879→            )}
+   880→          </Card>
+   881→
+   882→          {(promo.notes || promo.customer?.notes) && (
+   883→            <Card className="p-5">
+   884→              <h3 className="font-semibold flex items-center gap-2 mb-3">
+   885→                <StickyNote className="h-4 w-4 text-muted-foreground" /> {t("detail.notes")}
+   886→              </h3>
+   887→              {promo.notes ? (
+   888→                <p className="text-sm whitespace-pre-wrap">{promo.notes}</p>
+   889→              ) : (
+   890→                <p className="text-sm text-muted-foreground">
+   891→                  {t("detail.noNotes")}
+   892→                </p>
+   893→              )}
+   894→            </Card>
+   895→          )}
+   896→        </div>
+   897→      </div>
+   898→
+   899→      <PromoFormDialog
+   900→        open={formOpen}
+   901→        onOpenChange={setFormOpen}
+   902→        mode="edit"
+   903→        promo={promo}
+   904→      />
+   905→
+   906→      <AlertDialog
+   907→        open={deleteConfirm}
+   908→        onOpenChange={setDeleteConfirm}
+   909→      >
+   910→        <AlertDialogContent>
+   911→          <AlertDialogHeader>
+   912→            <AlertDialogTitle>{t("detail.deleteTitle", { name: promo.name })}</AlertDialogTitle>
+   913→            <AlertDialogDescription>
+   914→              {t("detail.deleteDesc")}
+   915→            </AlertDialogDescription>
+   916→          </AlertDialogHeader>
+   917→          <AlertDialogFooter>
+   918→            <AlertDialogCancel>{t("action.cancel")}</AlertDialogCancel>
+   919→            <AlertDialogAction
+   920→              onClick={handleDelete}
+   921→              className="bg-rose-600 hover:bg-rose-700 text-white"
+   922→            >
+   923→              {t("action.delete")}
+   924→            </AlertDialogAction>
+   925→          </AlertDialogFooter>
+   926→        </AlertDialogContent>
+   927→      </AlertDialog>
+   928→    </div>
+   929→  );
+   930→}
+   931→
