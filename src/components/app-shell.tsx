@@ -43,6 +43,7 @@ interface NavItem {
   key: ViewKey;
   label: string;
   icon: React.ElementType;
+  demoHidden?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -54,8 +55,8 @@ const NAV: NavItem[] = [
   { key: "sounds", label: "nav.sounds", icon: Music2 },
   { key: "customers", label: "nav.customers", icon: Users },
   { key: "notes", label: "Notes", icon: StickyNote },
-  { key: "bio", label: "Bio Page", icon: Sparkles },
-  { key: "settings", label: "nav.settings", icon: Settings },
+  { key: "bio", label: "Bio Page", icon: Sparkles, demoHidden: true },
+  { key: "settings", label: "nav.settings", icon: Settings, demoHidden: true },
 ];
 
 function BrandLogo() {
@@ -98,13 +99,19 @@ function ThemeToggle() {
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const isDemo = user?.role === "DEMO";
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
+
+  // Filter out demoHidden items when in demo mode
+  const navItems = isDemo ? NAV.filter((item) => !item.demoHidden) : NAV;
+
   // promo-detail should highlight promos
   const activeKey: ViewKey = view === "promo-detail" ? "promos" : view;
-  const activeIndex = NAV.findIndex((item) => item.key === activeKey);
+  const activeIndex = navItems.findIndex((item) => item.key === activeKey);
 
-  const items: BounceSidebarItem[] = NAV.map((item) => ({
+  const items: BounceSidebarItem[] = navItems.map((item) => ({
     label: t(item.label),
     icon: item.icon,
   }));
@@ -115,7 +122,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
       value={activeIndex}
       defaultValue={0}
       onChange={(index) => {
-        setView(NAV[index].key);
+        setView(navItems[index].key);
         onNavigate?.();
       }}
       dotColor="#818cf8"

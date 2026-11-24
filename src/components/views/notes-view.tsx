@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useIsDemo } from "@/hooks/use-data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ const COLOR_KEYS = Object.keys(COLORS);
 
 export function NotesView() {
   const { t } = useI18n();
+  const isDemo = useIsDemo();
   const qc = useQueryClient();
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editTitle, setEditTitle] = React.useState("");
@@ -151,14 +153,16 @@ export function NotesView() {
             Your personal notes — daily thoughts, reminders, ideas.
           </p>
         </div>
-        <Button
-          onClick={() => createMutation.mutate()}
-          disabled={createMutation.isPending}
-          className="gap-2"
-        >
-          {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          New Note
-        </Button>
+        {!isDemo && (
+          <Button
+            onClick={() => createMutation.mutate()}
+            disabled={createMutation.isPending}
+            className="gap-2"
+          >
+            {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            New Note
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -242,15 +246,17 @@ export function NotesView() {
                         >
                           {note.pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-rose-500 hover:text-rose-600"
-                          onClick={() => setDeleteId(note.id)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {!isDemo && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-rose-500 hover:text-rose-600"
+                            onClick={() => setDeleteId(note.id)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                     <p

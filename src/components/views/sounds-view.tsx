@@ -7,6 +7,7 @@ import {
   useUpdateSound,
   useDeleteSound,
   usePromos,
+  useIsDemo,
 } from "@/hooks/use-data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ import { useI18n } from "@/components/language-provider";
 
 export function SoundsView() {
   const { t } = useI18n();
+  const isDemo = useIsDemo();
   const { data: sounds = [], isLoading } = useSounds();
   const { data: promos = [] } = usePromos();
   const createSound = useCreateSound();
@@ -161,16 +163,18 @@ export function SoundsView() {
           <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
             <Download className="h-4 w-4" /> {t("action.export")}
           </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditSound(null);
-              setFormOpen(true);
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" /> {t("form.newSound")}
-          </Button>
+          {!isDemo && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditSound(null);
+                setFormOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" /> {t("form.newSound")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -265,25 +269,29 @@ export function SoundsView() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              setEditSound(s);
-                              setFormOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-rose-600"
-                            onClick={() => setDeleteId(s.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {!isDemo && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditSound(s);
+                                setFormOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {!isDemo && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-rose-600"
+                              onClick={() => setDeleteId(s.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

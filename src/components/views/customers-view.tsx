@@ -7,6 +7,7 @@ import {
   useUpdateCustomer,
   useDeleteCustomer,
   usePromos,
+  useIsDemo,
 } from "@/hooks/use-data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import { useI18n } from "@/components/language-provider";
 
 export function CustomersView() {
   const { t } = useI18n();
+  const isDemo = useIsDemo();
   const { data: customers = [], isLoading } = useCustomers();
   const { data: promos = [] } = usePromos();
   const createCustomer = useCreateCustomer();
@@ -164,16 +166,18 @@ export function CustomersView() {
           <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
             <Download className="h-4 w-4" /> {t("action.export")}
           </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditCustomer(null);
-              setFormOpen(true);
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" /> {t("form.newCustomer")}
-          </Button>
+          {!isDemo && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditCustomer(null);
+                setFormOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" /> {t("form.newCustomer")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -216,25 +220,29 @@ export function CustomersView() {
                     )}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        setEditCustomer(c);
-                        setFormOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-rose-600"
-                      onClick={() => setDeleteId(c.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!isDemo && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setEditCustomer(c);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {!isDemo && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-rose-600"
+                        onClick={() => setDeleteId(c.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 

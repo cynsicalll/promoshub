@@ -41,7 +41,7 @@ async function getDemoData() {
   return demoCache!;
 }
 
-function useIsDemo() {
+export function useIsDemo() {
   const { user } = useAuth();
   return user?.role === "DEMO";
 }

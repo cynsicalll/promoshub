@@ -5,6 +5,7 @@ import {
   usePayments,
   useUpdatePayment,
   useDeletePayment,
+  useIsDemo,
 } from "@/hooks/use-data";
 import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
@@ -78,6 +79,7 @@ type SortKey =
 
 export function MoneyView() {
   const { t } = useI18n();
+  const isDemo = useIsDemo();
   const { data: payments = [], isLoading } = usePayments();
   const updatePayment = useUpdatePayment();
   const deletePayment = useDeletePayment();
@@ -451,14 +453,16 @@ export function MoneyView() {
                         className="text-right"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-rose-600"
-                          onClick={() => setDeleteId(p.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {!isDemo && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-rose-600"
+                            onClick={() => setDeleteId(p.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { usePromos, useDeletePromo } from "@/hooks/use-data";
+import { usePromos, useDeletePromo, useIsDemo } from "@/hooks/use-data";
 import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,7 @@ import { formatDateInput, toISODate } from "@/lib/format";
 
 export function PromoDetailView() {
   const { t } = useI18n();
+  const isDemo = useIsDemo();
   const qc = useQueryClient();
   const promoId = useAppStore((s) => s.selectedPromoId);
   const setView = useAppStore((s) => s.setView);
@@ -266,35 +267,39 @@ export function PromoDetailView() {
               <Share2 className="h-4 w-4" /> {t("detail.copyLink")}
             </Button>
           ) : null}
-          {promo.shareEnabled ? (
+          {!isDemo && (
+            promo.shareEnabled ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDisableShare}
+                className="gap-2"
+                disabled={disableShare.isPending}
+              >
+                <Lock className="h-4 w-4" /> {t("detail.stopShare")}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEnableShare}
+                className="gap-2"
+                disabled={enableShare.isPending}
+              >
+                <Unlock className="h-4 w-4" /> {t("detail.shareWithCustomer")}
+              </Button>
+            )
+          )}
+          {!isDemo && (
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDisableShare}
+              onClick={() => setFormOpen(true)}
               className="gap-2"
-              disabled={disableShare.isPending}
             >
-              <Lock className="h-4 w-4" /> {t("detail.stopShare")}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleEnableShare}
-              className="gap-2"
-              disabled={enableShare.isPending}
-            >
-              <Unlock className="h-4 w-4" /> {t("detail.shareWithCustomer")}
+              <Pencil className="h-4 w-4" /> {t("action.edit")}
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFormOpen(true)}
-            className="gap-2"
-          >
-            <Pencil className="h-4 w-4" /> {t("action.edit")}
-          </Button>
           {/* Visible to: Viewer (dad) or Collaborator — not both */}
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground whitespace-nowrap">Visible to:</span>
@@ -329,48 +334,52 @@ export function PromoDetailView() {
               </SelectContent>
             </Select>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
-            onClick={async () => {
-              try {
-                const total = promoTotal(promo);
-                const res = await fetch("/api/push/send", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    type: "promo",
-                    data: {
-                      name: promo.name,
-                      amount: total,
-                      customer: promo.customer?.name || "",
-                      date: formatDate(promo.date),
-                    },
-                  }),
-                });
-                if (!res.ok) throw new Error("Failed");
-                const result = await res.json();
-                if (result.sent > 0) {
-                  toast.success(`Notification sent to viewer: "${result.title}"`);
-                } else {
-                  toast.error("Viewer hasn't enabled notifications yet. Ask them to tap the bell button on their link.");
+          {!isDemo && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+              onClick={async () => {
+                try {
+                  const total = promoTotal(promo);
+                  const res = await fetch("/api/push/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      type: "promo",
+                      data: {
+                        name: promo.name,
+                        amount: total,
+                        customer: promo.customer?.name || "",
+                        date: formatDate(promo.date),
+                      },
+                    }),
+                  });
+                  if (!res.ok) throw new Error("Failed");
+                  const result = await res.json();
+                  if (result.sent > 0) {
+                    toast.success(`Notification sent to viewer: "${result.title}"`);
+                  } else {
+                    toast.error("Viewer hasn't enabled notifications yet. Ask them to tap the bell button on their link.");
+                  }
+                } catch {
+                  toast.error("Failed to send notification");
                 }
-              } catch {
-                toast.error("Failed to send notification");
-              }
-            }}
-          >
-            <Bell className="h-4 w-4" /> Notify
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDeleteConfirm(true)}
-            className="gap-2 text-rose-600 hover:text-rose-700"
-          >
-            <Trash2 className="h-4 w-4" /> {t("action.delete")}
-          </Button>
+              }}
+            >
+              <Bell className="h-4 w-4" /> Notify
+            </Button>
+          )}
+          {!isDemo && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteConfirm(true)}
+              className="gap-2 text-rose-600 hover:text-rose-700"
+            >
+              <Trash2 className="h-4 w-4" /> {t("action.delete")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -747,47 +756,49 @@ export function PromoDetailView() {
                       </div>
                       {/* PNR: Request Approval button + status — sends to VIEWER (dad) */}
                       <div className="border-t pt-2 flex items-center gap-2 flex-wrap">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1.5 text-xs"
-                          onClick={async () => {
-                            try {
-                              const res = await fetch("/api/backup");
-                              const data = await res.json();
-                              const viewers = (data.users || []).filter((u: { role: string; shareToken?: string }) => u.role === "VIEWER");
-                              if (viewers.length === 0) {
-                                toast.error("No viewer user found. Create a viewer account first.");
-                                return;
+                        {!isDemo && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 text-xs"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch("/api/backup");
+                                const data = await res.json();
+                                const viewers = (data.users || []).filter((u: { role: string; shareToken?: string }) => u.role === "VIEWER");
+                                if (viewers.length === 0) {
+                                  toast.error("No viewer user found. Create a viewer account first.");
+                                  return;
+                                }
+                                const viewer = viewers[0];
+                                if (!viewer.shareToken) {
+                                  toast.error("Viewer doesn't have a shareToken yet. Go to Settings to generate one.");
+                                  return;
+                                }
+                                const promoName = promo.name;
+                                const pnrRes = await fetch("/api/payment-approvals", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    paymentId: p.id,
+                                    approverToken: viewer.shareToken,
+                                    amount: p.amount,
+                                    promoName,
+                                  }),
+                                });
+                                if (!pnrRes.ok) throw new Error("Failed");
+                                toast.success(`Payment approval request sent to ${viewer.username || viewer.displayName || "viewer"}`);
+                                // Immediately update local status to PENDING
+                                setApprovalStatuses((prev) => ({ ...prev, [p.id]: { status: "PENDING" } }));
+                              } catch {
+                                toast.error("Failed to send approval request");
                               }
-                              const viewer = viewers[0];
-                              if (!viewer.shareToken) {
-                                toast.error("Viewer doesn't have a shareToken yet. Go to Settings to generate one.");
-                                return;
-                              }
-                              const promoName = promo.name;
-                              const pnrRes = await fetch("/api/payment-approvals", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  paymentId: p.id,
-                                  approverToken: viewer.shareToken,
-                                  amount: p.amount,
-                                  promoName,
-                                }),
-                              });
-                              if (!pnrRes.ok) throw new Error("Failed");
-                              toast.success(`Payment approval request sent to ${viewer.username || viewer.displayName || "viewer"}`);
-                              // Immediately update local status to PENDING
-                              setApprovalStatuses((prev) => ({ ...prev, [p.id]: { status: "PENDING" } }));
-                            } catch {
-                              toast.error("Failed to send approval request");
-                            }
-                          }}
-                        >
-                          <Bell className="h-3 w-3" />
-                          Request Approval
-                        </Button>
+                            }}
+                          >
+                            <Bell className="h-3 w-3" />
+                            Request Approval
+                          </Button>
+                        )}
                         {/* Approval status badge */}
                         {approvalStatuses[p.id]?.status === "PENDING" && (
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-2 py-1 rounded-full">

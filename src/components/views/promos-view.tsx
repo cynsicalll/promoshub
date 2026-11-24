@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePromos, useCustomers, useDeletePromo } from "@/hooks/use-data";
+import { usePromos, useCustomers, useDeletePromo, useIsDemo } from "@/hooks/use-data";
 import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,7 @@ type SortKey =
 
 export function PromosView() {
   const { t } = useI18n();
+  const isDemo = useIsDemo();
   const { data: promos = [], isLoading } = usePromos();
   const { data: customers = [] } = useCustomers();
   const openPromo = useAppStore((s) => s.openPromo);
@@ -413,25 +414,29 @@ export function PromosView() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              setEditPromo(p);
-                              setFormOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-rose-600"
-                            onClick={() => setDeleteId(p.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {!isDemo && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setEditPromo(p);
+                                  setFormOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-rose-600"
+                                onClick={() => setDeleteId(p.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
