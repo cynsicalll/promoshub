@@ -171,18 +171,22 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
           <NavLinks />
         </div>
         <div className="mt-6 flex flex-col gap-2">
-          <Button onClick={() => setFormOpen(true)} className="w-full gap-2">
-            <Plus className="h-4 w-4" />
-            {t("action.newPromo")}
-          </Button>
-          <Button
-            onClick={() => setUploadOpen(true)}
-            variant="outline"
-            className="w-full gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
-          >
-            <Video className="h-4 w-4" />
-            {t("action.upload")}
-          </Button>
+          {!isDemo && (
+            <>
+              <Button onClick={() => setFormOpen(true)} className="w-full gap-2">
+                <Plus className="h-4 w-4" />
+                {t("action.newPromo")}
+              </Button>
+              <Button
+                onClick={() => setUploadOpen(true)}
+                variant="outline"
+                className="w-full gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
+              >
+                <Video className="h-4 w-4" />
+                {t("action.upload")}
+              </Button>
+            </>
+          )}
           {isDemo && onOpenDemoCustomer && (
             <Button
               onClick={onOpenDemoCustomer}
@@ -208,27 +212,31 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
             <NavLinks onNavigate={() => setMobileOpen(false)} />
           </div>
           <div className="mt-6 flex flex-col gap-2">
-            <Button
-              onClick={() => {
-                setMobileOpen(false);
-                setFormOpen(true);
-              }}
-              className="w-full gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              {t("action.newPromo")}
-            </Button>
-            <Button
-              onClick={() => {
-                setMobileOpen(false);
-                setUploadOpen(true);
-              }}
-              variant="outline"
-              className="w-full gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
-            >
-              <Video className="h-4 w-4" />
-              {t("action.upload")}
-            </Button>
+            {!isDemo && (
+              <>
+                <Button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setFormOpen(true);
+                  }}
+                  className="w-full gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("action.newPromo")}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setUploadOpen(true);
+                  }}
+                  variant="outline"
+                  className="w-full gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
+                >
+                  <Video className="h-4 w-4" />
+                  {t("action.upload")}
+                </Button>
+              </>
+            )}
             {isDemo && onOpenDemoCustomer && (
               <Button
                 onClick={() => {
@@ -266,23 +274,27 @@ export function AppShell({ children, onOpenDemoCustomer }: { children: React.Rea
             <SearchTrigger onOpen={() => setSearchOpen(true)} />
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setUploadOpen(true)}
-              size="sm"
-              variant="outline"
-              className="gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
-            >
-              <Video className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("action.upload")}</span>
-            </Button>
-            <Button
-              onClick={() => setFormOpen(true)}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("action.newPromo")}</span>
-            </Button>
+            {!isDemo && (
+              <>
+                <Button
+                  onClick={() => setUploadOpen(true)}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700 dark:border-pink-900/50 dark:text-pink-400 dark:hover:bg-pink-950/30"
+                >
+                  <Video className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t("action.upload")}</span>
+                </Button>
+                <Button
+                  onClick={() => setFormOpen(true)}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t("action.newPromo")}</span>
+                </Button>
+              </>
+            )}
             <LanguageToggle />
             <ThemeToggle />
             <Button

@@ -15,6 +15,7 @@ const PUBLIC_API_PATHS = [
   "/api/tiktok-resolve",
   "/api/bio", // GET is public; PUT/DELETE are admin-gated + CSRF-checked below
   "/api/demo-viewer-data", // public demo for the bio page project showcase
+  "/api/demo-data", // public demo data for the full admin showcase
   "/api/bio/upload-image", // admin-gated in handler
 ];
 
@@ -119,8 +120,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // For /api/my-promos, /api/demo-data, require any logged-in user
-  if (pathname === "/api/my-promos" || pathname === "/api/demo-data") {
+  // For /api/my-promos, require any logged-in user
+  if (pathname === "/api/my-promos") {
     if (!hasSessionCookie(req)) {
       return NextResponse.json(
         { error: "Authentication required" },

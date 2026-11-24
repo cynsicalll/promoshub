@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionFromRequest } from "@/lib/auth";
 import type { Promo, Customer, Sound, Payment, DashboardData, MonthlyEntry } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-// Returns example/demo data for DEMO role users
-export async function GET(req: NextRequest) {
-  const session = getSessionFromRequest(req);
-  if (!session) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
-  if (session.role !== "DEMO" && session.role !== "ADMIN") {
-    return NextResponse.json({ error: "Access denied" }, { status: 403 });
-  }
+// Returns example/demo data — fully public (no auth needed).
+// Used by the bio page project showcase (?demo=viewer) and DEMO role users.
+export async function GET() {
 
   // ─── Example Customers ──────────────────────────────
   const customers: Customer[] = [

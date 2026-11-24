@@ -21,6 +21,7 @@ import { CustomerDashboard } from "@/components/views/customer-dashboard";
 import { MoneyViewerDashboard } from "@/components/views/money-viewer-dashboard";
 import { BioPage, type LoginDestination } from "@/components/views/bio-page";
 import { BioEditorView } from "@/components/views/bio-editor-view";
+import { DemoAdminApp } from "@/components/views/demo-admin-app";
 
 function AdminApp() {
   const view = useAppStore((s) => s.view);
@@ -84,9 +85,9 @@ function AuthRouter() {
     }
   }, [user, showLogin, loginDestination, setView]);
 
-  // Public demo of the viewer dashboard (showcased from the bio page)
+  // Public demo of the full admin dashboard (showcased from the bio page)
   if (demoMode === "viewer") {
-    return <MoneyViewerDashboard demo />;
+    return <DemoAdminApp />;
   }
 
   // Public share view (no auth needed)
