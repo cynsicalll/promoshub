@@ -39,13 +39,13 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
-const ICON_MAP: Record<string, React.ElementType> = {
-  trophy: Trophy,
-  users: Users,
-  eye: Eye,
-  bike: Bike,
-  ski: Snowflake,
-  money: DollarSign,
+const ICON_MAP: Record<string, { icon: React.ElementType; color: string }> = {
+  trophy: { icon: Trophy, color: "#FF9F0A" },      // orange
+  users: { icon: Users, color: "#30D158" },         // green
+  eye: { icon: Eye, color: "#0A84FF" },             // blue
+  bike: { icon: Bike, color: "#FF375F" },           // pink
+  ski: { icon: Snowflake, color: "#64D2FF" },       // cyan
+  money: { icon: DollarSign, color: "#BF5AF2" },    // purple
 };
 
 const FALLBACK: BioProfile = {
@@ -173,7 +173,9 @@ function MilestoneTimeline({ milestones }: { milestones: BioMilestone[] }) {
 
 function MilestoneCard({ milestone, isLatest, delay }: { milestone: BioMilestone; isLatest: boolean; delay: number }) {
   const { ref, visible } = useScrollReveal<HTMLDivElement>();
-  const Icon = milestone.icon ? ICON_MAP[milestone.icon] : null;
+  const iconEntry = milestone.icon ? ICON_MAP[milestone.icon] : null;
+  const Icon = iconEntry?.icon;
+  const iconColor = iconEntry?.color ?? "#86868b";
 
   return (
     <div
@@ -185,12 +187,12 @@ function MilestoneCard({ milestone, isLatest, delay }: { milestone: BioMilestone
         transition: `opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
       }}
     >
-      {/* Dot on the timeline */}
+      {/* Dot on the timeline — colored to match the icon */}
       <div
         className={`absolute -left-6 top-3 w-3.5 h-3.5 rounded-full ${isLatest ? "dot-pulse" : ""}`}
         style={{
-          background: isLatest ? "var(--bp-accent)" : "rgba(255,255,255,0.2)",
-          boxShadow: isLatest ? "0 0 0 3px rgba(0,122,255,0.15)" : "none",
+          background: iconColor,
+          boxShadow: `0 0 0 3px ${iconColor}26`,
         }}
       />
 
@@ -198,7 +200,7 @@ function MilestoneCard({ milestone, isLatest, delay }: { milestone: BioMilestone
       <div className={`${GLASS} rounded-2xl p-4`}>
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2">
-            {Icon && <Icon className="h-3.5 w-3.5 text-[var(--bp-text-muted)]" />}
+            {Icon && <Icon className="h-3.5 w-3.5" style={{ color: iconColor }} />}
             <h3 className="text-sm font-medium text-[var(--bp-text)]" style={{ fontFamily: "var(--font-display)" }}>
               {milestone.title}
             </h3>
@@ -217,10 +219,10 @@ function MilestoneCard({ milestone, isLatest, delay }: { milestone: BioMilestone
 
 // ─── Stat tile ────────────────────────────────────────────────────────────────
 
-function StatTile({ label, value, icon: Icon }: { label: string; value: string; icon: React.ElementType }) {
+function StatTile({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
   return (
     <div className={`${GLASS} rounded-2xl px-4 py-3 text-center`}>
-      <Icon className="h-3.5 w-3.5 mx-auto mb-1 text-[var(--bp-text-muted)]" />
+      <Icon className="h-3.5 w-3.5 mx-auto mb-1" style={{ color }} />
       <p className="text-xl font-semibold tabular-nums text-[var(--bp-text)]" style={{ fontFamily: "var(--font-display)" }}>
         {value}
       </p>
@@ -256,23 +258,23 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
     return () => window.removeEventListener("mousemove", handleMove);
   }, []);
 
-  const stats: { label: string; value: string; icon: React.ElementType }[] = [];
+  const stats: { label: string; value: string; icon: React.ElementType; color: string }[] = [];
   if (profile.showFollowers && profile.followers > 0)
-    stats.push({ label: "Followers", value: formatCompact(profile.followers), icon: Users });
+    stats.push({ label: "Followers", value: formatCompact(profile.followers), icon: Users, color: "#30D158" });
   if (profile.showTotalViews && (profile.totalViews ?? 0) > 0)
-    stats.push({ label: "Views", value: `${formatCompact(profile.totalViews!)}+`, icon: Eye });
+    stats.push({ label: "Views", value: `${formatCompact(profile.totalViews!)}+`, icon: Eye, color: "#0A84FF" });
   if (profile.showTotalLikes && profile.totalLikes > 0)
-    stats.push({ label: "Likes", value: `${formatCompact(profile.totalLikes)}+`, icon: ThumbsUp });
+    stats.push({ label: "Likes", value: `${formatCompact(profile.totalLikes)}+`, icon: ThumbsUp, color: "#FF375F" });
   if (profile.showVideoCount && profile.videoCount > 0)
-    stats.push({ label: "Videos", value: `${formatCompact(profile.videoCount)}+`, icon: Film });
+    stats.push({ label: "Videos", value: `${formatCompact(profile.videoCount)}+`, icon: Film, color: "#BF5AF2" });
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: "var(--bp-bg)", color: "var(--bp-text)" }}>
-      {/* Background — neutral gray with subtle white spotlight at top */}
+      {/* Background — neutral gray with subtle multi-color ambient glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 100% 50% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(10,132,255,0.06) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 30%, rgba(191,90,242,0.04) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 20% 70%, rgba(48,209,88,0.03) 0%, transparent 60%)",
         }}
       />
 
@@ -347,10 +349,10 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
         {/* ─── Hero ─── */}
         <header className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-4">
-            {/* Avatar — clean, no gradient ring */}
+            {/* Avatar — subtle blue-tinted border */}
             <div
               className="w-20 h-20 rounded-full overflow-hidden shrink-0"
-              style={{ border: "2px solid rgba(255,255,255,0.1)" }}
+              style={{ border: "2px solid rgba(10,132,255,0.2)", boxShadow: "0 0 0 1px rgba(10,132,255,0.1)" }}
             >
               {profile.profileImage ? (
                  
@@ -405,7 +407,7 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {stats.map((s) => (
-                <StatTile key={s.label} label={s.label} value={s.value} icon={s.icon} />
+                <StatTile key={s.label} label={s.label} value={s.value} icon={s.icon} color={s.color} />
               ))}
             </div>
           </section>
@@ -511,12 +513,16 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
             </h2>
             <div className={`${GLASS} rounded-2xl p-4`}>
               <ul className="flex flex-col gap-2.5">
-                {profile.achievements.map((a, i) => (
-                  <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--bp-text)" }}>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--bp-accent)" }} />
-                    {a}
-                  </li>
-                ))}
+                {profile.achievements.map((a, i) => {
+                  const dotColors = ["#30D158", "#0A84FF", "#FF375F", "#BF5AF2", "#FF9F0A", "#64D2FF"];
+                  const dotColor = dotColors[i % dotColors.length];
+                  return (
+                    <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--bp-text)" }}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dotColor }} />
+                      {a}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </section>
