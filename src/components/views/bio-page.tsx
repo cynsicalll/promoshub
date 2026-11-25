@@ -13,13 +13,17 @@ import {
   Users,
   ThumbsUp,
   Film,
+  Trophy,
+  Bike,
+  Snowflake,
+  DollarSign,
 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { BioProfile } from "@/app/api/bio/route";
+import type { BioProfile, BioMilestone } from "@/app/api/bio/route";
 
 export type LoginDestination = "financial" | "edit";
 
@@ -29,6 +33,20 @@ function formatCompact(n: number): string {
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
   return String(n);
 }
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  trophy: Trophy,
+  users: Users,
+  eye: Eye,
+  bike: Bike,
+  ski: Snowflake,
+  money: DollarSign,
+};
 
 const FALLBACK: BioProfile = {
   displayName: "Cynsical",
@@ -54,7 +72,19 @@ const FALLBACK: BioProfile = {
   ],
   achievements: ["100K+ TikTok followers", "100M+ total views", "17yo entrepreneur & professional yapper", "Passionate skier (mainly park)", "Motocross/Surron rider & mountain biker"],
   videos: [],
+  milestones: [
+    { id: "m1", title: "Started TikTok", date: "2024-06-01", icon: "users" },
+    { id: "m2", title: "10K followers", date: "2024-09-15", icon: "users" },
+    { id: "m3", title: "First 1M view video", date: "2025-01-20", icon: "eye" },
+    { id: "m4", title: "100K followers", date: "2025-06-10", icon: "users" },
+    { id: "m5", title: "Launched Promos", date: "2025-10-01", icon: "money" },
+    { id: "m6", title: "100M+ total views", date: "2026-03-01", icon: "eye" },
+  ],
 };
+
+// ─── Apple-style liquid glass class ──────────────────────────────────────────
+
+const GLASS = "apple-glass";
 
 // ─── TikTok Profile Embed ────────────────────────────────────────────────────
 
@@ -74,7 +104,7 @@ function TikTokProfileEmbed({ handle }: { handle: string }) {
   }, [handle]);
 
   return (
-    <div className="liquid-glass rounded-2xl p-3 overflow-hidden flex justify-center min-h-[120px]">
+    <div className={`${GLASS} rounded-2xl p-3 overflow-hidden flex justify-center min-h-[120px]`}>
       <blockquote
         className="tiktok-embed"
         cite={`https://www.tiktok.com/@${handle}`}
@@ -85,8 +115,8 @@ function TikTokProfileEmbed({ handle }: { handle: string }) {
         <section><a href={`https://www.tiktok.com/@${handle}`} target="_blank" rel="noopener noreferrer">@{handle}</a></section>
       </blockquote>
       {!loaded && (
-        <div className="flex items-center text-xs text-white/40">
-          <div className="h-3 w-3 animate-spin rounded-full border border-white/10 border-t-[#e8b339] mr-2" />
+        <div className="flex items-center text-xs text-[var(--bp-text-muted)]">
+          <div className="h-3 w-3 animate-spin rounded-full border border-white/10 border-t-[var(--bp-accent)] mr-2" />
           Loading…
         </div>
       )}
@@ -94,53 +124,107 @@ function TikTokProfileEmbed({ handle }: { handle: string }) {
   );
 }
 
-// ─── Magnetic hover wrapper ──────────────────────────────────────────────────
-// Subtle cursor-following tilt — one deliberate interaction effect.
+// ─── Scroll reveal hook (IntersectionObserver) ───────────────────────────────
 
-function MagneticHover({ children, strength = 0.15 }: { children: React.ReactNode; strength?: number }) {
-  const ref = React.useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = React.useState("");
+function useScrollReveal<T extends HTMLElement>() {
+  const ref = React.useRef<T>(null);
+  const [visible, setVisible] = React.useState(false);
 
-  const handleMove = (e: React.MouseEvent) => {
+  React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    setTransform(`perspective(600px) rotateY(${x * strength}deg) rotateX(${-y * strength}deg)`);
-  };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-  const reset = () => setTransform("");
+  return { ref, visible };
+}
+
+// ─── Milestone Timeline ──────────────────────────────────────────────────────
+
+function MilestoneTimeline({ milestones }: { milestones: BioMilestone[] }) {
+  // Sort by date descending (most recent first)
+  const sorted = [...milestones].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div
-      ref={ref}
-      onMouseMove={handleMove}
-      onMouseLeave={reset}
-      style={{
-        transform,
-        transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        transformStyle: "preserve-3d",
-      }}
-    >
-      {children}
+    <div className="relative pl-6">
+      {/* Vertical line */}
+      <div className="absolute left-[7px] top-2 bottom-2 w-px bg-white/10 overflow-hidden">
+        <div className="timeline-line-draw" />
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {sorted.map((m, i) => (
+          <MilestoneCard key={m.id} milestone={m} isLatest={i === 0} delay={i * 100} />
+        ))}
+      </div>
     </div>
   );
 }
 
-// ─── Stat tile with count-up ──────────────────────────────────────────────────
+function MilestoneCard({ milestone, isLatest, delay }: { milestone: BioMilestone; isLatest: boolean; delay: number }) {
+  const { ref, visible } = useScrollReveal<HTMLDivElement>();
+  const Icon = milestone.icon ? ICON_MAP[milestone.icon] : null;
 
-function StatTile({ label, value, icon: Icon, delay }: { label: string; value: string; icon: React.ElementType; delay: number }) {
   return (
     <div
-      className="liquid-glass rounded-2xl px-4 py-3 text-center reveal"
-      style={{ animationDelay: `${delay}ms` }}
+      ref={ref}
+      className="relative"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateX(0)" : "translateX(-16px)",
+        transition: `opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
+      }}
     >
-      <Icon className="h-3.5 w-3.5 mx-auto mb-1 text-[#e8b339]" />
-      <p className="text-xl font-bold tabular-nums text-white" style={{ fontFamily: "var(--font-display)" }}>
+      {/* Dot on the timeline */}
+      <div
+        className={`absolute -left-6 top-3 w-3.5 h-3.5 rounded-full ${isLatest ? "dot-pulse" : ""}`}
+        style={{
+          background: isLatest ? "var(--bp-accent)" : "rgba(255,255,255,0.2)",
+          boxShadow: isLatest ? "0 0 0 3px rgba(0,122,255,0.15)" : "none",
+        }}
+      />
+
+      {/* Card */}
+      <div className={`${GLASS} rounded-2xl p-4`}>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            {Icon && <Icon className="h-3.5 w-3.5 text-[var(--bp-text-muted)]" />}
+            <h3 className="text-sm font-medium text-[var(--bp-text)]" style={{ fontFamily: "var(--font-display)" }}>
+              {milestone.title}
+            </h3>
+          </div>
+          <span className="text-[11px] text-[var(--bp-text-muted)] font-medium tabular-nums">
+            {formatDate(milestone.date)}
+          </span>
+        </div>
+        {milestone.description && (
+          <p className="text-xs text-[var(--bp-text-muted)] leading-relaxed">{milestone.description}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stat tile ────────────────────────────────────────────────────────────────
+
+function StatTile({ label, value, icon: Icon }: { label: string; value: string; icon: React.ElementType }) {
+  return (
+    <div className={`${GLASS} rounded-2xl px-4 py-3 text-center`}>
+      <Icon className="h-3.5 w-3.5 mx-auto mb-1 text-[var(--bp-text-muted)]" />
+      <p className="text-xl font-semibold tabular-nums text-[var(--bp-text)]" style={{ fontFamily: "var(--font-display)" }}>
         {value}
       </p>
-      <p className="text-[10px] text-white/40 mt-0.5">{label}</p>
+      <p className="text-[10px] text-[var(--bp-text-muted)] mt-0.5">{label}</p>
     </div>
   );
 }
@@ -160,7 +244,7 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
 
   const profile = data ?? FALLBACK;
 
-  // Cursor glow — one ambient effect, follows the mouse
+  // Cursor glow — neutral white, barely visible
   const cursorRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     const handleMove = (e: MouseEvent) => {
@@ -183,102 +267,113 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
     stats.push({ label: "Videos", value: `${formatCompact(profile.videoCount)}+`, icon: Film });
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#06060a] text-white">
-      {/* ─── Background: single radial depth + subtle noise ─── */}
+    <div className="min-h-screen relative overflow-hidden" style={{ background: "var(--bp-bg)", color: "var(--bp-text)" }}>
+      {/* Background — neutral gray with subtle white spotlight at top */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(ellipse 100% 60% at 50% 0%, rgba(232,179,57,0.06) 0%, transparent 70%), radial-gradient(ellipse 80% 50% at 50% 100%, rgba(120,80,200,0.04) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse 100% 50% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 60%)",
         }}
       />
 
-      {/* ─── Cursor-following glow (one ambient effect) ─── */}
+      {/* Cursor-following glow — neutral white */}
       <div
         ref={cursorRef}
         className="fixed top-0 left-0 w-[400px] h-[400px] rounded-full pointer-events-none z-0"
         style={{
-          background: "radial-gradient(circle, rgba(232,179,57,0.08) 0%, transparent 60%)",
+          background: "radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 60%)",
           transition: "transform 0.15s ease-out",
         }}
       />
 
-      {/* ─── Animations ─── */}
+      {/* Apple-style liquid glass + animations */}
       <style>{`
-        @keyframes reveal {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .reveal {
-          animation: reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .name-shimmer {
-          background: linear-gradient(90deg, #fff 0%, #e8b339 50%, #fff 100%);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: shimmer 4s ease-in-out infinite;
-        }
-        .liquid-glass {
-          background: rgba(255,255,255,0.03);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255,255,255,0.06);
+        .apple-glass {
+          background: rgba(255,255,255,0.05);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border: 0.5px solid rgba(255,255,255,0.1);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .liquid-glass:hover {
-          background: rgba(255,255,255,0.05);
-          border-color: rgba(232,179,57,0.2);
+        .apple-glass:hover {
+          background: rgba(255,255,255,0.08);
+          border-color: rgba(255,255,255,0.15);
         }
-        .avatar-ring {
-          position: relative;
+        @keyframes page-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .avatar-ring::before {
-          content: '';
+        .page-enter > * {
+          animation: page-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+        .page-enter > *:nth-child(1) { animation-delay: 0ms; }
+        .page-enter > *:nth-child(2) { animation-delay: 80ms; }
+        .page-enter > *:nth-child(3) { animation-delay: 160ms; }
+        .page-enter > *:nth-child(4) { animation-delay: 240ms; }
+        .page-enter > *:nth-child(5) { animation-delay: 320ms; }
+        .page-enter > *:nth-child(6) { animation-delay: 400ms; }
+        .page-enter > *:nth-child(7) { animation-delay: 480ms; }
+        .page-enter > *:nth-child(8) { animation-delay: 560ms; }
+        .page-enter > *:nth-child(9) { animation-delay: 640ms; }
+        @keyframes dot-pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.3); }
+          100% { transform: scale(1); }
+        }
+        .dot-pulse {
+          animation: dot-pulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s 1;
+        }
+        .timeline-line-draw {
           position: absolute;
-          inset: -3px;
-          border-radius: 50%;
-          background: conic-gradient(from 0deg, #e8b339, transparent 70%, #e8b339);
-          animation: spin 8s linear infinite;
-          opacity: 0.3;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(to bottom, var(--bp-accent), rgba(255,255,255,0.1));
+          transform-origin: top;
+          animation: line-draw 1s cubic-bezier(0.4, 0, 0.2, 1) both;
         }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+        @keyframes line-draw {
+          from { transform: scaleY(0); }
+          to { transform: scaleY(1); }
         }
         @media (prefers-reduced-motion: reduce) {
-          .reveal, .name-shimmer, .avatar-ring::before { animation: none !important; }
+          .page-enter > *, .dot-pulse, .timeline-line-draw { animation: none !important; }
         }
       `}</style>
 
-      <div className="relative z-10 mx-auto max-w-xl px-5 py-12 sm:py-16 flex flex-col gap-8">
+      <div className="page-enter relative z-10 mx-auto max-w-2xl px-6 py-12 sm:py-16 flex flex-col gap-12">
         {/* ─── Hero ─── */}
-        <header className="flex flex-col items-center gap-4 reveal">
-          {/* Avatar with rotating gold ring */}
-          <div className="avatar-ring">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 bg-white/5 relative z-10">
+        <header className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-4">
+            {/* Avatar — clean, no gradient ring */}
+            <div
+              className="w-20 h-20 rounded-full overflow-hidden shrink-0"
+              style={{ border: "2px solid rgba(255,255,255,0.1)" }}
+            >
               {profile.profileImage ? (
                  
                 <img src={profile.profileImage} alt={profile.displayName} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/30 text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>
+                <div
+                  className="w-full h-full flex items-center justify-center text-lg font-semibold"
+                  style={{ fontFamily: "var(--font-display)", color: "var(--bp-text-muted)", background: "var(--bp-surface)" }}
+                >
                   {profile.displayName.slice(0, 2).toUpperCase()}
                 </div>
               )}
             </div>
-          </div>
-
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight name-shimmer" style={{ fontFamily: "var(--font-display)" }}>
-              {profile.displayName}
-            </h1>
-            {(profile.tagline || profile.bio) && (
-              <p className="text-sm text-white/50 mt-1">{profile.tagline || profile.bio}</p>
-            )}
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)", color: "var(--bp-text)" }}>
+                {profile.displayName}
+              </h1>
+              {(profile.tagline || profile.bio) && (
+                <p className="text-sm mt-0.5" style={{ color: "var(--bp-text-muted)" }}>
+                  {profile.tagline || profile.bio}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Socials — glass pills */}
@@ -290,10 +385,11 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="liquid-glass inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium text-white/90 hover:text-[#e8b339]"
+                  className={`${GLASS} inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium`}
+                  style={{ color: "var(--bp-text)" }}
                 >
                   {s.title}
-                  {s.handle && <span className="text-white/30">{s.handle}</span>}
+                  {s.handle && <span style={{ color: "var(--bp-text-muted)" }}>{s.handle}</span>}
                   <ExternalLink className="h-3 w-3 opacity-40" />
                 </a>
               ))}
@@ -303,11 +399,13 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
 
         {/* ─── Stats ─── */}
         {stats.length > 0 && (
-          <section className="reveal" style={{ animationDelay: "100ms" }}>
-            <h2 className="text-[10px] font-medium uppercase tracking-wider text-white/30 mb-2.5 text-center">Stats</h2>
+          <section>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
+              Stats
+            </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {stats.map((s, i) => (
-                <StatTile key={s.label} label={s.label} value={s.value} icon={s.icon} delay={150 + i * 50} />
+              {stats.map((s) => (
+                <StatTile key={s.label} label={s.label} value={s.value} icon={s.icon} />
               ))}
             </div>
           </section>
@@ -315,41 +413,54 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
 
         {/* ─── TikTok embed ─── */}
         {profile.tiktokHandle && (
-          <section className="reveal" style={{ animationDelay: "200ms" }}>
-            <h2 className="text-[10px] font-medium uppercase tracking-wider text-white/30 mb-2.5 text-center">TikTok</h2>
+          <section>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
+              TikTok
+            </h2>
             <TikTokProfileEmbed handle={profile.tiktokHandle} />
+          </section>
+        )}
+
+        {/* ─── Milestones ─── */}
+        {profile.milestones && profile.milestones.length > 0 && (
+          <section>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
+              Milestones
+            </h2>
+            <MilestoneTimeline milestones={profile.milestones} />
           </section>
         )}
 
         {/* ─── Videos ─── */}
         {profile.videos.length > 0 && (
-          <section className="reveal" style={{ animationDelay: "250ms" }}>
-            <h2 className="text-[10px] font-medium uppercase tracking-wider text-white/30 mb-2.5 text-center">Popular videos</h2>
+          <section>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
+              Popular videos
+            </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {profile.videos.map((v) => (
-                <MagneticHover key={v.id} strength={0.1}>
-                  <a
-                    href={v.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block relative aspect-[9/16] rounded-xl overflow-hidden liquid-glass"
-                  >
-                    {v.thumbnail ? (
-                       
-                      <img src={v.thumbnail} alt={v.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Play className="h-6 w-6 text-white/20" />
-                      </div>
-                    )}
-                    {typeof v.views === "number" && v.views > 0 && (
-                      <span className="absolute bottom-1.5 left-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-black/70 text-white flex items-center gap-0.5">
-                        <Play className="h-2 w-2 fill-white" />
-                        {formatCompact(v.views)}
-                      </span>
-                    )}
-                  </a>
-                </MagneticHover>
+                <a
+                  key={v.id}
+                  href={v.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${GLASS} block relative aspect-[9/16] rounded-2xl overflow-hidden`}
+                >
+                  {v.thumbnail ? (
+                     
+                    <img src={v.thumbnail} alt={v.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Play className="h-6 w-6" style={{ color: "var(--bp-text-muted)" }} />
+                    </div>
+                  )}
+                  {typeof v.views === "number" && v.views > 0 && (
+                    <span className="absolute bottom-1.5 left-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-black/70 text-white flex items-center gap-0.5">
+                      <Play className="h-2 w-2 fill-white" />
+                      {formatCompact(v.views)}
+                    </span>
+                  )}
+                </a>
               ))}
             </div>
           </section>
@@ -357,36 +468,36 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
 
         {/* ─── Projects ─── */}
         {profile.projects.length > 0 && (
-          <section className="reveal" style={{ animationDelay: "300ms" }}>
-            <h2 className="text-[10px] font-medium uppercase tracking-wider text-white/30 mb-2.5 text-center">Projects</h2>
+          <section>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
+              Projects
+            </h2>
             <div className="flex flex-col gap-2">
-              {profile.projects.map((p, i) => (
-                <MagneticHover key={p.id} strength={0.08}>
-                  <a
-                    href={p.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="liquid-glass block rounded-2xl p-4 hover:text-[#e8b339]"
-                    style={{ animationDelay: `${350 + i * 50}ms` }}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-base font-medium text-white" style={{ fontFamily: "var(--font-display)" }}>
-                        {p.title}
-                      </h3>
-                      <ArrowUpRight className="h-3.5 w-3.5 text-white/30" />
+              {profile.projects.map((p) => (
+                <a
+                  key={p.id}
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${GLASS} block rounded-2xl p-4`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-base font-medium" style={{ fontFamily: "var(--font-display)", color: "var(--bp-text)" }}>
+                      {p.title}
+                    </h3>
+                    <ArrowUpRight className="h-3.5 w-3.5" style={{ color: "var(--bp-text-muted)" }} />
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: "var(--bp-text-muted)" }}>{p.description}</p>
+                  {p.tags && p.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {p.tags.map((tag) => (
+                        <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "var(--bp-text-muted)", border: "0.5px solid rgba(255,255,255,0.05)" }}>
+                          {tag}
+                        </span>
+                      ))}
                     </div>
-                    <p className="text-xs text-white/40 leading-relaxed">{p.description}</p>
-                    {p.tags && p.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {p.tags.map((tag) => (
-                          <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/30 border border-white/5">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </a>
-                </MagneticHover>
+                  )}
+                </a>
               ))}
             </div>
           </section>
@@ -394,17 +505,15 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
 
         {/* ─── About / Achievements ─── */}
         {profile.achievements.length > 0 && (
-          <section className="reveal" style={{ animationDelay: "400ms" }}>
-            <h2 className="text-[10px] font-medium uppercase tracking-wider text-white/30 mb-2.5 text-center">About</h2>
-            <div className="liquid-glass rounded-2xl p-4">
-              <ul className="flex flex-col gap-2">
+          <section>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
+              About
+            </h2>
+            <div className={`${GLASS} rounded-2xl p-4`}>
+              <ul className="flex flex-col gap-2.5">
                 {profile.achievements.map((a, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-2.5 text-sm text-white/70 reveal"
-                    style={{ animationDelay: `${450 + i * 40}ms` }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#e8b339] shrink-0 shadow-[0_0_6px_rgba(232,179,57,0.6)]" />
+                  <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--bp-text)" }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--bp-accent)" }} />
                     {a}
                   </li>
                 ))}
@@ -414,8 +523,8 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
         )}
 
         {/* ─── Footer ─── */}
-        <footer className="reveal pt-6 border-t border-white/5 text-center" style={{ animationDelay: "500ms" }}>
-          <p className="text-xs text-white/20">
+        <footer className="pt-6 text-center" style={{ borderTop: "0.5px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-xs" style={{ color: "var(--bp-text-muted)" }}>
             {profile.displayName} · {profile.tiktokHandle && `@${profile.tiktokHandle}`}
           </p>
         </footer>
@@ -425,33 +534,38 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
       <Popover>
         <PopoverTrigger asChild>
           <button
-            className="fixed bottom-4 left-4 z-50 flex h-8 w-8 items-center justify-center rounded-lg liquid-glass text-white/40 hover:text-[#e8b339]"
+            className={`${GLASS} fixed bottom-4 left-4 z-50 flex h-8 w-8 items-center justify-center rounded-lg`}
+            style={{ color: "var(--bp-text-muted)" }}
             title="Sign in"
             aria-label="Sign in"
           >
             <Lock className="h-3.5 w-3.5" />
           </button>
         </PopoverTrigger>
-        <PopoverContent side="top" align="start" sideOffset={8} className="w-48 p-1 liquid-glass border-white/5">
-          <div className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-white/30">Sign in to</div>
+        <PopoverContent side="top" align="start" sideOffset={8} className="w-48 p-1 apple-glass rounded-xl">
+          <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--bp-text-muted)" }}>
+            Sign in to
+          </div>
           <button
             onClick={() => onLogin("financial")}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-white/80 hover:bg-white/5 transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition-colors duration-100 hover:bg-white/5"
+            style={{ color: "var(--bp-text)" }}
           >
-            <Wallet className="h-4 w-4 text-[#e8b339] shrink-0" />
+            <Wallet className="h-4 w-4 shrink-0" style={{ color: "var(--bp-accent)" }} />
             <div className="flex flex-col items-start">
               <span className="font-medium">Financial</span>
-              <span className="text-[10px] text-white/30">Promo manager</span>
+              <span className="text-[10px]" style={{ color: "var(--bp-text-muted)" }}>Promo manager</span>
             </div>
           </button>
           <button
             onClick={() => onLogin("edit")}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-white/80 hover:bg-white/5 transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition-colors duration-100 hover:bg-white/5"
+            style={{ color: "var(--bp-text)" }}
           >
-            <Pencil className="h-4 w-4 text-[#e8b339] shrink-0" />
+            <Pencil className="h-4 w-4 shrink-0" style={{ color: "var(--bp-accent)" }} />
             <div className="flex flex-col items-start">
               <span className="font-medium">Edit page</span>
-              <span className="text-[10px] text-white/30">Update this bio</span>
+              <span className="text-[10px]" style={{ color: "var(--bp-text-muted)" }}>Update this bio</span>
             </div>
           </button>
         </PopoverContent>

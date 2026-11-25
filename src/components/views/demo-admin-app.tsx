@@ -40,8 +40,15 @@ export function DemoAdminApp() {
 
   return (
     <AuthContext.Provider value={demoAuthValue}>
-      {/* Demo banner — sticky top strip */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-7 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-center gap-2 text-[11px] font-medium text-amber-500 backdrop-blur-md">
+      {/* Demo banner — neutral Apple-style */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 h-7 flex items-center justify-center gap-2 text-[11px] font-medium backdrop-blur-md"
+        style={{
+          background: "rgba(0,122,255,0.08)",
+          borderBottom: "0.5px solid rgba(0,122,255,0.15)",
+          color: "#007aff",
+        }}
+      >
         <Sparkles className="h-3 w-3" />
         Demo mode — sample data, no real information
       </div>

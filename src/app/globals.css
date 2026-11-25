@@ -118,14 +118,18 @@
   --sidebar-ring: oklch(0.62 0.24 278);
 }
 
-/* ─── Bio page design tokens (always dark, independent of theme) ─── */
+/* ─── Bio page design tokens — Apple-style neutral palette ─── */
 :root {
-  --bp-bg: #0c0c0e;
-  --bp-surface: #161618;
-  --bp-border: #26262a;
-  --bp-text: #ededf0;
-  --bp-text-muted: #8a8a92;
-  --bp-accent: #e8b339;
+  --bp-bg: #1c1c1e;
+  --bp-surface: #2c2c2e;
+  --bp-border: rgba(255,255,255,0.1);
+  --bp-text: #f5f5f7;
+  --bp-text-muted: #86868b;
+  --bp-accent: #007aff;
+  --bp-glass-bg: rgba(255,255,255,0.05);
+  --bp-glass-blur: blur(20px) saturate(180%);
+  --bp-glass-border: 0.5px solid rgba(255,255,255,0.1);
+  --bp-glass-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 @layer base {

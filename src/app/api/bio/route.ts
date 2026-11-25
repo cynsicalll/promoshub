@@ -31,30 +31,36 @@ export interface BioProject {
   tags?: string[];
 }
 
+export interface BioMilestone {
+  id: string;
+  title: string;
+  date: string; // ISO date string
+  description?: string;
+  icon?: string; // "trophy" | "users" | "eye" | "bike" | "ski" | "money"
+}
+
 export interface BioProfile {
   displayName: string;
   bio: string;
   tagline?: string;
-  profileImage?: string; // URL, base64 data URI, or empty for default avatar
+  profileImage?: string;
   tiktokHandle: string;
   tiktokUrl: string;
-  // Stats (editable numbers; 0 means hidden)
   followers: number;
   following: number;
   totalLikes: number;
   videoCount: number;
   totalViews: number;
-  // Show/hide stat tiles
   showFollowers: boolean;
   showFollowing: boolean;
   showTotalLikes: boolean;
   showVideoCount: boolean;
   showTotalViews: boolean;
-  // Collections
   socials: BioSocial[];
   projects: BioProject[];
   achievements: string[];
   videos: BioVideo[];
+  milestones: BioMilestone[];
 }
 
 // ─── Default seed ────────────────────────────────────────────────────────────
@@ -112,6 +118,14 @@ const DEFAULT_PROFILE: BioProfile = {
     "Motocross/Surron rider & mountain biker",
   ],
   videos: [],
+  milestones: [
+    { id: "m1", title: "Started TikTok", date: "2024-06-01", icon: "users" },
+    { id: "m2", title: "10K followers", date: "2024-09-15", icon: "users" },
+    { id: "m3", title: "First 1M view video", date: "2025-01-20", icon: "eye" },
+    { id: "m4", title: "100K followers", date: "2025-06-10", icon: "users" },
+    { id: "m5", title: "Launched Promos", date: "2025-10-01", icon: "money" },
+    { id: "m6", title: "100M+ total views", date: "2026-03-01", icon: "eye" },
+  ],
 };
 
 const SETTING_KEY = "bio_profile";
@@ -152,6 +166,7 @@ export async function PUT(req: NextRequest) {
     projects: Array.isArray(body.projects) ? body.projects : [],
     achievements: Array.isArray(body.achievements) ? body.achievements : [],
     videos: Array.isArray(body.videos) ? body.videos : [],
+    milestones: Array.isArray(body.milestones) ? body.milestones : [],
   };
 
   await db.setting.upsert({

@@ -33,8 +33,9 @@ import {
   GripVertical,
   Upload,
   Eye,
+  Flag,
 } from "lucide-react";
-import type { BioProfile, BioVideo, BioSocial, BioProject } from "@/app/api/bio/route";
+import type { BioProfile, BioVideo, BioSocial, BioProject, BioMilestone } from "@/app/api/bio/route";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -209,7 +210,7 @@ export function BioEditorView() {
       )}
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto">
           <TabsTrigger value="profile" className="gap-1.5 text-xs sm:text-sm">
             <User className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Profile</span>
@@ -217,6 +218,10 @@ export function BioEditorView() {
           <TabsTrigger value="tiktok" className="gap-1.5 text-xs sm:text-sm">
             <Music2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">TikTok</span>
+          </TabsTrigger>
+          <TabsTrigger value="milestones" className="gap-1.5 text-xs sm:text-sm">
+            <Flag className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Milestones</span>
           </TabsTrigger>
           <TabsTrigger value="videos" className="gap-1.5 text-xs sm:text-sm">
             <Video className="h-3.5 w-3.5" />
@@ -380,6 +385,20 @@ export function BioEditorView() {
                 displayed as <code>100K</code> automatically.
               </p>
             </div>
+          </SectionCard>
+        </TabsContent>
+
+        {/* ─── Milestones tab ─── */}
+        <TabsContent value="milestones" className="space-y-4 mt-4">
+          <SectionCard
+            title="Milestones"
+            icon={Flag}
+            description="A timeline of your achievements with dates. Shown on the bio page, sorted by date (most recent first)."
+          >
+            <MilestoneEditor
+              milestones={draft.milestones ?? []}
+              onChange={(milestones) => update({ milestones })}
+            />
           </SectionCard>
         </TabsContent>
 
@@ -926,6 +945,104 @@ function VideoEditor({
       <Button variant="outline" size="sm" onClick={add} className="gap-1.5">
         <Plus className="h-3.5 w-3.5" />
         Add video
+      </Button>
+    </div>
+  );
+}
+
+// ─── Milestone editor ────────────────────────────────────────────────────────
+
+const MILESTONE_ICONS = [
+  { value: "trophy", label: "Trophy" },
+  { value: "users", label: "Followers" },
+  { value: "eye", label: "Views" },
+  { value: "bike", label: "Bike" },
+  { value: "ski", label: "Ski" },
+  { value: "money", label: "Money" },
+];
+
+function MilestoneEditor({
+  milestones,
+  onChange,
+}: {
+  milestones: BioMilestone[];
+  onChange: (m: BioMilestone[]) => void;
+}) {
+  const add = () =>
+    onChange([
+      ...milestones,
+      { id: uid("milestone"), title: "", date: new Date().toISOString().slice(0, 10), icon: "trophy" },
+    ]);
+
+  return (
+    <div className="space-y-3">
+      {milestones.length === 0 && (
+        <p className="text-xs text-muted-foreground">No milestones yet. Add your first achievement with a date.</p>
+      )}
+      {milestones.map((m, i) => (
+        <div key={m.id} className="rounded-lg border p-3 space-y-2">
+          <div className="flex items-start gap-2">
+            <Flag className="h-4 w-4 text-primary mt-2.5 shrink-0" />
+            <div className="flex-1 grid gap-2 sm:grid-cols-2">
+              <Input
+                placeholder="Title (e.g. 100K followers)"
+                value={m.title}
+                onChange={(e) => {
+                  const next = [...milestones];
+                  next[i] = { ...m, title: e.target.value };
+                  onChange(next);
+                }}
+              />
+              <Input
+                type="date"
+                value={m.date}
+                onChange={(e) => {
+                  const next = [...milestones];
+                  next[i] = { ...m, date: e.target.value };
+                  onChange(next);
+                }}
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-muted-foreground hover:text-destructive"
+              onClick={() => onChange(milestones.filter((_, idx) => idx !== i))}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <select
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              value={m.icon ?? "trophy"}
+              onChange={(e) => {
+                const next = [...milestones];
+                next[i] = { ...m, icon: e.target.value };
+                onChange(next);
+              }}
+            >
+              {MILESTONE_ICONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <Input
+              placeholder="Description (optional)"
+              value={m.description ?? ""}
+              onChange={(e) => {
+                const next = [...milestones];
+                next[i] = { ...m, description: e.target.value };
+                onChange(next);
+              }}
+            />
+          </div>
+        </div>
+      ))}
+      <Button variant="outline" size="sm" onClick={add} className="gap-1.5">
+        <Plus className="h-3.5 w-3.5" />
+        Add milestone
       </Button>
     </div>
   );
