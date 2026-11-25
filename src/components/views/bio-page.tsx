@@ -269,13 +269,75 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
     stats.push({ label: "Videos", value: `${formatCompact(profile.videoCount)}+`, icon: Film, color: "#BF5AF2" });
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: "var(--bp-bg)", color: "var(--bp-text)" }}>
-      {/* Background — neutral gray with subtle multi-color ambient glow */}
+    <div className="min-h-screen relative overflow-hidden" style={{ background: "#0a0e1a", color: "var(--bp-text)" }}>
+      {/* ─── Rich animated aurora background ─── */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        {/* Deep base gradient */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #0a0e1a 0%, #0c0a1a 40%, #0a0e1a 100%)" }} />
+
+        {/* Aurora orb 1 — blue, top-left, drifts */}
+        <div
+          className="absolute w-[60vw] h-[60vw] rounded-full"
+          style={{
+            top: "-15%",
+            left: "-10%",
+            background: "radial-gradient(circle, rgba(10,132,255,0.18) 0%, transparent 55%)",
+            animation: "aurora1 24s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+        {/* Aurora orb 2 — purple, bottom-right, drifts */}
+        <div
+          className="absolute w-[55vw] h-[55vw] rounded-full"
+          style={{
+            bottom: "-15%",
+            right: "-10%",
+            background: "radial-gradient(circle, rgba(191,90,242,0.14) 0%, transparent 55%)",
+            animation: "aurora2 30s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+        {/* Aurora orb 3 — teal, center, drifts */}
+        <div
+          className="absolute w-[45vw] h-[45vw] rounded-full"
+          style={{
+            top: "30%",
+            left: "30%",
+            background: "radial-gradient(circle, rgba(100,210,255,0.08) 0%, transparent 55%)",
+            animation: "aurora3 36s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+        {/* Aurora orb 4 — pink, top-right, subtle */}
+        <div
+          className="absolute w-[40vw] h-[40vw] rounded-full"
+          style={{
+            top: "10%",
+            right: "5%",
+            background: "radial-gradient(circle, rgba(255,55,95,0.06) 0%, transparent 55%)",
+            animation: "aurora4 42s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+      </div>
+
+      {/* Film grain — adds organic texture, breaks up the digital feel */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")",
+          backgroundRepeat: "repeat",
+          mixBlendMode: "overlay",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Vignette — depth */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(10,132,255,0.06) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 30%, rgba(191,90,242,0.04) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 20% 70%, rgba(48,209,88,0.03) 0%, transparent 60%)",
-        }}
+        style={{ background: "radial-gradient(ellipse 90% 70% at 50% 40%, transparent 40%, rgba(0,0,0,0.4) 100%)" }}
+        aria-hidden="true"
       />
 
       {/* Cursor-following glow — neutral white */}
@@ -342,6 +404,28 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
         }
         @media (prefers-reduced-motion: reduce) {
           .page-enter > *, .dot-pulse, .timeline-line-draw { animation: none !important; }
+        }
+        @keyframes aurora1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(8vw, 6vh) scale(1.1); }
+          66% { transform: translate(-4vw, 8vh) scale(0.95); }
+        }
+        @keyframes aurora2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(-6vw, -4vh) scale(1.08); }
+          66% { transform: translate(5vw, 6vh) scale(0.97); }
+        }
+        @keyframes aurora3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(6vw, -8vh) scale(1.05); }
+          66% { transform: translate(-7vw, -3vh) scale(1.04); }
+        }
+        @keyframes aurora4 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+          50% { transform: translate(4vw, -5vh) scale(1.12); opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [style*="aurora"] { animation: none !important; }
         }
       `}</style>
 
