@@ -272,8 +272,15 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
     <div className="min-h-screen relative overflow-hidden" style={{ background: "#0a0e1a", color: "var(--bp-text)" }}>
       {/* ─── Rich animated aurora background ─── */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        {/* Deep base gradient */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #0a0e1a 0%, #0c0a1a 40%, #0a0e1a 100%)" }} />
+        {/* Rich base gradient — always visible color */}
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(135deg, #0a0e1a 0%, #0d0a1e 25%, #0a0e1a 50%, #0e0a18 75%, #0a0e1a 100%)",
+        }} />
+
+        {/* Visible color wash — blue to purple diagonal */}
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(135deg, rgba(10,132,255,0.08) 0%, transparent 40%, rgba(191,90,242,0.06) 60%, transparent 100%)",
+        }} />
 
         {/* Aurora orb 1 — blue, top-left, drifts */}
         <div
@@ -281,7 +288,7 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
           style={{
             top: "-15%",
             left: "-10%",
-            background: "radial-gradient(circle, rgba(10,132,255,0.18) 0%, transparent 55%)",
+            background: "radial-gradient(circle, rgba(10,132,255,0.28) 0%, transparent 50%)",
             animation: "aurora1 24s ease-in-out infinite",
             willChange: "transform",
           }}
@@ -292,7 +299,7 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
           style={{
             bottom: "-15%",
             right: "-10%",
-            background: "radial-gradient(circle, rgba(191,90,242,0.14) 0%, transparent 55%)",
+            background: "radial-gradient(circle, rgba(191,90,242,0.22) 0%, transparent 50%)",
             animation: "aurora2 30s ease-in-out infinite",
             willChange: "transform",
           }}
@@ -303,7 +310,7 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
           style={{
             top: "30%",
             left: "30%",
-            background: "radial-gradient(circle, rgba(100,210,255,0.08) 0%, transparent 55%)",
+            background: "radial-gradient(circle, rgba(100,210,255,0.14) 0%, transparent 50%)",
             animation: "aurora3 36s ease-in-out infinite",
             willChange: "transform",
           }}
@@ -314,16 +321,16 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
           style={{
             top: "10%",
             right: "5%",
-            background: "radial-gradient(circle, rgba(255,55,95,0.06) 0%, transparent 55%)",
+            background: "radial-gradient(circle, rgba(255,55,95,0.12) 0%, transparent 50%)",
             animation: "aurora4 42s ease-in-out infinite",
             willChange: "transform",
           }}
         />
       </div>
 
-      {/* Film grain — adds organic texture, breaks up the digital feel */}
+      {/* Film grain — adds organic texture */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        className="absolute inset-0 pointer-events-none opacity-[0.05]"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")",
@@ -336,7 +343,7 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
       {/* Vignette — depth */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 90% 70% at 50% 40%, transparent 40%, rgba(0,0,0,0.4) 100%)" }}
+        style={{ background: "radial-gradient(ellipse 90% 70% at 50% 40%, transparent 30%, rgba(0,0,0,0.5) 100%)" }}
         aria-hidden="true"
       />
 
