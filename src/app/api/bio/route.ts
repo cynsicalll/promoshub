@@ -29,6 +29,7 @@ export interface BioProject {
   description: string;
   url?: string;
   tags?: string[];
+  image?: string; // screenshot/preview URL — shown on the right side of the card
 }
 
 export interface BioMilestone {
@@ -43,6 +44,7 @@ export interface BioProfile {
   displayName: string;
   bio: string;
   tagline?: string;
+  aboutText?: string; // longer bio paragraph shown in its own section
   profileImage?: string;
   tiktokHandle: string;
   tiktokUrl: string;
@@ -68,6 +70,7 @@ export interface BioProfile {
 const DEFAULT_PROFILE: BioProfile = {
   displayName: "Cynsical",
   tagline: "Influencer · Entrepreneur · Yapper",
+  aboutText: "I'm a 17-year-old creator building things on the internet. I make TikToks about motocross, skiing, and life — and I build apps that help creators and businesses manage their promo campaigns, track payments, and automate content. When I'm not coding or filming, I'm riding my Surron or hitting the terrain park.",
   bio: "i like money & fast things",
   profileImage: "",
   tiktokHandle: "sigmadudereal",
@@ -99,6 +102,7 @@ const DEFAULT_PROFILE: BioProfile = {
         "Sound promo management system — track payments, splits, TikTok analytics and send push notifications for approvals.",
       url: "/?demo=viewer",
       tags: ["Next.js", "TypeScript", "Prisma", "TikTok API"],
+      image: "https://image.thum.io/get/width/600/crop/500/https://sigmadude.vercel.app/?demo=viewer",
     },
     {
       id: "project-clipvault",
@@ -107,6 +111,7 @@ const DEFAULT_PROFILE: BioProfile = {
         "Watches Twitch streams 24/7, catches the moments chat reacts to, and edits them into vertical clips with facecam, titles and a rating. Closed beta.",
       url: "https://clipvault.live",
       tags: ["Twitch", "AI", "Video", "Automation"],
+      image: "https://image.thum.io/get/width/600/crop/500/https://clipvault.live",
     },
   ],
   achievements: [

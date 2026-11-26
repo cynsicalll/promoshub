@@ -278,13 +278,26 @@ export function BioEditorView() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="bio" className="text-xs">
-                  Bio / description
+                  Bio / short description (shown in hero)
                 </Label>
                 <Textarea
                   id="bio"
-                  rows={3}
+                  rows={2}
                   value={draft.bio}
                   onChange={(e) => update({ bio: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="aboutText" className="text-xs">
+                  About me (longer paragraph, shown in its own section)
+                </Label>
+                <Textarea
+                  id="aboutText"
+                  rows={5}
+                  placeholder="Write a few sentences about yourself..."
+                  value={draft.aboutText ?? ""}
+                  onChange={(e) => update({ aboutText: e.target.value })}
                 />
               </div>
             </div>
@@ -722,6 +735,15 @@ function ProjectEditor({
                 onChange={(e) => {
                   const next = [...projects];
                   next[i] = { ...p, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) };
+                  onChange(next);
+                }}
+              />
+              <Input
+                placeholder="Screenshot URL (optional, shown on right of card)"
+                value={p.image ?? ""}
+                onChange={(e) => {
+                  const next = [...projects];
+                  next[i] = { ...p, image: e.target.value };
                   onChange(next);
                 }}
               />

@@ -52,6 +52,7 @@ const FALLBACK: BioProfile = {
   displayName: "Cynsical",
   bio: "i like money & fast things",
   tagline: "Influencer · Entrepreneur · Yapper",
+  aboutText: "I'm a 17-year-old creator building things on the internet. I make TikToks about motocross, skiing, and life — and I build apps that help creators and businesses manage their promo campaigns, track payments, and automate content. When I'm not coding or filming, I'm riding my Surron or hitting the terrain park.",
   profileImage: "",
   tiktokHandle: "sigmadudereal",
   tiktokUrl: "https://www.tiktok.com/@sigmadudereal",
@@ -67,8 +68,8 @@ const FALLBACK: BioProfile = {
   showTotalViews: true,
   socials: [{ id: "tiktok", title: "TikTok", url: "https://www.tiktok.com/@sigmadudereal", handle: "@sigmadudereal", icon: "tiktok" }],
   projects: [
-    { id: "promos", title: "Promos", description: "Sound promo management system.", url: "/?demo=viewer", tags: ["Next.js", "TypeScript"] },
-    { id: "clipvault", title: "ClipVault", description: "Watches Twitch streams 24/7.", url: "https://clipvault.live", tags: ["Twitch", "AI"] },
+    { id: "promos", title: "Promos", description: "Sound promo management system — track payments, splits, TikTok analytics and send push notifications for approvals.", url: "/?demo=viewer", tags: ["Next.js", "TypeScript", "Prisma", "TikTok API"], image: "https://image.thum.io/get/width/600/crop/500/https://sigmadude.vercel.app/?demo=viewer" },
+    { id: "clipvault", title: "ClipVault", description: "Watches Twitch streams 24/7, catches the moments chat reacts to, and edits them into vertical clips with facecam, titles and a rating. Closed beta.", url: "https://clipvault.live", tags: ["Twitch", "AI", "Video", "Automation"], image: "https://image.thum.io/get/width/600/crop/500/https://clipvault.live" },
   ],
   achievements: ["100K+ TikTok followers", "100M+ total views", "17yo entrepreneur & professional yapper", "Passionate skier (mainly park)", "Motocross/Surron rider & mountain biker"],
   videos: [],
@@ -588,48 +589,91 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
           </section>
         )}
 
-        {/* ─── Projects ─── */}
+        {/* ─── About Me (bio paragraph) ─── */}
+        {profile.aboutText && (
+          <section>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
+              About me
+            </h2>
+            <div className={`${GLASS} rounded-2xl p-5`}>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--bp-text)", lineHeight: 1.7 }}>
+                {profile.aboutText}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* ─── Projects — with screenshot images on the right ─── */}
         {profile.projects.length > 0 && (
           <section>
             <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
               Projects
             </h2>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {profile.projects.map((p) => (
                 <a
                   key={p.id}
                   href={p.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`${GLASS} block rounded-2xl p-4`}
+                  className={`${GLASS} group relative block rounded-2xl overflow-hidden`}
+                  style={{ minHeight: p.image ? "140px" : "auto" }}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-base font-medium" style={{ fontFamily: "var(--font-display)", color: "var(--bp-text)" }}>
-                      {p.title}
-                    </h3>
-                    <ArrowUpRight className="h-3.5 w-3.5" style={{ color: "var(--bp-text-muted)" }} />
-                  </div>
-                  <p className="text-xs leading-relaxed" style={{ color: "var(--bp-text-muted)" }}>{p.description}</p>
-                  {p.tags && p.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {p.tags.map((tag) => (
-                        <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "var(--bp-text-muted)", border: "0.5px solid rgba(255,255,255,0.05)" }}>
-                          {tag}
-                        </span>
-                      ))}
+                  <div className="flex">
+                    {/* Left side — text content */}
+                    <div className="flex-1 p-4 min-w-0 z-10 relative">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-base font-medium" style={{ fontFamily: "var(--font-display)", color: "var(--bp-text)" }}>
+                          {p.title}
+                        </h3>
+                        <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: "var(--bp-text-muted)" }} />
+                      </div>
+                      <p className="text-xs leading-relaxed" style={{ color: "var(--bp-text-muted)" }}>{p.description}</p>
+                      {p.tags && p.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {p.tags.map((tag) => (
+                            <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "var(--bp-text-muted)", border: "0.5px solid rgba(255,255,255,0.05)" }}>
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    {/* Right side — screenshot with gradient fade from glass */}
+                    {p.image && (
+                      <div className="relative w-32 sm:w-48 shrink-0 overflow-hidden">
+                        {/* Gradient mask — fades from transparent (glass) to opaque (image) */}
+                        <div
+                          className="absolute inset-0 z-10"
+                          style={{
+                            background: "linear-gradient(to right, var(--bp-glass-bg, rgba(255,255,255,0.05)) 0%, transparent 30%)",
+                            backdropFilter: "blur(8px)",
+                          }}
+                        />
+                        { }
+                        <img
+                          src={p.image}
+                          alt={p.title}
+                          className="absolute inset-0 w-full h-full object-cover object-top"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </a>
               ))}
             </div>
           </section>
         )}
 
-        {/* ─── About / Achievements ─── */}
+        {/* ─── Achievements ─── */}
         {profile.achievements.length > 0 && (
           <section>
             <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
-              About
+              Highlights
             </h2>
             <div className={`${GLASS} rounded-2xl p-4`}>
               <ul className="flex flex-col gap-2.5">
