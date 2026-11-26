@@ -104,22 +104,45 @@ function TikTokProfileEmbed({ handle }: { handle: string }) {
   }, [handle]);
 
   return (
-    <div className={`${GLASS} rounded-2xl p-3 overflow-hidden flex justify-center min-h-[120px]`}>
-      <blockquote
-        className="tiktok-embed"
-        cite={`https://www.tiktok.com/@${handle}`}
-        data-unique-id={handle}
-        data-embed-type="creator"
-        style={{ maxWidth: "780px", minWidth: "288px" }}
-      >
-        <section><a href={`https://www.tiktok.com/@${handle}`} target="_blank" rel="noopener noreferrer">@{handle}</a></section>
-      </blockquote>
-      {!loaded && (
-        <div className="flex items-center text-xs text-[var(--bp-text-muted)]">
-          <div className="h-3 w-3 animate-spin rounded-full border border-white/10 border-t-[var(--bp-accent)] mr-2" />
-          Loading…
+    <div className={`${GLASS} rounded-2xl overflow-hidden`}>
+      {/* Header row — gives context */}
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "0.5px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center gap-2">
+          {/* TikTok icon */}
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" style={{ color: "#f5f5f7" }}>
+            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/>
+          </svg>
+          <span className="text-sm font-medium" style={{ color: "var(--bp-text)" }}>@{handle}</span>
         </div>
-      )}
+        <a
+          href={`https://www.tiktok.com/@${handle}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-all duration-200"
+          style={{ color: "var(--bp-text-muted)", background: "rgba(255,255,255,0.05)" }}
+        >
+          Visit
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+      {/* Embed */}
+      <div className="flex justify-center min-h-[120px] p-3">
+        <blockquote
+          className="tiktok-embed"
+          cite={`https://www.tiktok.com/@${handle}`}
+          data-unique-id={handle}
+          data-embed-type="creator"
+          style={{ maxWidth: "780px", minWidth: "288px" }}
+        >
+          <section><a href={`https://www.tiktok.com/@${handle}`} target="_blank" rel="noopener noreferrer">@{handle}</a></section>
+        </blockquote>
+        {!loaded && (
+          <div className="flex items-center text-xs" style={{ color: "var(--bp-text-muted)" }}>
+            <div className="h-3 w-3 animate-spin rounded-full border border-white/10 border-t-[var(--bp-accent)] mr-2" />
+            Loading profile…
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -152,8 +175,9 @@ function useScrollReveal<T extends HTMLElement>() {
 // ─── Milestone Timeline ──────────────────────────────────────────────────────
 
 function MilestoneTimeline({ milestones }: { milestones: BioMilestone[] }) {
-  // Sort by date descending (most recent first)
-  const sorted = [...milestones].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Sort by date ascending (oldest first) — timeline reads as a journey
+  const sorted = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const latestIndex = sorted.length - 1;
 
   return (
     <div className="relative pl-6">
@@ -164,7 +188,7 @@ function MilestoneTimeline({ milestones }: { milestones: BioMilestone[] }) {
 
       <div className="flex flex-col gap-4">
         {sorted.map((m, i) => (
-          <MilestoneCard key={m.id} milestone={m} isLatest={i === 0} delay={i * 100} />
+          <MilestoneCard key={m.id} milestone={m} isLatest={i === latestIndex} delay={i * 100} />
         ))}
       </div>
     </div>
@@ -437,36 +461,41 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
       `}</style>
 
       <div className="page-enter relative z-10 mx-auto max-w-2xl px-6 py-12 sm:py-16 flex flex-col gap-12">
-        {/* ─── Hero ─── */}
-        <header className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-4">
-            {/* Avatar — subtle blue-tinted border */}
-            <div
-              className="w-20 h-20 rounded-full overflow-hidden shrink-0"
-              style={{ border: "2px solid rgba(10,132,255,0.2)", boxShadow: "0 0 0 1px rgba(10,132,255,0.1)" }}
-            >
-              {profile.profileImage ? (
-                 
-                <img src={profile.profileImage} alt={profile.displayName} className="w-full h-full object-cover" />
-              ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center text-lg font-semibold"
-                  style={{ fontFamily: "var(--font-display)", color: "var(--bp-text-muted)", background: "var(--bp-surface)" }}
-                >
-                  {profile.displayName.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)", color: "var(--bp-text)" }}>
-                {profile.displayName}
-              </h1>
-              {(profile.tagline || profile.bio) && (
-                <p className="text-sm mt-0.5" style={{ color: "var(--bp-text-muted)" }}>
-                  {profile.tagline || profile.bio}
-                </p>
-              )}
-            </div>
+        {/* ─── Hero — instantly communicates who this is ─── */}
+        <header className="flex flex-col items-center gap-5">
+          {/* Avatar — larger, more prominent */}
+          <div
+            className="w-24 h-24 rounded-full overflow-hidden shrink-0"
+            style={{ border: "2px solid rgba(10,132,255,0.2)", boxShadow: "0 0 0 1px rgba(10,132,255,0.1), 0 4px 24px rgba(0,0,0,0.4)" }}
+          >
+            {profile.profileImage ? (
+               
+              <img src={profile.profileImage} alt={profile.displayName} className="w-full h-full object-cover" />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-xl font-semibold"
+                style={{ fontFamily: "var(--font-display)", color: "var(--bp-text-muted)", background: "var(--bp-surface)" }}
+              >
+                {profile.displayName.slice(0, 2).toUpperCase()}
+              </div>
+            )}
+          </div>
+
+          {/* Name + tagline — the core identity */}
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-display)", color: "var(--bp-text)" }}>
+              {profile.displayName}
+            </h1>
+            {(profile.tagline || profile.bio) && (
+              <p className="text-base mt-1.5" style={{ color: "var(--bp-text-muted)" }}>
+                {profile.tagline || profile.bio}
+              </p>
+            )}
+            {profile.bio && profile.tagline && profile.bio !== profile.tagline && (
+              <p className="text-sm mt-0.5 opacity-60" style={{ color: "var(--bp-text-muted)" }}>
+                {profile.bio}
+              </p>
+            )}
           </div>
 
           {/* Socials — glass pills */}
@@ -478,7 +507,7 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`${GLASS} inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium`}
+                  className={`${GLASS} inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium`}
                   style={{ color: "var(--bp-text)" }}
                 >
                   {s.title}
@@ -504,11 +533,11 @@ export function BioPage({ onLogin }: { onLogin: (destination: LoginDestination) 
           </section>
         )}
 
-        {/* ─── TikTok embed ─── */}
+        {/* ─── TikTok profile — framed with context ─── */}
         {profile.tiktokHandle && (
           <section>
             <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: "var(--bp-text-muted)" }}>
-              TikTok
+              TikTok Profile
             </h2>
             <TikTokProfileEmbed handle={profile.tiktokHandle} />
           </section>
